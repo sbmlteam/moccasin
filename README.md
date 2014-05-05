@@ -17,7 +17,7 @@ Michael Hucka (http://www.cds.caltech.edu/~mhucka)
 Background
 ----------
 
-The Systems Biology Markup Language [SBML](http://sbml.org) is a machine-readable representation format for computational models of biological processes.  By supporting SBML as an input/output format, different tools can all operate on an identical representation of a model, removing opportunities for translation errors and assuring a common starting point for analyses and simulations.
+The Systems Biology Markup Language ([SBML](http://sbml.org)) is a machine-readable representation format for computational models of biological processes.  By supporting SBML as an input/output format, different tools can all operate on an identical representation of a model, removing opportunities for translation errors and assuring a common starting point for analyses and simulations.
 
 As part of our continuing efforts to develop SBML and useful software tools around it, we previously created [SBMLToolbox](http://sbml.org/Software/SBMLToolbox).  It allows an SBML model to be imported into [MATLAB](http://www.mathworks.com) and [Octave](http://octave.org), where the model is represented as a data structure that users can manipulate using the facilites of those environments; likewise, the data structure can be exported to SBML form.  One of the features that SBMLToolbox does *not* provide, however, is the ability to convert free-form, unstructured MATLAB/Octave differential equation models into SBML: if the user did not write their MATLAB/Octave model using the SBMLToolbox data structure in the first place, then there is no way to export it in SBML form.  However, users have repeatedly asked us for a way to do this.
 
