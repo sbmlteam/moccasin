@@ -1,5 +1,7 @@
 The purpose of this experiment is to try to use PLY 3.3 with OMPC and try to fix the "unknown conflict" error in OMPC's grammar.
 
+I tried to hack the grammar in ompc/ompcply.py.
+
 I was unable to get past a conflict in the parser grammar when using PLY 3.3.  Here's the output:
 
 > python2.6 ompc/ompcply.py mfiles/add.m 
