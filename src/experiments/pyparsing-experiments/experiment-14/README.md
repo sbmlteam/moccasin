@@ -1,0 +1,1 @@
+This experiment adds handling of the colon ':' operator.  It also fixes handling of continuation lines, which I must have broken at some point in the recent past, but unfortunately it has some other line-handling issues.  Still, progress.
