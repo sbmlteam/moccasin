@@ -126,17 +126,19 @@ EXPR               = Forward()
 # element contents are of the same type.  But again, since we expect our
 # input to be valid Matlab, we don't expect to have to verify that property.
 
-ROW_WITH_COMMAS    = delimitedList(EXPR)
-ROW_WITH_SEMIS     = Optional(ROW_WITH_COMMAS) + SEMI
 ROW_WITH_SPACES    = OneOrMore(EXPR)
+ROW_WITH_COMMAS    = delimitedList(EXPR)
+ROW_WITH_SEMIS     = Optional(ROW_WITH_COMMAS | ROW_WITH_SPACES) + SEMI
 ROW                = ROW_WITH_SEMIS | ROW_WITH_COMMAS | ROW_WITH_SPACES
 BARE_MATRIX        = Group(LBRACKET + ZeroOrMore(ROW) + RBRACKET)
 
-# Bare cell arrays.  I think these are basically just heterogeneous matrices.
+# Cell arrays.  I think these are basically just heterogeneous matrices.
+# Note that you can write {} by itself, but a reference has to have at
+# least one indexing term: array{} is not valid.
 
 CELL_ARRAY_ID      = ID_BASE.copy()
 BARE_CELL_ARRAY    = Group(LBRACE + ZeroOrMore(ROW) + RBRACE)
-CELL_ARRAY_REF     = CELL_ARRAY_ID + BARE_CELL_ARRAY
+CELL_ARRAY_REF     = CELL_ARRAY_ID + LBRACE + OneOrMore(EXPR) + RBRACE
 
 # Function calls and matrix accesses look the same. We will have to
 # distinguish them at run-time by figuring out if a given identifier
@@ -152,8 +154,6 @@ MATRIX_ID          = ID_BASE.copy()
 MATRIX_ARGS        = delimitedList(EXPR | Group(':'))
 MATRIX_REF         = MATRIX_ID + LPAR + ZeroOrMore(MATRIX_ARGS) + RPAR
 
-FUNC_OR_MATRIX_REF = FUNCTION_REF | MATRIX_REF
-
 # Func. handles: http://www.mathworks.com/help/matlab/ref/function_handle.html
 
 FUNC_HANDLE_ID     = ID_BASE.copy()
@@ -161,18 +161,21 @@ NAMED_FUNC_HANDLE  = '@' + FUNC_HANDLE_ID
 ANON_FUNC_HANDLE   = '@' + LPAR + Group(Optional(ARG_LIST)) + RPAR + EXPR
 FUNC_HANDLE        = NAMED_FUNC_HANDLE | ANON_FUNC_HANDLE
 
-# Structure arrays.
-
-STRUCT_ID          = ID_BASE.copy()
-STRUCT_INDEX       = LPAR + ZeroOrMore(MATRIX_ARGS) + RPAR
-STRUCT_ARRAY_REF   = STRUCT_ID + Optional(STRUCT_INDEX) + '.' + ID_REF
-
 # The operator precendece rules in Matlab are listed here:
 # http://www.mathworks.com/help/matlab/matlab_prog/operator-precedence.html
 
-OPERAND            = Group(FUNC_OR_MATRIX_REF | STRUCT_ARRAY_REF | ID_REF \
-                           | FUNC_HANDLE | BARE_MATRIX | BARE_CELL_ARRAY \
+OPERAND            = Group(FUNCTION_REF | MATRIX_REF | CELL_ARRAY_REF \
+                           | ID_REF | FUNC_HANDLE \
+                           | BARE_MATRIX | BARE_CELL_ARRAY \
                            | NUMBER | BOOLEAN | STRING)
+
+# This cheats with structure references.  Structure references are x.y where
+# "x" can be an expression that yields a structure.  This poses a problem: if
+# you write a grammar rule in the normal fashion as EXPR + "." + ID_REF, then
+# the grammar becomes infinitely recursive.  The approach below makes "." a
+# binary operator; that way, the LHS can be an expression.  We should only
+# have an id reference as the RHS in that case, and maybe we can enforce that
+# in the future somehow.  But for now....
 
 EXPR               << operatorPrecedence(OPERAND, [
     (oneOf('- + ~'),            1, opAssoc.RIGHT),
@@ -186,6 +189,7 @@ EXPR               << operatorPrecedence(OPERAND, [
     ('|',                       2, opAssoc.LEFT, makeLRlike(2)),
     ('&&',                      2, opAssoc.LEFT, makeLRlike(2)),
     ('||',                      2, opAssoc.LEFT, makeLRlike(2)),
+    ('.',                       2, opAssoc.LEFT, makeLRlike(2)),
 ])
 
 COND_EXPR          = operatorPrecedence(OPERAND, [
