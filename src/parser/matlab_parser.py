@@ -255,12 +255,14 @@ LINE_COMMENT       = Group('%' + restOfLine + EOL)
 BLOCK_COMMENT      = Group('%{' + SkipTo('%}', include=True))
 COMMENT            = (BLOCK_COMMENT | LINE_COMMENT).setParseAction(print_tokens)
 DELIMITER          = COMMA | SEMI
-STMT               = (FUNCTION_DEF_STMT | CONTROL_STMT | ASSIGNMENT | COMMAND_STMT | EXPR).setParseAction(print_tokens)
-MATLAB_SYNTAX      = ZeroOrMore(STMT | DELIMITER | COMMENT)
-
 CONTINUATION       = Combine(ELLIPSIS.leaveWhitespace() + EOL + EOS)
+STMT               = (FUNCTION_DEF_STMT | CONTROL_STMT | ASSIGNMENT | COMMAND_STMT | EXPR).setParseAction(print_tokens)
+
+MATLAB_SYNTAX      = ZeroOrMore(STMT | DELIMITER | COMMENT)
 MATLAB_SYNTAX.ignore(CONTINUATION)
 
+# This is supposed to be for optimization, but unless I call this, the parser
+# simply never finishes parsing even simple inputs.
 MATLAB_SYNTAX.enablePackrat()
 
 
