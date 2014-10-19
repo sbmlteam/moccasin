@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 # Not done:
-# - transpose operator
 # - arrays using newlines
 # - LHS arrays have to have subscripts
 # - make it indicate what the things are
@@ -170,8 +169,8 @@ STRUCT_REF         = STRUCT_BASE + "." + ID_REF
 # The operator precendece rules in Matlab are listed here:
 # http://www.mathworks.com/help/matlab/matlab_prog/operator-precedence.html
 
-OPERAND            = Group(FUNCTION_REF | MATRIX_REF | CELL_ARRAY_REF \
-                           | STRUCT_REF | ID_REF | MATRIX_TRANSPOSE \
+OPERAND            = Group(MATRIX_TRANSPOSE | FUNCTION_REF | MATRIX_REF | CELL_ARRAY_REF \
+                           | STRUCT_REF | ID_REF \
                            | FUNC_HANDLE | BARE_MATRIX | BARE_CELL_ARRAY \
                            | NUMBER | BOOLEAN | STRING)
 
@@ -224,9 +223,17 @@ END                = Keyword('end')
 
 CONTROL_STMT       = WHILE_STMT | IF_STMT | ELSEIF_STMT | ELSE_STMT \
                     | SWITCH_STMT | CASE_STMT | OTHERWISE_STMT \
-                    | TRY_STMT | CATCH_STMT \
+                    | FOR_STMT | TRY_STMT | CATCH_STMT \
                     | CONTINUE_STMT | BREAK_STMT | RETURN_STMT \
                     | GLOBAL_STMT | PERSISTENT_STMT | END
+
+# Examples of Matlab command statements:
+#   pause on
+#   hold off
+# The same commands take other forms, like pause(n), but those will get caught
+# by the regular function reference grammar.
+
+COMMAND_STMT       = ID_REF + Word(alphanums + "_")
 
 SINGLE_VALUE       = ID_REF
 IDS_WITH_COMMAS    = delimitedList(SINGLE_VALUE)
@@ -241,7 +248,7 @@ LINE_COMMENT       = Group('%' + restOfLine + EOL)
 BLOCK_COMMENT      = Group('%{' + SkipTo('%}', include=True))
 COMMENT            = (BLOCK_COMMENT | LINE_COMMENT).setParseAction(print_tokens)
 DELIMITER          = COMMA | SEMI
-STMT               = (FUNCTION_DEF_STMT | CONTROL_STMT | ASSIGNMENT | EXPR).setParseAction(print_tokens)
+STMT               = (FUNCTION_DEF_STMT | CONTROL_STMT | ASSIGNMENT | COMMAND_STMT | EXPR).setParseAction(print_tokens)
 MATLAB_SYNTAX      = ZeroOrMore(STMT | DELIMITER | COMMENT)
 
 CONTINUATION       = Combine(ELLIPSIS.leaveWhitespace() + EOL + EOS)
