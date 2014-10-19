@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import glob, sys
-from pyparsing import ParseException
+from pyparsing import ParseException, ParseResults
 sys.path.append('..')
 sys.path.append('../../utilities')
 from matlab_parser import parse_string
