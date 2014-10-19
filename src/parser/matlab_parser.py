@@ -119,14 +119,12 @@ ROW                = ROW_WITH_SEMIS | ROW_WITH_COMMAS | ROW_WITH_SPACES
 BARE_MATRIX        = Group(LBRACKET + ZeroOrMore(ROW) + RBRACKET)
 
 # Cell arrays.  I think these are basically just heterogeneous matrices.
-# Note that you can write {} by itself, but a reference has to have at
-# least one indexing term: "somearray{}" is not valid.
+# Note that you can write {} by itself, but a reference has to have at least
+# one indexing term: "somearray{}" is not valid.  Cell array references don't
+# seem to allow newlines in the args, but do allow a bare ':'.
 
 CELL_ARRAY_ID      = ID_BASE.copy()
 BARE_CELL_ARRAY    = Group(LBRACE + ZeroOrMore(ROW) + RBRACE)
-
-# Cell array references don't seem to allow newlines in the args, but do
-# allow a bare ':'.
 
 CELL_ARRAY_ARGS    = delimitedList(EXPR | Group(':'))
 CELL_ARRAY_REF     = CELL_ARRAY_ID + LBRACE + CELL_ARRAY_ARGS + RBRACE
