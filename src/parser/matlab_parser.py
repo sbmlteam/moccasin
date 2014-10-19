@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-# make it indicate what the things are
-# dotted notation
-# {} forms
 # arrays using newlines
+# LHS arrays have to have subscripts
+
+# make it indicate what the things are
 
 
 import sys, math, operator
@@ -77,7 +77,6 @@ def tracer(tokens):
 
 EOL                = LineEnd().suppress()
 EOS                = LineStart().suppress()
-COMMENTSTART       = Literal('%').suppress()
 SEMI               = Literal(';').suppress()
 COMMA              = Literal(',').suppress()
 LBRACKET           = Literal('[').suppress()
@@ -101,17 +100,11 @@ FLOAT              = ( Combine(Word(nums) + Optional('.' + Word(nums)) + EXPONEN
                     )
 NUMBER             = FLOAT | INTEGER
 
-# Quoted strings.
-# Currently, the way this grammar is written means it will not handle
-# the use of the single quote as a transpose operator.  None of the examples
-# so far in our domain of application have used transpose; at some point
-# someone probably will, but let's wait until then.
-
-STRING             = QuotedString("'", escQuote="''")
-
 TRUE               = Keyword('true')
 FALSE              = Keyword('false')
 BOOLEAN            = TRUE | FALSE
+
+STRING             = QuotedString("'", escQuote="''")
 
 # List of references to identifiers.  Used in function definitions.
 
@@ -161,25 +154,27 @@ NAMED_FUNC_HANDLE  = '@' + FUNC_HANDLE_ID
 ANON_FUNC_HANDLE   = '@' + LPAR + Group(Optional(ARG_LIST)) + RPAR + EXPR
 FUNC_HANDLE        = NAMED_FUNC_HANDLE | ANON_FUNC_HANDLE
 
+# Struct array references.  This is incomplete: in Matlab, the LHS can
+# actually be a full expression that yields a struct.  Here, to avoid an
+# infinitely recursive grammar, we only allow a specific set of objects and
+# exclude a full EXPR.  (Doing the obvious thing, EXPR + "." + ID_REF, results
+# in an infinitely-recursive grammar.)
+
+STRUCT_BASE        = CELL_ARRAY_REF | MATRIX_REF | FUNCTION_REF | FUNC_HANDLE | ID_REF
+STRUCT_REF         = STRUCT_BASE + "." + ID_REF
+
 # The operator precendece rules in Matlab are listed here:
 # http://www.mathworks.com/help/matlab/matlab_prog/operator-precedence.html
 
 OPERAND            = Group(FUNCTION_REF | MATRIX_REF | CELL_ARRAY_REF \
-                           | ID_REF | FUNC_HANDLE \
+                           | STRUCT_REF | ID_REF | FUNC_HANDLE \
                            | BARE_MATRIX | BARE_CELL_ARRAY \
                            | NUMBER | BOOLEAN | STRING)
 
-# This cheats with structure references.  Structure references are x.y where
-# "x" can be an expression that yields a structure.  This poses a problem: if
-# you write a grammar rule in the normal fashion as EXPR + "." + ID_REF, then
-# the grammar becomes infinitely recursive.  The approach below makes "." a
-# binary operator; that way, the LHS can be an expression.  We should only
-# have an id reference as the RHS in that case, and maybe we can enforce that
-# in the future somehow.  But for now....
-
 EXPR               << operatorPrecedence(OPERAND, [
     (oneOf('- + ~'),            1, opAssoc.RIGHT),
-    (oneOf(".' .^ ^"),          2, opAssoc.LEFT, makeLRlike(2)),
+    (".'",                      1, opAssoc.RIGHT),
+    (oneOf(".^ ^"),             2, opAssoc.LEFT, makeLRlike(2)),
     (oneOf('* / .* ./ .\\ \\'), 2, opAssoc.LEFT, makeLRlike(2)),
     (oneOf('+ -'),              2, opAssoc.LEFT, makeLRlike(2)),
     ('::',                      3, opAssoc.LEFT),
@@ -189,7 +184,6 @@ EXPR               << operatorPrecedence(OPERAND, [
     ('|',                       2, opAssoc.LEFT, makeLRlike(2)),
     ('&&',                      2, opAssoc.LEFT, makeLRlike(2)),
     ('||',                      2, opAssoc.LEFT, makeLRlike(2)),
-    ('.',                       2, opAssoc.LEFT, makeLRlike(2)),
 ])
 
 COND_EXPR          = operatorPrecedence(OPERAND, [
@@ -202,8 +196,8 @@ COND_EXPR          = operatorPrecedence(OPERAND, [
 
 ASSIGNED_ID        = ID_BASE.copy()
 SIMPLE_ASSIGNMENT  = ASSIGNED_ID + EQUALS + EXPR
-MATRIX_ASSIGNMENT  = (BARE_MATRIX | MATRIX_REF) + EQUALS + EXPR
-ASSIGNMENT         = MATRIX_ASSIGNMENT | SIMPLE_ASSIGNMENT
+OTHER_ASSIGNMENT   = (BARE_MATRIX | MATRIX_REF | CELL_ARRAY_REF | STRUCT_REF) + EQUALS + EXPR
+ASSIGNMENT         = OTHER_ASSIGNMENT | SIMPLE_ASSIGNMENT
 
 WHILE_STMT         = Group(Keyword('while') + COND_EXPR)
 IF_STMT            = Group(Keyword('if') + COND_EXPR)
@@ -239,7 +233,10 @@ FUNCTION_LHS       = Optional(Group(MULTIPLE_VALUES | SINGLE_VALUE) + EQUALS)
 FUNCTION_ARGS      = Optional(LPAR + ARG_LIST + RPAR)
 FUNCTION_DEF_STMT  = Group(Keyword('function') + FUNCTION_LHS + FUNCTION_NAME + FUNCTION_ARGS)
 
-COMMENT            = Group(COMMENTSTART + restOfLine + EOL).setParseAction(print_tokens)
+LINE_COMMENT       = Group('%' + restOfLine + EOL)
+#BLOCK_COMMENT      = Regex(r"%{[\s\S]*?%}")
+BLOCK_COMMENT      = Group('%{' + SkipTo('%}', include=True))
+COMMENT            = (BLOCK_COMMENT | LINE_COMMENT).setParseAction(print_tokens)
 DELIMITER          = COMMA | SEMI
 STMT               = (FUNCTION_DEF_STMT | CONTROL_STMT | ASSIGNMENT | EXPR).setParseAction(print_tokens)
 MATLAB_SYNTAX      = ZeroOrMore(STMT | DELIMITER | COMMENT)
