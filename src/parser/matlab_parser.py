@@ -120,25 +120,30 @@ BARE_MATRIX        = Group(LBRACKET + ZeroOrMore(ROW) + RBRACKET)
 
 # Cell arrays.  I think these are basically just heterogeneous matrices.
 # Note that you can write {} by itself, but a reference has to have at
-# least one indexing term: array{} is not valid.
+# least one indexing term: "somearray{}" is not valid.
 
 CELL_ARRAY_ID      = ID_BASE.copy()
 BARE_CELL_ARRAY    = Group(LBRACE + ZeroOrMore(ROW) + RBRACE)
-CELL_ARRAY_REF     = CELL_ARRAY_ID + LBRACE + OneOrMore(EXPR) + RBRACE
+
+# Cell array references don't seem to allow newlines in the args, but do
+# allow a bare ':'.
+
+CELL_ARRAY_ARGS    = delimitedList(EXPR | Group(':'))
+CELL_ARRAY_REF     = CELL_ARRAY_ID + LBRACE + CELL_ARRAY_ARGS + RBRACE
 
 # Function calls and matrix accesses look the same. We will have to
 # distinguish them at run-time by figuring out if a given identifier
 # reference refers to a function name or a matrix name.  Here I use 2
-# grammars because in the case of matrix references (and only in that case),
+# grammars because in the case of matrix references and cell array references
 # you can use a bare ':' in the argument list.
 
 FUNCTION_ID        = ID_BASE.copy()
 FUNCTION_ARGS      = delimitedList(EXPR)
-FUNCTION_REF       = FUNCTION_ID + LPAR + ZeroOrMore(FUNCTION_ARGS) + RPAR
+FUNCTION_REF       = FUNCTION_ID + LPAR + Optional(FUNCTION_ARGS) + RPAR
 
 MATRIX_ID          = ID_BASE.copy()
 MATRIX_ARGS        = delimitedList(EXPR | Group(':'))
-MATRIX_REF         = MATRIX_ID + LPAR + ZeroOrMore(MATRIX_ARGS) + RPAR
+MATRIX_REF         = MATRIX_ID + LPAR + Optional(MATRIX_ARGS) + RPAR
 
 # Func. handles: http://www.mathworks.com/help/matlab/ref/function_handle.html
 
@@ -228,12 +233,16 @@ CONTROL_STMT       = WHILE_STMT | IF_STMT | ELSEIF_STMT | ELSE_STMT \
                     | GLOBAL_STMT | PERSISTENT_STMT | END
 
 # Examples of Matlab command statements:
+#   figure
+#   pause
 #   pause on
-#   hold off
+#   pause(n)
+#   state = pause('query')
 # The same commands take other forms, like pause(n), but those will get caught
 # by the regular function reference grammar.
 
-COMMAND_STMT       = ID_REF + Word(alphanums + "_")
+COMMON_COMMANDS    = Keyword('figure') | Keyword('pause') | Keyword('hold')
+COMMAND_STMT       = COMMON_COMMANDS | ID_REF + Word(alphanums + "_")
 
 SINGLE_VALUE       = ID_REF
 IDS_WITH_COMMAS    = delimitedList(SINGLE_VALUE)
