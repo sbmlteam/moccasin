@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
-# arrays using newlines
-# LHS arrays have to have subscripts
-
-# make it indicate what the things are
+# Not done:
+# - transpose operator
+# - arrays using newlines
+# - LHS arrays have to have subscripts
+# - make it indicate what the things are
 
 
 import sys, math, operator
@@ -58,9 +59,7 @@ def parse_file(f):
 def print_tokens(tokens):
     # This gets called once for every matching line.
     # Tokens will be a list; the first element will be the variable.
-    print tokens
-
-
+    tokens.pprint()
 
 
 # Use tracer by attaching it as a parse action to a piece of grammar using
@@ -147,6 +146,11 @@ MATRIX_ID          = ID_BASE.copy()
 MATRIX_ARGS        = delimitedList(EXPR | Group(':'))
 MATRIX_REF         = MATRIX_ID + LPAR + ZeroOrMore(MATRIX_ARGS) + RPAR
 
+# I am not sure whether other kinds of objects can have the matrix transpose
+# operator applied to them.  Right now, it's limited to matrices or plain id's.
+
+MATRIX_TRANSPOSE   = (ID_REF | BARE_MATRIX | MATRIX_REF).leaveWhitespace() + "'"
+
 # Func. handles: http://www.mathworks.com/help/matlab/ref/function_handle.html
 
 FUNC_HANDLE_ID     = ID_BASE.copy()
@@ -167,8 +171,8 @@ STRUCT_REF         = STRUCT_BASE + "." + ID_REF
 # http://www.mathworks.com/help/matlab/matlab_prog/operator-precedence.html
 
 OPERAND            = Group(FUNCTION_REF | MATRIX_REF | CELL_ARRAY_REF \
-                           | STRUCT_REF | ID_REF | FUNC_HANDLE \
-                           | BARE_MATRIX | BARE_CELL_ARRAY \
+                           | STRUCT_REF | ID_REF | MATRIX_TRANSPOSE \
+                           | FUNC_HANDLE | BARE_MATRIX | BARE_CELL_ARRAY \
                            | NUMBER | BOOLEAN | STRING)
 
 EXPR               << operatorPrecedence(OPERAND, [
@@ -234,7 +238,6 @@ FUNCTION_ARGS      = Optional(LPAR + ARG_LIST + RPAR)
 FUNCTION_DEF_STMT  = Group(Keyword('function') + FUNCTION_LHS + FUNCTION_NAME + FUNCTION_ARGS)
 
 LINE_COMMENT       = Group('%' + restOfLine + EOL)
-#BLOCK_COMMENT      = Regex(r"%{[\s\S]*?%}")
 BLOCK_COMMENT      = Group('%{' + SkipTo('%}', include=True))
 COMMENT            = (BLOCK_COMMENT | LINE_COMMENT).setParseAction(print_tokens)
 DELIMITER          = COMMA | SEMI
