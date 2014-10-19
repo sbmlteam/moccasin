@@ -1,16 +1,35 @@
 #!/usr/bin/env python
 
 
-import sys, math, operator
+import sys, math, operator, pdb
 from pyparsing import *
 
 sys.path.append('../utilities')
+sys.path.append('../../utilities')
 from moccasin_utilities import *
+
+
+# -----------------------------------------------------------------------------
+# Global variables.
+# -----------------------------------------------------------------------------
+
+assignments      = {}
+comments         = []
+expression_stack = []
 
 
 # -----------------------------------------------------------------------------
 # Parsing utilities.
 # -----------------------------------------------------------------------------
+
+def init_globals():
+    global assignments
+    global comments
+    global expression_stack
+    assignments      = {}
+    comments         = []
+    expression_stack = []
+
 
 def makeLRlike(numterms):
     if numterms is None:
@@ -35,14 +54,83 @@ def makeLRlike(numterms):
     return pa
 
 
+@parse_debug_helper
+def store_assignment(tokens):
+    # This gets called once for every matching line.
+    # Tokens will be a list; the first element will be the variable.
+    # For this simple test, we just create a dictionary keyed by the variable.
+    global assignments
+    global expression_stack
+    # if not tokens:
+    #     pass
+    # lhs = tokens[0]
+    # if type(lhs) is str:
+    #     # Simple assignment: x = something
+    #     varname = tokens[0]
+    #     assignments[varname] = tokens[1:]
+    #     if type(tokens[2]) is ParseResults:
+    #         # pdb.set_trace()
+    #         print tokens[2].dump()
+    # else:
+    #     # LHS is more complicated, such as an array: [x,y] = something
+    #     pass
+
+
+def set_parse_tag(tokens, tag):
+    if tokens is not None and type(tokens) is ParseResults:
+        tokens['tag'] = tag
+
+
+def tag_grammar(tokens, tag):
+    if tokens is not None and type(tokens) is ParseResults:
+        tokens['tag'] = tag
+        # pdb.set_trace()
+
+
+def get_parse_tag(tokens):
+    return tokens['tag']
+
+
+def print_assignments():
+    global assignments
+    for name, value in assignments.iteritems():
+        print name + " -> " + str(value)
+
+
+def print_variables(parse_result_object):
+    if parse_result_object == None:
+        print("Empty parse results object?")
+    else:
+        results = parse_result_object.asDict()
+        if 'vars' in results.keys():
+            print results['vars']
+
+
+def print_called(parse_result_object):
+    if parse_result_object == None:
+        print("Empty parse results object?")
+    else:
+        results = parse_result_object.asDict()
+        if 'called' in results.keys():
+            print results['called']
+
+
 def parse_string(str):
-    result = MATLAB_SYNTAX.parseString(str, parseAll=True)
-    return result
+    init_globals()
+    try:
+        return MATLAB_SYNTAX.parseString(str, parseAll=True)
+    except ParseException as err:
+        print("error: {0}".format(err))
+        return None
 
 
 def parse_file(f):
-    result = MATLAB_SYNTAX.parseFile(f)
-    return result
+    init_globals()
+    try:
+        return MATLAB_SYNTAX.parseFile(f)
+    except ParseException as err:
+        print("error: {0}".format(err))
+        return None
 
 
 # -----------------------------------------------------------------------------
@@ -81,7 +169,7 @@ RPAR               = Literal(")").suppress()
 EQUALS             = Literal('=')
 ELLIPSIS           = Literal('...')
 
-ID_BASE            = Word(alphas, alphanums + '_') # [a-zA-Z][_a-zA-Z0-9]*
+ID_BASE            = Word(alphas, alphanums + '_')
 
 INTEGER            = Word(nums)
 EXPONENT           = Combine(oneOf('E e D d') + Optional(oneOf('+ -')) + Word(nums))
@@ -112,11 +200,9 @@ EXPR               = Forward()
 # element contents are of the same type.  But again, since we expect our
 # input to be valid Matlab, we don't expect to have to verify that property.
 
-ROW_WITH_SPACES    = OneOrMore(EXPR)
-ROW_WITH_COMMAS    = delimitedList(EXPR)
-ROW_WITH_SEMIS     = Optional(ROW_WITH_COMMAS | ROW_WITH_SPACES) + SEMI
-ROW                = ROW_WITH_SEMIS | ROW_WITH_COMMAS | ROW_WITH_SPACES
-BARE_MATRIX        = Group(LBRACKET + ZeroOrMore(ROW) + RBRACKET)
+SINGLE_ROW         = Group(delimitedList(EXPR) | OneOrMore(EXPR))
+ROWS               = SINGLE_ROW + ZeroOrMore(SEMI + SINGLE_ROW)
+BARE_MATRIX        = Group(LBRACKET + ZeroOrMore(ROWS) + RBRACKET)#.addParseAction(tracer)
 
 # Cell arrays.  I think these are basically just heterogeneous matrices.
 # Note that you can write {} by itself, but a reference has to have at least
@@ -124,10 +210,10 @@ BARE_MATRIX        = Group(LBRACKET + ZeroOrMore(ROW) + RBRACKET)
 # seem to allow newlines in the args, but do allow a bare ':'.
 
 CELL_ARRAY_ID      = ID_BASE.copy()
-BARE_CELL_ARRAY    = Group(LBRACE + ZeroOrMore(ROW) + RBRACE)
+BARE_CELL_ARRAY    = Group(LBRACE + ZeroOrMore(ROWS) + RBRACE)
 
 CELL_ARRAY_ARGS    = delimitedList(EXPR | Group(':'))
-CELL_ARRAY_REF     = CELL_ARRAY_ID + LBRACE + CELL_ARRAY_ARGS + RBRACE
+CELL_ARRAY_REF     = Group(CELL_ARRAY_ID + LBRACE + CELL_ARRAY_ARGS + RBRACE)
 
 # Function calls and matrix accesses look the same. We will have to
 # distinguish them at run-time by figuring out if a given identifier
@@ -137,18 +223,18 @@ CELL_ARRAY_REF     = CELL_ARRAY_ID + LBRACE + CELL_ARRAY_ARGS + RBRACE
 
 FUNCTION_ID        = ID_BASE.copy()
 FUNCTION_ARGS      = delimitedList(EXPR)
-FUNCTION_REF       = FUNCTION_ID + LPAR + Optional(FUNCTION_ARGS) + RPAR
+FUNCTION_CALL      = Group(FUNCTION_ID + LPAR + Group(Optional(FUNCTION_ARGS)) + RPAR)
 
 MATRIX_ID          = ID_BASE.copy()
 MATRIX_ARGS        = delimitedList(EXPR | Group(':'))
-MATRIX_REF         = MATRIX_ID + LPAR + Optional(MATRIX_ARGS) + RPAR
+MATRIX_REF         = Group(MATRIX_ID + LPAR + Optional(MATRIX_ARGS) + RPAR)
 
 # Func. handles: http://www.mathworks.com/help/matlab/ref/function_handle.html
 
 FUNC_HANDLE_ID     = ID_BASE.copy()
 NAMED_FUNC_HANDLE  = '@' + FUNC_HANDLE_ID
 ANON_FUNC_HANDLE   = '@' + LPAR + Group(Optional(ARG_LIST)) + RPAR + EXPR
-FUNC_HANDLE        = NAMED_FUNC_HANDLE | ANON_FUNC_HANDLE
+FUNC_HANDLE        = Group(NAMED_FUNC_HANDLE | ANON_FUNC_HANDLE)
 
 # Struct array references.  This is incomplete: in Matlab, the LHS can
 # actually be a full expression that yields a struct.  Here, to avoid an
@@ -156,8 +242,8 @@ FUNC_HANDLE        = NAMED_FUNC_HANDLE | ANON_FUNC_HANDLE
 # exclude a full EXPR.  (Doing the obvious thing, EXPR + "." + ID_REF, results
 # in an infinitely-recursive grammar.)
 
-STRUCT_BASE        = CELL_ARRAY_REF | MATRIX_REF | FUNCTION_REF | FUNC_HANDLE | ID_REF
-STRUCT_REF         = STRUCT_BASE + "." + ID_REF
+STRUCT_BASE        = CELL_ARRAY_REF | MATRIX_REF | FUNCTION_CALL | FUNC_HANDLE | ID_REF
+STRUCT_REF         = Group(STRUCT_BASE + "." + ID_REF)
 
 # The transpose operator is a problem.  It seems you can actually apply it to
 # full expressions, as long as the expressions yield an array.  Parsing the
@@ -167,15 +253,14 @@ STRUCT_REF         = STRUCT_BASE + "." + ID_REF
 
 PARENTHESIZED_EXPR = LPAR + EXPR + RPAR
 TRANSPOSABLES      = MATRIX_REF | ID_REF | BARE_MATRIX | PARENTHESIZED_EXPR
-TRANSPOSE          = TRANSPOSABLES.leaveWhitespace() + "'"
+TRANSPOSE          = Group(TRANSPOSABLES.leaveWhitespace() + "'")
 
 # The operator precendece rules in Matlab are listed here:
 # http://www.mathworks.com/help/matlab/matlab_prog/operator-precedence.html
 
-OPERAND            = Group(TRANSPOSE | FUNCTION_REF | MATRIX_REF \
-                           | CELL_ARRAY_REF | STRUCT_REF | ID_REF \
-                           | FUNC_HANDLE | BARE_MATRIX | BARE_CELL_ARRAY \
-                           | NUMBER | BOOLEAN | STRING)
+OPERAND            = TRANSPOSE | FUNCTION_CALL | MATRIX_REF | CELL_ARRAY_REF \
+                     | STRUCT_REF | FUNC_HANDLE | BARE_MATRIX \
+                     | BARE_CELL_ARRAY | ID_REF | NUMBER | BOOLEAN | STRING
 
 EXPR               << operatorPrecedence(OPERAND, [
     (oneOf('- + ~'),            1, opAssoc.RIGHT),
@@ -200,10 +285,11 @@ COND_EXPR          = operatorPrecedence(OPERAND, [
     ('||',                     2, opAssoc.LEFT, makeLRlike(2)),
 ])
 
-ASSIGNED_ID        = ID_BASE.copy()
-SIMPLE_ASSIGNMENT  = ASSIGNED_ID + EQUALS + EXPR
+ASSIGNED_ID        = (ID_BASE.copy()).setResultsName('vars', listAllMatches=True)
+SIMPLE_ASSIGNMENT  = ASSIGNED_ID + EQUALS.suppress() + EXPR
 OTHER_ASSIGNMENT   = (BARE_MATRIX | MATRIX_REF | CELL_ARRAY_REF | STRUCT_REF) + EQUALS + EXPR
 ASSIGNMENT         = OTHER_ASSIGNMENT | SIMPLE_ASSIGNMENT
+ASSIGNMENT.addParseAction(store_assignment)
 
 WHILE_STMT         = Group(Keyword('while') + COND_EXPR)
 IF_STMT            = Group(Keyword('if') + COND_EXPR)
@@ -240,23 +326,25 @@ CONTROL_STMT       = WHILE_STMT | IF_STMT | ELSEIF_STMT | ELSE_STMT \
 # by the regular function reference grammar.
 
 COMMON_COMMANDS    = Keyword('figure') | Keyword('pause') | Keyword('hold')
-COMMAND_STMT       = COMMON_COMMANDS | ID_REF + Word(alphanums + "_")
+COMMAND_STMT_ARG   = Word(alphanums + "_")
+COMMAND_STMT       = COMMON_COMMANDS | ID_REF + COMMAND_STMT_ARG
 
 SINGLE_VALUE       = ID_REF
 IDS_WITH_COMMAS    = delimitedList(SINGLE_VALUE)
 IDS_WITH_SPACES    = OneOrMore(SINGLE_VALUE)
 MULTIPLE_VALUES    = LBRACKET + (IDS_WITH_SPACES | IDS_WITH_COMMAS) + RBRACKET
-FUNCTION_NAME      = ID_BASE.copy()
+FUNCTION_DEF_NAME  = ID_BASE.copy()
 FUNCTION_LHS       = Optional(Group(MULTIPLE_VALUES | SINGLE_VALUE) + EQUALS)
 FUNCTION_ARGS      = Optional(LPAR + ARG_LIST + RPAR)
-FUNCTION_DEF_STMT  = Group(Keyword('function') + FUNCTION_LHS + FUNCTION_NAME + FUNCTION_ARGS)
+FUNCTION           = Keyword('function').suppress()
+FUNCTION_DEF_STMT  = Group(FUNCTION + FUNCTION_LHS + FUNCTION_DEF_NAME + FUNCTION_ARGS)
 
 LINE_COMMENT       = Group('%' + restOfLine + EOL)
 BLOCK_COMMENT      = Group('%{' + SkipTo('%}', include=True))
-COMMENT            = (BLOCK_COMMENT | LINE_COMMENT).setParseAction(print_tokens)
+COMMENT            = (BLOCK_COMMENT | LINE_COMMENT).addParseAction(print_tokens)
 DELIMITER          = COMMA | SEMI
 CONTINUATION       = Combine(ELLIPSIS.leaveWhitespace() + EOL + EOS)
-STMT               = (FUNCTION_DEF_STMT | CONTROL_STMT | ASSIGNMENT | COMMAND_STMT | EXPR).setParseAction(print_tokens)
+STMT               = Group(FUNCTION_DEF_STMT | CONTROL_STMT | ASSIGNMENT | COMMAND_STMT | EXPR).addParseAction(print_tokens)
 
 MATLAB_SYNTAX      = ZeroOrMore(STMT | DELIMITER | COMMENT)
 MATLAB_SYNTAX.ignore(CONTINUATION)
@@ -267,16 +355,100 @@ MATLAB_SYNTAX.enablePackrat()
 
 
 # -----------------------------------------------------------------------------
+# Interpretation of elements
+# -----------------------------------------------------------------------------
+
+BARE_MATRIX       .addParseAction(lambda x: tag_grammar(x, 'matrix'))
+FUNCTION_CALL     .addParseAction(lambda x: tag_grammar(x, 'function call'))
+FUNC_HANDLE       .addParseAction(lambda x: tag_grammar(x, 'function handle'))
+SIMPLE_ASSIGNMENT .addParseAction(lambda x: tag_grammar(x, 'variable assignment'))
+OTHER_ASSIGNMENT  .addParseAction(lambda x: tag_grammar(x, 'matrix/cell/struct assignment'))
+FUNCTION_DEF_STMT .addParseAction(lambda x: tag_grammar(x, 'function definition'))
+LINE_COMMENT      .addParseAction(lambda x: tag_grammar(x, 'comment'))
+EXPR              .addParseAction(lambda x: tag_grammar(x, 'expr'))
+
+
+# -----------------------------------------------------------------------------
+# Annotation of grammar for debugging.
+#
+# You can leave the setName(...) calls as-is.  To see debugging output, add a
+# .setDebug(True) to an element.  Some examples are left commented out below.
+# -----------------------------------------------------------------------------
+
+ELLIPSIS          .setName('ELLIPSIS')
+BOOLEAN           .setName('BOOLEAN')
+STRING            .setName('STRING')
+ID_REF            .setName('ID_REF')#.setDebug(True)
+COMMENT           .setName('COMMENT')#.setDebug(True)
+LINE_COMMENT      .setName('LINE_COMMENT')#.setDebug(True)
+ARG_LIST          .setName('ARG_LIST')
+ROWS              .setName('ROWS')#.setDebug(True)
+BARE_MATRIX       .setName('BARE_MATRIX')#.setDebug(True)
+MATRIX_ID         .setName('MATRIX_ID')
+MATRIX_REF        .setName('MATRIX_REF')
+BARE_CELL_ARRAY   .setName('BARE_CELL_ARRAY')
+CELL_ARRAY_ID     .setName('CELL_ARRAY_ID')
+CELL_ARRAY_REF    .setName('CELL_ARRAY_REF')
+FUNCTION_ID       .setName('FUNCTION_ID')#.setDebug(True)
+FUNCTION_CALL     .setName('FUNCTION_CALL')#.setDebug(True)
+FUNC_HANDLE_ID    .setName('FUNC_HANDLE_ID')
+FUNC_HANDLE       .setName('FUNC_HANDLE')#.setDebug(True)
+STRUCT_REF        .setName('STRUCT_REF')
+TRANSPOSE         .setName('TRANSPOSE')
+OPERAND           .setName('OPERAND')#.setDebug(True)
+EXPR              .setName('EXPR')
+COND_EXPR         .setName('COND_EXPR')
+ASSIGNED_ID       .setName('ASSIGNED_ID')
+ASSIGNMENT        .setName('ASSIGNMENT')#.setDebug(True)
+CONTROL_STMT      .setName('CONTROL_STMT')
+COMMON_COMMANDS   .setName('COMMON_COMMANDS')
+COMMAND_STMT_ARG  .setName('CONTROL_STMT_ARG')
+COMMAND_STMT      .setName('COMMAND_STMT')
+FUNCTION_DEF_NAME .setName('FUNCTION_DEF_NAME')
+FUNCTION_DEF_STMT .setName('FUNCTION_DEF_STMT')
+SINGLE_VALUE      .setName('SINGLE_VALUE')
+WHILE_STMT        .setName('WHILE_STMT')
+IF_STMT           .setName('IF_STMT')
+ELSEIF_STMT       .setName('ELSEIF_STMT')
+ELSE_STMT         .setName('ELSE_STMT')
+RETURN_STMT       .setName('RETURN_STMT')
+BREAK_STMT        .setName('BREAK_STMT')
+CONTINUE_STMT     .setName('CONTINUE_STMT')
+GLOBAL_STMT       .setName('GLOBAL_STMT')
+PERSISTENT_STMT   .setName('PERSISTENT_STMT')
+FOR_ID            .setName('FOR_ID')
+FOR_STMT          .setName('FOR_STMT')
+SWITCH_STMT       .setName('SWITCH_STMT')
+CASE_STMT         .setName('CASE_STMT')
+OTHERWISE_STMT    .setName('OTHERWISE_STMT')
+TRY_STMT          .setName('TRY_STMT')
+CATCH_STMT        .setName('CATCH_STMT')
+END               .setName('END')
+FUNCTION          .setName('FUNCTION')
+STMT              .setName('STMT')
+
+# -----------------------------------------------------------------------------
 # Direct run interface
 # -----------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    file = open(sys.argv[1], 'r')
-    print "----- input " + "-"*66
+    debug = False
+    if sys.argv[1] == '-d':
+        debug = True
+        path = sys.argv[2]
+    else:
+        path = sys.argv[1]
+
+    file = open(path, 'r')
+    print "----- file " + path + "-"*30
     contents = file.read()
     print contents
     print "----- output " + "-"*65
-    try:
-        parse_string(contents)
-    except ParseException as err:
-        print("error: {0}".format(err))
+    result = parse_string(contents)
+    if debug: pdb.set_trace()
+    print "----- data dumps " + "-"*65
+    # print result.asDict()
+    # print result.pprint()
+    # print_variables(result)
+    # print_called(result)
+
