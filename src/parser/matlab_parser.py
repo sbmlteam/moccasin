@@ -145,7 +145,7 @@ def print_tokens(tokens):
 
 
 # Use tracer by attaching it as a parse action to a piece of grammar using
-#   .setParseAction(tracer)
+#   .addParseAction(tracer)
 
 @traceParseAction
 def tracer(tokens):
@@ -209,11 +209,10 @@ BARE_MATRIX        = Group(LBRACKET + ZeroOrMore(ROWS) + RBRACKET)#.addParseActi
 # one indexing term: "somearray{}" is not valid.  Cell array references don't
 # seem to allow newlines in the args, but do allow a bare ':'.
 
-CELL_ARRAY_ID      = ID_BASE.copy()
 BARE_CELL_ARRAY    = Group(LBRACE + ZeroOrMore(ROWS) + RBRACE)
 
 CELL_ARRAY_ARGS    = delimitedList(EXPR | Group(':'))
-CELL_ARRAY_REF     = Group(CELL_ARRAY_ID + LBRACE + CELL_ARRAY_ARGS + RBRACE)
+CELL_ARRAY_REF     = Group(ID_REF + LBRACE + CELL_ARRAY_ARGS + RBRACE)
 
 # Function calls and matrix accesses look the same. We will have to
 # distinguish them at run-time by figuring out if a given identifier
@@ -221,18 +220,15 @@ CELL_ARRAY_REF     = Group(CELL_ARRAY_ID + LBRACE + CELL_ARRAY_ARGS + RBRACE)
 # grammars because in the case of matrix references and cell array references
 # you can use a bare ':' in the argument list.
 
-FUNCTION_ID        = ID_BASE.copy()
 FUNCTION_ARGS      = delimitedList(EXPR)
-FUNCTION_CALL      = Group(FUNCTION_ID + LPAR + Group(Optional(FUNCTION_ARGS)) + RPAR)
+FUNCTION_CALL      = Group(ID_REF + LPAR + Group(Optional(FUNCTION_ARGS)) + RPAR)
 
-MATRIX_ID          = ID_BASE.copy()
 MATRIX_ARGS        = delimitedList(EXPR | Group(':'))
-MATRIX_REF         = Group(MATRIX_ID + LPAR + Optional(MATRIX_ARGS) + RPAR)
+MATRIX_REF         = Group(ID_REF + LPAR + Optional(MATRIX_ARGS) + RPAR)
 
 # Func. handles: http://www.mathworks.com/help/matlab/ref/function_handle.html
 
-FUNC_HANDLE_ID     = ID_BASE.copy()
-NAMED_FUNC_HANDLE  = '@' + FUNC_HANDLE_ID
+NAMED_FUNC_HANDLE  = '@' + ID_REF
 ANON_FUNC_HANDLE   = '@' + LPAR + Group(Optional(ARG_LIST)) + RPAR + EXPR
 FUNC_HANDLE        = Group(NAMED_FUNC_HANDLE | ANON_FUNC_HANDLE)
 
@@ -258,9 +254,10 @@ TRANSPOSE          = Group(TRANSPOSABLES.leaveWhitespace() + "'")
 # The operator precendece rules in Matlab are listed here:
 # http://www.mathworks.com/help/matlab/matlab_prog/operator-precedence.html
 
-OPERAND            = TRANSPOSE | FUNCTION_CALL | MATRIX_REF | CELL_ARRAY_REF \
-                     | STRUCT_REF | FUNC_HANDLE | BARE_MATRIX \
-                     | BARE_CELL_ARRAY | ID_REF | NUMBER | BOOLEAN | STRING
+OPERAND            = Group(TRANSPOSE | FUNCTION_CALL | MATRIX_REF \
+                           | CELL_ARRAY_REF | STRUCT_REF | FUNC_HANDLE \
+                           | BARE_MATRIX | BARE_CELL_ARRAY \
+                           | ID_REF | NUMBER | BOOLEAN | STRING)
 
 EXPR               << operatorPrecedence(OPERAND, [
     (oneOf('- + ~'),            1, opAssoc.RIGHT),
@@ -287,7 +284,7 @@ COND_EXPR          = operatorPrecedence(OPERAND, [
 
 ASSIGNED_ID        = (ID_BASE.copy()).setResultsName('vars', listAllMatches=True)
 SIMPLE_ASSIGNMENT  = ASSIGNED_ID + EQUALS.suppress() + EXPR
-OTHER_ASSIGNMENT   = (BARE_MATRIX | MATRIX_REF | CELL_ARRAY_REF | STRUCT_REF) + EQUALS + EXPR
+OTHER_ASSIGNMENT   = (BARE_MATRIX | MATRIX_REF | CELL_ARRAY_REF | STRUCT_REF) + EQUALS.suppress() + EXPR
 ASSIGNMENT         = OTHER_ASSIGNMENT | SIMPLE_ASSIGNMENT
 ASSIGNMENT.addParseAction(store_assignment)
 
@@ -358,13 +355,14 @@ MATLAB_SYNTAX.enablePackrat()
 # Interpretation of elements
 # -----------------------------------------------------------------------------
 
-BARE_MATRIX       .addParseAction(lambda x: tag_grammar(x, 'matrix'))
+BARE_MATRIX       .addParseAction(lambda x: tag_grammar(x, 'bare matrix'))
 FUNCTION_CALL     .addParseAction(lambda x: tag_grammar(x, 'function call'))
 FUNC_HANDLE       .addParseAction(lambda x: tag_grammar(x, 'function handle'))
 SIMPLE_ASSIGNMENT .addParseAction(lambda x: tag_grammar(x, 'variable assignment'))
 OTHER_ASSIGNMENT  .addParseAction(lambda x: tag_grammar(x, 'matrix/cell/struct assignment'))
 FUNCTION_DEF_STMT .addParseAction(lambda x: tag_grammar(x, 'function definition'))
 LINE_COMMENT      .addParseAction(lambda x: tag_grammar(x, 'comment'))
+ID_REF            .addParseAction(lambda x: tag_grammar(x, 'id reference'))
 EXPR              .addParseAction(lambda x: tag_grammar(x, 'expr'))
 
 
@@ -384,14 +382,10 @@ LINE_COMMENT      .setName('LINE_COMMENT')#.setDebug(True)
 ARG_LIST          .setName('ARG_LIST')
 ROWS              .setName('ROWS')#.setDebug(True)
 BARE_MATRIX       .setName('BARE_MATRIX')#.setDebug(True)
-MATRIX_ID         .setName('MATRIX_ID')
 MATRIX_REF        .setName('MATRIX_REF')
 BARE_CELL_ARRAY   .setName('BARE_CELL_ARRAY')
-CELL_ARRAY_ID     .setName('CELL_ARRAY_ID')
 CELL_ARRAY_REF    .setName('CELL_ARRAY_REF')
-FUNCTION_ID       .setName('FUNCTION_ID')#.setDebug(True)
 FUNCTION_CALL     .setName('FUNCTION_CALL')#.setDebug(True)
-FUNC_HANDLE_ID    .setName('FUNC_HANDLE_ID')
 FUNC_HANDLE       .setName('FUNC_HANDLE')#.setDebug(True)
 STRUCT_REF        .setName('STRUCT_REF')
 TRANSPOSE         .setName('TRANSPOSE')
