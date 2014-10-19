@@ -201,7 +201,7 @@ EXPR               = Forward()
 # input to be valid Matlab, we don't expect to have to verify that property.
 
 SINGLE_ROW         = Group(delimitedList(EXPR) | OneOrMore(EXPR))
-ROWS               = SINGLE_ROW + ZeroOrMore(SEMI + SINGLE_ROW)
+ROWS               = Group(SINGLE_ROW) + ZeroOrMore(SEMI + Group(SINGLE_ROW))
 BARE_MATRIX        = Group(LBRACKET + ZeroOrMore(ROWS) + RBRACKET)#.addParseAction(tracer)
 
 # Cell arrays.  I think these are basically just heterogeneous matrices.
@@ -356,6 +356,7 @@ MATLAB_SYNTAX.enablePackrat()
 # -----------------------------------------------------------------------------
 
 BARE_MATRIX       .addParseAction(lambda x: tag_grammar(x, 'bare matrix'))
+SINGLE_ROW        .addParseAction(lambda x: tag_grammar(x, 'single row'))
 FUNCTION_CALL     .addParseAction(lambda x: tag_grammar(x, 'function call'))
 FUNC_HANDLE       .addParseAction(lambda x: tag_grammar(x, 'function handle'))
 SIMPLE_ASSIGNMENT .addParseAction(lambda x: tag_grammar(x, 'variable assignment'))
