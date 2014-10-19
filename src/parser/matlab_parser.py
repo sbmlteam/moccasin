@@ -1,10 +1,5 @@
 #!/usr/bin/env python
 
-# Not done:
-# - arrays using newlines
-# - LHS arrays have to have subscripts
-# - make it indicate what the things are
-
 
 import sys, math, operator
 from pyparsing import *
@@ -145,11 +140,6 @@ MATRIX_ID          = ID_BASE.copy()
 MATRIX_ARGS        = delimitedList(EXPR | Group(':'))
 MATRIX_REF         = MATRIX_ID + LPAR + ZeroOrMore(MATRIX_ARGS) + RPAR
 
-# I am not sure whether other kinds of objects can have the matrix transpose
-# operator applied to them.  Right now, it's limited to matrices or plain id's.
-
-MATRIX_TRANSPOSE   = (ID_REF | BARE_MATRIX | MATRIX_REF).leaveWhitespace() + "'"
-
 # Func. handles: http://www.mathworks.com/help/matlab/ref/function_handle.html
 
 FUNC_HANDLE_ID     = ID_BASE.copy()
@@ -166,11 +156,21 @@ FUNC_HANDLE        = NAMED_FUNC_HANDLE | ANON_FUNC_HANDLE
 STRUCT_BASE        = CELL_ARRAY_REF | MATRIX_REF | FUNCTION_REF | FUNC_HANDLE | ID_REF
 STRUCT_REF         = STRUCT_BASE + "." + ID_REF
 
+# The transpose operator is a problem.  It seems you can actually apply it to
+# full expressions, as long as the expressions yield an array.  Parsing the
+# general case is hard because strings in Matlab use single quotes, so adding
+# an operator that's a single quote confuses the parser.  The following
+# approach is a hacky partial solution that only allows certain cases.
+
+PARENTHESIZED_EXPR = LPAR + EXPR + RPAR
+TRANSPOSABLES      = MATRIX_REF | ID_REF | BARE_MATRIX | PARENTHESIZED_EXPR
+TRANSPOSE          = TRANSPOSABLES.leaveWhitespace() + "'"
+
 # The operator precendece rules in Matlab are listed here:
 # http://www.mathworks.com/help/matlab/matlab_prog/operator-precedence.html
 
-OPERAND            = Group(MATRIX_TRANSPOSE | FUNCTION_REF | MATRIX_REF | CELL_ARRAY_REF \
-                           | STRUCT_REF | ID_REF \
+OPERAND            = Group(TRANSPOSE | FUNCTION_REF | MATRIX_REF \
+                           | CELL_ARRAY_REF | STRUCT_REF | ID_REF \
                            | FUNC_HANDLE | BARE_MATRIX | BARE_CELL_ARRAY \
                            | NUMBER | BOOLEAN | STRING)
 
