@@ -15,18 +15,20 @@ from moccasin_utilities import *
 
 contexts = []
 context_index = -1
+print_tokens = False
 
 
 # -----------------------------------------------------------------------------
 # Top-level call interfaces.
 # -----------------------------------------------------------------------------
 
-def parse_matlab_string(str):
+def parse_matlab_string(str, print_raw=False):
     global contexts
+    global print_tokens
     push_context('(default context)')
+    print_tokens = print_raw
     try:
-        raw_results = MATLAB_SYNTAX.parseString(str, parseAll=True)
-        return (contexts, raw_results)
+        return MATLAB_SYNTAX.parseString(str, parseAll=True)
     except ParseException as err:
         print("error: {0}".format(err))
         return None
@@ -204,11 +206,11 @@ def print_stored_stmts():
 # Debugging helpers.
 # -----------------------------------------------------------------------------
 
-@parse_debug_helper
 def print_tokens(tokens):
     # This gets called once for every matching line.
     # Tokens will be a list; the first element will be the variable.
-    tokens.pprint()
+    global print_tokens
+    if print_tokens: print tokens
 
 
 # Use tracer by attaching it as a parse action to a piece of grammar using
@@ -219,6 +221,7 @@ def tracer(tokens):
     return None
 
 
+@parse_debug_helper
 def print_variables(parse_result_object):
     if parse_result_object == None:
         print("Empty parse results object?")
@@ -525,7 +528,7 @@ if __name__ == '__main__':
     contents = file.read()
     print contents
     print '----- raw parse results ' + '-'*50
-    parse_matlab_string(contents)
+    parse_matlab_string(contents, True)
     print ''
     if print_interpreted:
         print '----- interpreted output ' + '-'*50

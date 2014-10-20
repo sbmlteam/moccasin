@@ -13,7 +13,7 @@ for f in glob.glob("syntax-test-cases/valid*.m"):
     print contents.rstrip()
     print '----- output ' + '-'*30
     try:
-        parse_matlab_string(contents)
+        parse_matlab_string(contents, True)
     except ParseException as err:
         print("error: {0}".format(err))
     print ''
