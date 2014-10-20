@@ -190,7 +190,7 @@ def print_stored_stmts():
                 value_type = interpret_type(value)
                 if value_type == 'bare matrix':
                     rows = len(value[0])
-                    print('      ' + name + ' = (a matrix w with ' + str(rows) + ' rows)')
+                    print('      ' + name + ' = (a matrix with ' + str(rows) + ' rows)')
                 elif value_type == None:
                     print('      ' + name + ' = ' + stringify_simple_expr(value))
                 else:
