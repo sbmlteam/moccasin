@@ -191,8 +191,11 @@ def print_stored_stmts():
                 if value_type == 'bare matrix':
                     rows = len(value[0])
                     print('      ' + name + ', a matrix w with ' + str(rows) + ' rows')
-                elif value_type != None:
+                elif value_type == None:
                     print('      ' + name + ' = ' + stringify_simple_expr(value))
+                else:
+                    print('      ' + name)
+
         else:
             print('    No variables defined in this context.')
 
