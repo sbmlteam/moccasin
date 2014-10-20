@@ -28,7 +28,8 @@ def parse_matlab_string(str, print_raw=False):
     push_context('(default context)')
     print_tokens = print_raw
     try:
-        return MATLAB_SYNTAX.parseString(str, parseAll=True)
+        MATLAB_SYNTAX.parseString(str, parseAll=True)
+        return contexts
     except ParseException as err:
         print("error: {0}".format(err))
         return None
@@ -83,6 +84,7 @@ def create_context(name):
     new_context = dict()
     new_context['variables'] = dict()
     new_context['functions'] = dict()
+    new_context['calls'] = dict()
     new_context['name'] = name
     return new_context
 
@@ -118,15 +120,34 @@ def save_function_definition(name, args, output):
 
 def save_variable_definition(name, value):
     context = get_context()
-    context['variables'][name] = { 'value': value }
+    context['variables'][name] = value
+
+
+def save_function_call(fname, args):
+    context = get_context()
+    context['calls'][fname] = args
+
+
+def search_for(tag, pr):
+    if not pr or type(pr) is not ParseResults:
+        return None
+    if pr['tag'] is not None and pr['tag'] == tag:
+        return pr
+    content_list = pr[0]
+    for result in content_list:
+        result = search_for(tag, content_list)
+        if result is not None:
+            return result
+    return None
 
 
 @parse_debug_helper
 def store_stmt(tokens):
-    if not tokens:
-        return
-    if type(tokens) is ParseResults:
-        stmt = tokens[0]
+    try:
+        if not tokens:
+            return
+        if type(tokens) is ParseResults:
+            stmt = tokens[0]
         if 'tag' not in stmt.keys():
             return
         if stmt['tag'] is not None:
@@ -141,8 +162,19 @@ def store_stmt(tokens):
                 push_context(name)
             elif tag == 'variable assignment':
                 name = stmt[0]
-                value = stmt[1]
-                save_variable_definition(name, value)
+                rhs = stmt[1]
+                save_variable_definition(name, rhs)
+            elif tag == 'matrix/cell/struct assignment':
+                rhs = stmt[1]
+                call_stmt = search_for('function call', rhs)
+                if call_stmt:
+                    fname = call_stmt[0][0]
+                    args = call_stmt[0][1]
+                    save_function_call(fname, args)
+            elif tag == 'function call':
+                pdb.set_trace()
+    except:
+        pass
 
 
 def interpret_type(pr):
@@ -170,25 +202,22 @@ def stringify_simple_expr(pr):
     # return ' '.join(pr.asList())
 
 
+def translate_parsed_formula(pr):
+    return stringify_simple_expr(pr)
+
+
+# -----------------------------------------------------------------------------
+# Debugging helpers.
+# -----------------------------------------------------------------------------
+
 def print_stored_stmts():
     for c in contexts:
         print('')
         print('** context: ' + c['name'] + ' **')
-        if len(c['functions']) > 0:
-            print('    Functions defined in this context:')
-            for name in c['functions'].keys():
-                fdict = c['functions'][name]
-                args = fdict['args']
-                output = fdict['output']
-                print('      ' + ' '.join(output)
-                      + ' = ' + name + '(' + ' '.join(args) + ')')
-        else:
-            print('    No functions defined in this context.')
         if len(c['variables']) > 0:
             print('    Variables defined in this context:')
             for name in c['variables'].keys():
-                fdict = c['variables'][name]
-                value = fdict['value']
+                value = c['variables'][name]
                 value_type = interpret_type(value)
                 if value_type == 'bare matrix':
                     rows = len(value[0])
@@ -200,11 +229,17 @@ def print_stored_stmts():
 
         else:
             print('    No variables defined in this context.')
+        if len(c['functions']) > 0:
+            print('    Functions defined in this context:')
+            for name in c['functions'].keys():
+                fdict = c['functions'][name]
+                args = fdict['args']
+                output = fdict['output']
+                print('      ' + ' '.join(output)
+                      + ' = ' + name + '(' + ' '.join(args) + ')')
+        else:
+            print('    No functions defined in this context.')
 
-
-# -----------------------------------------------------------------------------
-# Debugging helpers.
-# -----------------------------------------------------------------------------
 
 def print_tokens(tokens):
     # This gets called once for every matching line.
@@ -446,6 +481,7 @@ EXPR              .addParseAction(lambda x: tag_grammar(x, 'expr'))
 FUNCTION_DEF_STMT .addParseAction(lambda x: tag_grammar(x, 'function definition'))
 END               .addParseAction(lambda x: tag_grammar(x, 'end'))
 
+FUNCTION_CALL     .addParseAction(store_stmt)
 STMT              .addParseAction(store_stmt)
 
 
@@ -535,5 +571,3 @@ if __name__ == '__main__':
         print_stored_stmts()
     if debug:
         pdb.set_trace()
-
-    # print result.pprint()
