@@ -12,9 +12,9 @@ d=0.000192*60;
 figure
 plot(t,y(:,2))
 
-function y=g(t,x)
+function dy=g(t,x)
 % ODE for  mRNA and protein production and decay (Thattai-Van Oudenaarden)
-y=[a-b*x(1); c*x(1)-d*x(2)];
+dy=[a-b*x(1); c*x(1)-d*x(2)];
 end
 
 end
