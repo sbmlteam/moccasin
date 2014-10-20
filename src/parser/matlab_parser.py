@@ -13,23 +13,37 @@ from moccasin_utilities import *
 # Global variables.
 # -----------------------------------------------------------------------------
 
-assignments      = {}
-comments         = []
-expression_stack = []
+contexts = []
+context_index = -1
+
+
+# -----------------------------------------------------------------------------
+# Top-level call interfaces.
+# -----------------------------------------------------------------------------
+
+def parse_matlab_string(str):
+    global contexts
+    push_context('(default context)')
+    try:
+        raw_results = MATLAB_SYNTAX.parseString(str, parseAll=True)
+        return (contexts, raw_results)
+    except ParseException as err:
+        print("error: {0}".format(err))
+        return None
+
+
+# Older version
+def parse_string(str):
+    try:
+        return MATLAB_SYNTAX.parseString(str, parseAll=True)
+    except ParseException as err:
+        print("error: {0}".format(err))
+        return None
 
 
 # -----------------------------------------------------------------------------
 # Parsing utilities.
 # -----------------------------------------------------------------------------
-
-def init_globals():
-    global assignments
-    global comments
-    global expression_stack
-    assignments      = {}
-    comments         = []
-    expression_stack = []
-
 
 def makeLRlike(numterms):
     if numterms is None:
@@ -54,31 +68,34 @@ def makeLRlike(numterms):
     return pa
 
 
-@parse_debug_helper
-def store_assignment(tokens):
-    # This gets called once for every matching line.
-    # Tokens will be a list; the first element will be the variable.
-    # For this simple test, we just create a dictionary keyed by the variable.
-    global assignments
-    global expression_stack
-    # if not tokens:
-    #     pass
-    # lhs = tokens[0]
-    # if type(lhs) is str:
-    #     # Simple assignment: x = something
-    #     varname = tokens[0]
-    #     assignments[varname] = tokens[1:]
-    #     if type(tokens[2]) is ParseResults:
-    #         # pdb.set_trace()
-    #         print tokens[2].dump()
-    # else:
-    #     # LHS is more complicated, such as an array: [x,y] = something
-    #     pass
+def get_context():
+    global context_index
+    global contexts
+    if contexts:
+        return contexts[context_index]
+    else:
+        return None
 
 
-def set_parse_tag(tokens, tag):
-    if tokens is not None and type(tokens) is ParseResults:
-        tokens['tag'] = tag
+def create_context(name):
+    new_context = dict()
+    new_context['variables'] = dict()
+    new_context['functions'] = dict()
+    new_context['name'] = name
+    return new_context
+
+
+def push_context(name):
+    global context_index
+    global contexts
+    contexts.append(create_context(name))
+    context_index += 1
+
+
+def pop_context():
+    global context_index
+    if context_index > 0:
+        context_index -= 1
 
 
 def tag_grammar(tokens, tag):
@@ -87,50 +104,97 @@ def tag_grammar(tokens, tag):
         # pdb.set_trace()
 
 
-def get_parse_tag(tokens):
+def get_tag(tokens):
     return tokens['tag']
 
 
-def print_assignments():
-    global assignments
-    for name, value in assignments.iteritems():
-        print name + " -> " + str(value)
+def save_function_definition(name, args, output):
+    context = get_context()
+    context['functions'][name] = { 'args': args.asList(),
+                                   'output': output.asList() }
 
 
-def print_variables(parse_result_object):
-    if parse_result_object == None:
-        print("Empty parse results object?")
+def save_variable_definition(name, value):
+    context = get_context()
+    context['variables'][name] = { 'value': value }
+
+
+@parse_debug_helper
+def store_stmt(tokens):
+    if not tokens:
+        return
+    if type(tokens) is ParseResults:
+        stmt = tokens[0]
+        if 'tag' not in stmt.keys():
+            return
+        if stmt['tag'] is not None:
+            tag = stmt['tag']
+            if tag == 'end':
+                pop_context()
+            elif tag == 'function definition':
+                output = stmt[0][0]
+                name = stmt[0][2]
+                args = stmt[0][3]
+                save_function_definition(name, args, output)
+                push_context(name)
+            elif tag == 'variable assignment':
+                name = stmt[0]
+                value = stmt[1]
+                save_variable_definition(name, value)
+
+
+def interpret_type(pr):
+    if 'tag' in pr.keys():
+        return pr['tag']
     else:
-        results = parse_result_object.asDict()
-        if 'vars' in results.keys():
-            print results['vars']
-
-
-def print_called(parse_result_object):
-    if parse_result_object == None:
-        print("Empty parse results object?")
-    else:
-        results = parse_result_object.asDict()
-        if 'called' in results.keys():
-            print results['called']
-
-
-def parse_string(str):
-    init_globals()
-    try:
-        return MATLAB_SYNTAX.parseString(str, parseAll=True)
-    except ParseException as err:
-        print("error: {0}".format(err))
         return None
 
 
-def parse_file(f):
-    init_globals()
-    try:
-        return MATLAB_SYNTAX.parseFile(f)
-    except ParseException as err:
-        print("error: {0}".format(err))
-        return None
+def flatten(arg):
+    if hasattr(arg, '__iter__'):
+        sublist = ''
+        if len(arg) == 1 and type(arg[0]) is str:
+            return arg[0]
+        else:
+            for x in arg:
+                sublist += flatten(x)
+            return '(' + sublist + ')'
+    else:
+        return arg
+
+
+def stringify_simple_expr(pr):
+    return flatten(pr.asList())
+    # return ' '.join(pr.asList())
+
+
+def print_stored_stmts():
+    for c in contexts:
+        print('')
+        print('** context: ' + c['name'] + ' **')
+        if len(c['functions']) > 0:
+            print('    Functions defined in this context:')
+            for name in c['functions'].keys():
+                fdict = c['functions'][name]
+                args = fdict['args']
+                output = fdict['output']
+                print('      ' + ' '.join(output)
+                      + ' = ' + name + '(' + ' '.join(args) + ')')
+        else:
+            print('    No functions defined in this context.')
+        if len(c['variables']) > 0:
+            print('    Variables defined in this context:')
+            for name in c['variables'].keys():
+                fdict = c['variables'][name]
+                value = fdict['value']
+                value_type = interpret_type(value)
+                if value_type == 'bare matrix':
+                    rows = len(value[0])
+                    print('      ' + name + ', a matrix w with ' + str(rows) + ' rows')
+                elif value_type != None:
+                    print('      ' + name + ' = ' + stringify_simple_expr(value))
+        else:
+            print('    No variables defined in this context.')
 
 
 # -----------------------------------------------------------------------------
@@ -150,6 +214,15 @@ def print_tokens(tokens):
 @traceParseAction
 def tracer(tokens):
     return None
+
+
+def print_variables(parse_result_object):
+    if parse_result_object == None:
+        print("Empty parse results object?")
+    else:
+        results = parse_result_object.asDict()
+        if 'vars' in results.keys():
+            print results['vars']
 
 
 # -----------------------------------------------------------------------------
@@ -202,7 +275,7 @@ EXPR               = Forward()
 
 SINGLE_ROW         = Group(delimitedList(EXPR) | OneOrMore(EXPR))
 ROWS               = Group(SINGLE_ROW) + ZeroOrMore(SEMI + Group(SINGLE_ROW))
-BARE_MATRIX        = Group(LBRACKET + ZeroOrMore(ROWS) + RBRACKET)#.addParseAction(tracer)
+BARE_MATRIX        = Group(LBRACKET + ZeroOrMore(ROWS) + RBRACKET)
 
 # Cell arrays.  I think these are basically just heterogeneous matrices.
 # Note that you can write {} by itself, but a reference has to have at least
@@ -286,7 +359,6 @@ ASSIGNED_ID        = (ID_BASE.copy()).setResultsName('vars', listAllMatches=True
 SIMPLE_ASSIGNMENT  = ASSIGNED_ID + EQUALS.suppress() + EXPR
 OTHER_ASSIGNMENT   = (BARE_MATRIX | MATRIX_REF | CELL_ARRAY_REF | STRUCT_REF) + EQUALS.suppress() + EXPR
 ASSIGNMENT         = OTHER_ASSIGNMENT | SIMPLE_ASSIGNMENT
-ASSIGNMENT.addParseAction(store_assignment)
 
 WHILE_STMT         = Group(Keyword('while') + COND_EXPR)
 IF_STMT            = Group(Keyword('if') + COND_EXPR)
@@ -361,10 +433,14 @@ FUNCTION_CALL     .addParseAction(lambda x: tag_grammar(x, 'function call'))
 FUNC_HANDLE       .addParseAction(lambda x: tag_grammar(x, 'function handle'))
 SIMPLE_ASSIGNMENT .addParseAction(lambda x: tag_grammar(x, 'variable assignment'))
 OTHER_ASSIGNMENT  .addParseAction(lambda x: tag_grammar(x, 'matrix/cell/struct assignment'))
-FUNCTION_DEF_STMT .addParseAction(lambda x: tag_grammar(x, 'function definition'))
 LINE_COMMENT      .addParseAction(lambda x: tag_grammar(x, 'comment'))
 ID_REF            .addParseAction(lambda x: tag_grammar(x, 'id reference'))
 EXPR              .addParseAction(lambda x: tag_grammar(x, 'expr'))
+
+FUNCTION_DEF_STMT .addParseAction(lambda x: tag_grammar(x, 'function definition'))
+END               .addParseAction(lambda x: tag_grammar(x, 'end'))
+
+STMT              .addParseAction(store_stmt)
 
 
 # -----------------------------------------------------------------------------
@@ -422,28 +498,36 @@ END               .setName('END')
 FUNCTION          .setName('FUNCTION')
 STMT              .setName('STMT')
 
+
 # -----------------------------------------------------------------------------
 # Direct run interface
 # -----------------------------------------------------------------------------
 
 if __name__ == '__main__':
     debug = False
-    if sys.argv[1] == '-d':
-        debug = True
-        path = sys.argv[2]
-    else:
-        path = sys.argv[1]
+    print_interpreted = False
+    arg_index = 1
+    while sys.argv[arg_index] in ['-d', '-p']:
+        if sys.argv[arg_index] == '-d':
+            debug = True
+        elif sys.argv[arg_index] == '-p':
+            print_interpreted = True
+        else:
+            break
+        arg_index += 1
 
+    path = sys.argv[arg_index]
     file = open(path, 'r')
-    print "----- file " + path + "-"*30
+    print '----- file ' + path + ' ' + '-'*30
     contents = file.read()
     print contents
-    print "----- output " + "-"*65
-    result = parse_string(contents)
-    if debug: pdb.set_trace()
-    print "----- data dumps " + "-"*65
-    # print result.asDict()
-    # print result.pprint()
-    # print_variables(result)
-    # print_called(result)
+    print '----- raw parse results ' + '-'*50
+    parse_matlab_string(contents)
+    print ''
+    if print_interpreted:
+        print '----- interpreted output ' + '-'*50
+        print_stored_stmts()
+    if debug:
+        pdb.set_trace()
 
+    # print result.pprint()
