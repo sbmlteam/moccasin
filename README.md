@@ -24,15 +24,10 @@ As part of our continuing efforts to develop SBML and useful software tools arou
 The goal of this project is to provide a solution to this by developing a new software package, MOCCASIN (*"Model ODE Converter for Creating Awesome SBML INteroperability"*). MOCCASIN will be a user-assisted converter that helps researchers take models written in MATLAB and Octave without SBMLToolbox or any other similar toolboxes, and export them as SBML files.  Although a fully automated and general converter will be impossible, it should be possible to translate at least *some* MATLAB/Octave models using a combination of heuristics and user assistance.  Doing so will enable researchers to exchange and publish their models in a standard format accepted by hundreds of journals and to take advantage of hundreds of software tools that support SBML today.
 
 
-Versioning
-----------
+Funding
+-------
 
-This project uses the [Semantic Versioning](http://semver.org) principles for versioning.  The version number has the format `MAJOR.MINOR.PATCH-LABEL`. The fields have the following meaning:
-
-* An increment of the major version number, `MAJOR`, represents incompatible API changes.
-* An increment of the minor version number, `MINOR`, represents additional functionality in a backwards-compatible manner.
-* An increment of the patch version number, `PATCH`, represents backwards-compatible bug fixes.
-* Existence of a label `LABEL` represents a pre-release or build metadata.
+This work is made possible thanks to funding from the Mount Sinai School of Medicine in New York City, provided as part of the NIH-funded project *Modeling Immunity for Biodefense* (Principal Investigator: Stuart Sealfon).
 
 
 License
