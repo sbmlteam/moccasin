@@ -4,8 +4,7 @@ MOCCASIN
 *MOCCASIN* stands for *"Model ODE Converter for Creating Awesome SBML INteroperability"*.  It is a project to develop a user-assisted converter that can take MATLAB or Octave ODE-based models in biology and translate them into [SBML](http://sbml.org) format.
 
 ----
-*Authors*:      Sarah Keating (http://www.ebi.ac.uk/about/people/sarah-keating) and
-Michael Hucka (http://www.cds.caltech.edu/~mhucka) 
+*Authors*:      Michael Hucka (http://www.cds.caltech.edu/~mhucka) and Sarah Keating (http://www.ebi.ac.uk/about/people/sarah-keating)
 
 *Copyright*:    Copyright (C) 2014 by the California Institute of Technology, Pasadena, USA.
 
@@ -17,12 +16,9 @@ Michael Hucka (http://www.cds.caltech.edu/~mhucka)
 Background
 ----------
 
-The Systems Biology Markup Language ([SBML](http://sbml.org)) is a machine-readable representation format for computational models of biological processes.  By supporting SBML as an input/output format, different tools can all operate on an identical representation of a model, removing opportunities for translation errors and assuring a common starting point for analyses and simulations.
+Computation modeling has become a crucial aspect of biological research, and [SBML](http://sbml.org) (the Systems Biology Markup Language) has become the de facto standard open format for exchanging models between software tools in systems biology. [MATLAB](http://www.mathworks.com) and [Octave](http://www.gnu.org/software/octave/) are popular numerical computing environments used by modelers in biology, but while toolboxes for using SBML exist, many researchers either have legacy models or do not learn about the toolboxes before starting their work and then find it discouragingly difficult to export their MATLAB/Octave models to SBML.
 
-As part of our continuing efforts to develop SBML and useful software tools around it, we previously created [SBMLToolbox](http://sbml.org/Software/SBMLToolbox).  It allows an SBML model to be imported into [MATLAB](http://www.mathworks.com) and [Octave](http://octave.org), where the model is represented as a data structure that users can manipulate using the facilites of those environments; likewise, the data structure can be exported to SBML form.  One of the features that SBMLToolbox does *not* provide, however, is the ability to convert free-form, unstructured MATLAB/Octave differential equation models into SBML: if the user did not write their MATLAB/Octave model using the SBMLToolbox data structure in the first place, then there is no way to export it in SBML form.  However, users have repeatedly asked us for a way to do this.
-
-The goal of this project is to provide a solution to this by developing a new software package, MOCCASIN (*"Model ODE Converter for Creating Awesome SBML INteroperability"*). MOCCASIN will be a user-assisted converter that helps researchers take models written in MATLAB and Octave without SBMLToolbox or any other similar toolboxes, and export them as SBML files.  Although a fully automated and general converter will be impossible, it should be possible to translate at least *some* MATLAB/Octave models using a combination of heuristics and user assistance.  Doing so will enable researchers to exchange and publish their models in a standard format accepted by hundreds of journals and to take advantage of hundreds of software tools that support SBML today.
-
+The goal of this project is to develop software that uses a combination of heuristics and user assistance to help researchers export models written as ordinary MATLAB and Octave scripts. MOCCASIN  (*"Model ODE Converter for Creating Awesome SBML INteroperability"*) will help researchers take models written in MATLAB and Octave without SBMLToolbox or any other similar toolboxes, and export them as SBML files.  Although a fully automated and general converter will be probably be impossible, it should be possible to translate at least *some* MATLAB/Octave models using a combination of heuristics and user assistance.  Doing so will enable researchers to exchange and publish their models in a standard format accepted by hundreds of journals and to take advantage of hundreds of software tools that support SBML today.
 
 Funding
 -------
