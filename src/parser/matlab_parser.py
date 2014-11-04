@@ -28,7 +28,7 @@ def parse_matlab_string(str, print_raw=False):
     push_context('(default context)')
     print_tokens = print_raw
     try:
-        MATLAB_SYNTAX.parseString(str, parseAll=True)
+        matlab_syntax.parseString(str, parseAll=True)
         return contexts
     except ParseException as err:
         print("error: {0}".format(err))
@@ -38,7 +38,7 @@ def parse_matlab_string(str, print_raw=False):
 # Older version
 def parse_string(str):
     try:
-        return MATLAB_SYNTAX.parseString(str, parseAll=True)
+        return matlab_syntax.parseString(str, parseAll=True)
     except ParseException as err:
         print("error: {0}".format(err))
         return None
@@ -301,32 +301,34 @@ BOOLEAN            = TRUE | FALSE
 
 STRING             = QuotedString("'", escQuote="''")
 
+END                = Keyword('end')
+
 # List of references to identifiers.  Used in function definitions.
 
 ID_REF             = ID_BASE.copy()
-ARG_LIST           = Group(delimitedList(ID_REF))
+arg_list           = Group(delimitedList(ID_REF))
 
 # Here begins the grammar for expressions.
 
-EXPR               = Forward()
+expr               = Forward()
 
 # Bare matrices.  This is a cheat because it doesn't check that all the
 # element contents are of the same type.  But again, since we expect our
 # input to be valid Matlab, we don't expect to have to verify that property.
 
-SINGLE_ROW         = Group(delimitedList(EXPR) | OneOrMore(EXPR))
-ROWS               = Group(SINGLE_ROW) + ZeroOrMore(SEMI + Group(SINGLE_ROW))
-BARE_MATRIX        = Group(LBRACKET + ZeroOrMore(ROWS) + RBRACKET)
+single_row         = Group(delimitedList(expr) | OneOrMore(expr))
+rows               = Group(single_row) + ZeroOrMore(SEMI + Group(single_row))
+bare_matrix        = Group(LBRACKET + ZeroOrMore(rows) + RBRACKET)
 
 # Cell arrays.  I think these are basically just heterogeneous matrices.
 # Note that you can write {} by itself, but a reference has to have at least
 # one indexing term: "somearray{}" is not valid.  Cell array references don't
 # seem to allow newlines in the args, but do allow a bare ':'.
 
-BARE_CELL_ARRAY    = Group(LBRACE + ZeroOrMore(ROWS) + RBRACE)
+bare_cell_array    = Group(LBRACE + ZeroOrMore(rows) + RBRACE)
 
-CELL_ARRAY_ARGS    = delimitedList(EXPR | Group(':'))
-CELL_ARRAY_REF     = Group(ID_REF + LBRACE + CELL_ARRAY_ARGS + RBRACE)
+cell_array_args    = delimitedList(expr | Group(':'))
+cell_array_ref     = Group(ID_REF + LBRACE + cell_array_args + RBRACE)
 
 # Function calls and matrix accesses look the same. We will have to
 # distinguish them at run-time by figuring out if a given identifier
@@ -334,26 +336,26 @@ CELL_ARRAY_REF     = Group(ID_REF + LBRACE + CELL_ARRAY_ARGS + RBRACE)
 # grammars because in the case of matrix references and cell array references
 # you can use a bare ':' in the argument list.
 
-FUNCTION_ARGS      = delimitedList(EXPR)
-FUNCTION_CALL      = Group(ID_REF + LPAR + Group(Optional(FUNCTION_ARGS)) + RPAR)
+function_args      = delimitedList(expr)
+function_call      = Group(ID_REF + LPAR + Group(Optional(function_args)) + RPAR)
 
-MATRIX_ARGS        = delimitedList(EXPR | Group(':'))
-MATRIX_REF         = Group(ID_REF + LPAR + Optional(MATRIX_ARGS) + RPAR)
+matrix_args        = delimitedList(expr | Group(':'))
+matrix_ref         = Group(ID_REF + LPAR + Optional(matrix_args) + RPAR)
 
 # Func. handles: http://www.mathworks.com/help/matlab/ref/function_handle.html
 
-NAMED_FUNC_HANDLE  = '@' + ID_REF
-ANON_FUNC_HANDLE   = '@' + LPAR + Group(Optional(ARG_LIST)) + RPAR + EXPR
-FUNC_HANDLE        = Group(NAMED_FUNC_HANDLE | ANON_FUNC_HANDLE)
+named_func_handle  = '@' + ID_REF
+anon_func_handle   = '@' + LPAR + Group(Optional(arg_list)) + RPAR + expr
+func_handle        = Group(named_func_handle | anon_func_handle)
 
 # Struct array references.  This is incomplete: in Matlab, the LHS can
 # actually be a full expression that yields a struct.  Here, to avoid an
 # infinitely recursive grammar, we only allow a specific set of objects and
-# exclude a full EXPR.  (Doing the obvious thing, EXPR + "." + ID_REF, results
+# exclude a full expr.  (Doing the obvious thing, expr + "." + ID_REF, results
 # in an infinitely-recursive grammar.)
 
-STRUCT_BASE        = CELL_ARRAY_REF | MATRIX_REF | FUNCTION_CALL | FUNC_HANDLE | ID_REF
-STRUCT_REF         = Group(STRUCT_BASE + "." + ID_REF)
+struct_base        = cell_array_ref | matrix_ref | function_call | func_handle | ID_REF
+struct_ref         = Group(struct_base + "." + ID_REF)
 
 # The transpose operator is a problem.  It seems you can actually apply it to
 # full expressions, as long as the expressions yield an array.  Parsing the
@@ -361,19 +363,19 @@ STRUCT_REF         = Group(STRUCT_BASE + "." + ID_REF)
 # an operator that's a single quote confuses the parser.  The following
 # approach is a hacky partial solution that only allows certain cases.
 
-PARENTHESIZED_EXPR = LPAR + EXPR + RPAR
-TRANSPOSABLES      = MATRIX_REF | ID_REF | BARE_MATRIX | PARENTHESIZED_EXPR
-TRANSPOSE          = Group(TRANSPOSABLES.leaveWhitespace() + "'")
+parenthesized_expr = LPAR + expr + RPAR
+transposables      = matrix_ref | ID_REF | bare_matrix | parenthesized_expr
+transpose          = Group(transposables.leaveWhitespace() + "'")
 
 # The operator precendece rules in Matlab are listed here:
 # http://www.mathworks.com/help/matlab/matlab_prog/operator-precedence.html
 
-OPERAND            = Group(TRANSPOSE | FUNCTION_CALL | MATRIX_REF \
-                           | CELL_ARRAY_REF | STRUCT_REF | FUNC_HANDLE \
-                           | BARE_MATRIX | BARE_CELL_ARRAY \
+operand            = Group(transpose | function_call | matrix_ref \
+                           | cell_array_ref | struct_ref | func_handle \
+                           | bare_matrix | bare_cell_array \
                            | ID_REF | NUMBER | BOOLEAN | STRING)
 
-EXPR               << operatorPrecedence(OPERAND, [
+expr               << operatorPrecedence(operand, [
     (oneOf('- + ~'),            1, opAssoc.RIGHT),
     (".'",                      1, opAssoc.RIGHT),
     (oneOf(".^ ^"),             2, opAssoc.LEFT, makeLRlike(2)),
@@ -388,7 +390,7 @@ EXPR               << operatorPrecedence(OPERAND, [
     ('||',                      2, opAssoc.LEFT, makeLRlike(2)),
 ])
 
-COND_EXPR          = operatorPrecedence(OPERAND, [
+cond_expr          = operatorPrecedence(operand, [
     (oneOf('< <= > >= == ~='), 2, opAssoc.LEFT, makeLRlike(2)),
     ('&',                      2, opAssoc.LEFT, makeLRlike(2)),
     ('|',                      2, opAssoc.LEFT, makeLRlike(2)),
@@ -396,35 +398,33 @@ COND_EXPR          = operatorPrecedence(OPERAND, [
     ('||',                     2, opAssoc.LEFT, makeLRlike(2)),
 ])
 
-ASSIGNED_ID        = (ID_BASE.copy()).setResultsName('vars', listAllMatches=True)
-SIMPLE_ASSIGNMENT  = ASSIGNED_ID + EQUALS.suppress() + EXPR
-OTHER_ASSIGNMENT   = (BARE_MATRIX | MATRIX_REF | CELL_ARRAY_REF | STRUCT_REF) + EQUALS.suppress() + EXPR
-ASSIGNMENT         = OTHER_ASSIGNMENT | SIMPLE_ASSIGNMENT
+assigned_id        = (ID_BASE.copy()).setResultsName('vars', listAllMatches=True)
+simple_assignment  = assigned_id + EQUALS.suppress() + expr
+other_assignment   = (bare_matrix | matrix_ref | cell_array_ref | struct_ref) + EQUALS.suppress() + expr
+assignment         = other_assignment | simple_assignment
 
-WHILE_STMT         = Group(Keyword('while') + COND_EXPR)
-IF_STMT            = Group(Keyword('if') + COND_EXPR)
-ELSEIF_STMT        = Group(Keyword('elseif') + COND_EXPR)
-ELSE_STMT          = Keyword('else')
-RETURN_STMT        = Keyword('return')
-BREAK_STMT         = Keyword('break')
-CONTINUE_STMT      = Keyword('continue')
-GLOBAL_STMT        = Keyword('global')
-PERSISTENT_STMT    = Keyword('persistent')
-FOR_ID             = ID_BASE.copy()
-FOR_STMT           = Group(Keyword('for') + FOR_ID + EQUALS + EXPR)
-SWITCH_STMT        = Group(Keyword('switch') + EXPR)
-CASE_STMT          = Group(Keyword('case') + EXPR)
-OTHERWISE_STMT     = Keyword('otherwise')
-TRY_STMT           = Keyword('try')
-CATCH_STMT         = Group(Keyword('catch') + ID_REF)
+while_stmt         = Group(Keyword('while') + cond_expr)
+if_stmt            = Group(Keyword('if') + cond_expr)
+elseif_stmt        = Group(Keyword('elseif') + cond_expr)
+else_stmt          = Keyword('else')
+return_stmt        = Keyword('return')
+break_stmt         = Keyword('break')
+continue_stmt      = Keyword('continue')
+global_stmt        = Keyword('global')
+persistent_stmt    = Keyword('persistent')
+for_id             = ID_BASE.copy()
+for_stmt           = Group(Keyword('for') + for_id + EQUALS + expr)
+switch_stmt        = Group(Keyword('switch') + expr)
+case_stmt          = Group(Keyword('case') + expr)
+otherwise_stmt     = Keyword('otherwise')
+try_stmt           = Keyword('try')
+catch_stmt         = Group(Keyword('catch') + ID_REF)
 
-END                = Keyword('end')
-
-CONTROL_STMT       = WHILE_STMT | IF_STMT | ELSEIF_STMT | ELSE_STMT \
-                    | SWITCH_STMT | CASE_STMT | OTHERWISE_STMT \
-                    | FOR_STMT | TRY_STMT | CATCH_STMT \
-                    | CONTINUE_STMT | BREAK_STMT | RETURN_STMT \
-                    | GLOBAL_STMT | PERSISTENT_STMT | END
+control_stmt       = while_stmt | if_stmt | elseif_stmt | else_stmt \
+                    | switch_stmt | case_stmt | otherwise_stmt \
+                    | for_stmt | try_stmt | catch_stmt \
+                    | continue_stmt | break_stmt | return_stmt \
+                    | global_stmt | persistent_stmt | END
 
 # Examples of Matlab command statements:
 #   figure
@@ -435,54 +435,54 @@ CONTROL_STMT       = WHILE_STMT | IF_STMT | ELSEIF_STMT | ELSE_STMT \
 # The same commands take other forms, like pause(n), but those will get caught
 # by the regular function reference grammar.
 
-COMMON_COMMANDS    = Keyword('figure') | Keyword('pause') | Keyword('hold')
-COMMAND_STMT_ARG   = Word(alphanums + "_")
-COMMAND_STMT       = COMMON_COMMANDS | ID_REF + COMMAND_STMT_ARG
+common_commands    = Keyword('figure') | Keyword('pause') | Keyword('hold')
+command_stmt_arg   = Word(alphanums + "_")
+command_stmt       = common_commands | ID_REF + command_stmt_arg
 
-SINGLE_VALUE       = ID_REF
-IDS_WITH_COMMAS    = delimitedList(SINGLE_VALUE)
-IDS_WITH_SPACES    = OneOrMore(SINGLE_VALUE)
-MULTIPLE_VALUES    = LBRACKET + (IDS_WITH_SPACES | IDS_WITH_COMMAS) + RBRACKET
-FUNCTION_DEF_NAME  = ID_BASE.copy()
-FUNCTION_LHS       = Optional(Group(MULTIPLE_VALUES | SINGLE_VALUE) + EQUALS)
-FUNCTION_ARGS      = Optional(LPAR + ARG_LIST + RPAR)
-FUNCTION           = Keyword('function').suppress()
-FUNCTION_DEF_STMT  = Group(FUNCTION + FUNCTION_LHS + FUNCTION_DEF_NAME + FUNCTION_ARGS)
+single_value       = ID_REF
+ids_with_commas    = delimitedList(single_value)
+ids_with_spaces    = OneOrMore(single_value)
+multiple_values    = LBRACKET + (ids_with_spaces | ids_with_commas) + RBRACKET
+function_def_name  = ID_BASE.copy()
+function_lhs       = Optional(Group(multiple_values | single_value) + EQUALS)
+function_args      = Optional(LPAR + arg_list + RPAR)
+function           = Keyword('function').suppress()
+function_def_stmt  = Group(function + function_lhs + function_def_name + function_args)
 
-LINE_COMMENT       = Group('%' + restOfLine + EOL)
-BLOCK_COMMENT      = Group('%{' + SkipTo('%}', include=True))
-COMMENT            = (BLOCK_COMMENT | LINE_COMMENT).addParseAction(print_tokens)
-DELIMITER          = COMMA | SEMI
-CONTINUATION       = Combine(ELLIPSIS.leaveWhitespace() + EOL + EOS)
-STMT               = Group(FUNCTION_DEF_STMT | CONTROL_STMT | ASSIGNMENT | COMMAND_STMT | EXPR).addParseAction(print_tokens)
+line_comment       = Group('%' + restOfLine + EOL)
+block_comment      = Group('%{' + SkipTo('%}', include=True))
+comment            = (block_comment | line_comment).addParseAction(print_tokens)
+delimiter          = COMMA | SEMI
+continuation       = Combine(ELLIPSIS.leaveWhitespace() + EOL + EOS)
+stmt               = Group(function_def_stmt | control_stmt | assignment | command_stmt | expr).addParseAction(print_tokens)
 
-MATLAB_SYNTAX      = ZeroOrMore(STMT | DELIMITER | COMMENT)
-MATLAB_SYNTAX.ignore(CONTINUATION)
+matlab_syntax      = ZeroOrMore(stmt | delimiter | comment)
+matlab_syntax.ignore(continuation)
 
 # This is supposed to be for optimization, but unless I call this, the parser
 # simply never finishes parsing even simple inputs.
-MATLAB_SYNTAX.enablePackrat()
+matlab_syntax.enablePackrat()
 
 
 # -----------------------------------------------------------------------------
 # Interpretation of elements
 # -----------------------------------------------------------------------------
 
-BARE_MATRIX       .addParseAction(lambda x: tag_grammar(x, 'bare matrix'))
-SINGLE_ROW        .addParseAction(lambda x: tag_grammar(x, 'single row'))
-FUNCTION_CALL     .addParseAction(lambda x: tag_grammar(x, 'function call'))
-FUNC_HANDLE       .addParseAction(lambda x: tag_grammar(x, 'function handle'))
-SIMPLE_ASSIGNMENT .addParseAction(lambda x: tag_grammar(x, 'variable assignment'))
-OTHER_ASSIGNMENT  .addParseAction(lambda x: tag_grammar(x, 'matrix/cell/struct assignment'))
-LINE_COMMENT      .addParseAction(lambda x: tag_grammar(x, 'comment'))
+bare_matrix       .addParseAction(lambda x: tag_grammar(x, 'bare matrix'))
+single_row        .addParseAction(lambda x: tag_grammar(x, 'single row'))
+function_call     .addParseAction(lambda x: tag_grammar(x, 'function call'))
+func_handle       .addParseAction(lambda x: tag_grammar(x, 'function handle'))
+simple_assignment .addParseAction(lambda x: tag_grammar(x, 'variable assignment'))
+other_assignment  .addParseAction(lambda x: tag_grammar(x, 'matrix/cell/struct assignment'))
+line_comment      .addParseAction(lambda x: tag_grammar(x, 'comment'))
 ID_REF            .addParseAction(lambda x: tag_grammar(x, 'id reference'))
-EXPR              .addParseAction(lambda x: tag_grammar(x, 'expr'))
+expr              .addParseAction(lambda x: tag_grammar(x, 'expr'))
 
-FUNCTION_DEF_STMT .addParseAction(lambda x: tag_grammar(x, 'function definition'))
+function_def_stmt .addParseAction(lambda x: tag_grammar(x, 'function definition'))
 END               .addParseAction(lambda x: tag_grammar(x, 'end'))
 
-FUNCTION_CALL     .addParseAction(store_stmt)
-STMT              .addParseAction(store_stmt)
+function_call     .addParseAction(store_stmt)
+stmt              .addParseAction(store_stmt)
 
 
 # -----------------------------------------------------------------------------
@@ -496,49 +496,49 @@ ELLIPSIS          .setName('ELLIPSIS')
 BOOLEAN           .setName('BOOLEAN')
 STRING            .setName('STRING')
 ID_REF            .setName('ID_REF')#.setDebug(True)
-COMMENT           .setName('COMMENT')#.setDebug(True)
-LINE_COMMENT      .setName('LINE_COMMENT')#.setDebug(True)
-ARG_LIST          .setName('ARG_LIST')
-ROWS              .setName('ROWS')#.setDebug(True)
-BARE_MATRIX       .setName('BARE_MATRIX')#.setDebug(True)
-MATRIX_REF        .setName('MATRIX_REF')
-BARE_CELL_ARRAY   .setName('BARE_CELL_ARRAY')
-CELL_ARRAY_REF    .setName('CELL_ARRAY_REF')
-FUNCTION_CALL     .setName('FUNCTION_CALL')#.setDebug(True)
-FUNC_HANDLE       .setName('FUNC_HANDLE')#.setDebug(True)
-STRUCT_REF        .setName('STRUCT_REF')
-TRANSPOSE         .setName('TRANSPOSE')
-OPERAND           .setName('OPERAND')#.setDebug(True)
-EXPR              .setName('EXPR')
-COND_EXPR         .setName('COND_EXPR')
-ASSIGNED_ID       .setName('ASSIGNED_ID')
-ASSIGNMENT        .setName('ASSIGNMENT')#.setDebug(True)
-CONTROL_STMT      .setName('CONTROL_STMT')
-COMMON_COMMANDS   .setName('COMMON_COMMANDS')
-COMMAND_STMT_ARG  .setName('CONTROL_STMT_ARG')
-COMMAND_STMT      .setName('COMMAND_STMT')
-FUNCTION_DEF_NAME .setName('FUNCTION_DEF_NAME')
-FUNCTION_DEF_STMT .setName('FUNCTION_DEF_STMT')
-SINGLE_VALUE      .setName('SINGLE_VALUE')
-WHILE_STMT        .setName('WHILE_STMT')
-IF_STMT           .setName('IF_STMT')
-ELSEIF_STMT       .setName('ELSEIF_STMT')
-ELSE_STMT         .setName('ELSE_STMT')
-RETURN_STMT       .setName('RETURN_STMT')
-BREAK_STMT        .setName('BREAK_STMT')
-CONTINUE_STMT     .setName('CONTINUE_STMT')
-GLOBAL_STMT       .setName('GLOBAL_STMT')
-PERSISTENT_STMT   .setName('PERSISTENT_STMT')
-FOR_ID            .setName('FOR_ID')
-FOR_STMT          .setName('FOR_STMT')
-SWITCH_STMT       .setName('SWITCH_STMT')
-CASE_STMT         .setName('CASE_STMT')
-OTHERWISE_STMT    .setName('OTHERWISE_STMT')
-TRY_STMT          .setName('TRY_STMT')
-CATCH_STMT        .setName('CATCH_STMT')
+comment           .setName('comment')#.setDebug(True)
+line_comment      .setName('line_comment')#.setDebug(True)
+arg_list          .setName('arg_list')
+rows              .setName('rows')#.setDebug(True)
+bare_matrix       .setName('bare_matrix')#.setDebug(True)
+matrix_ref        .setName('matrix_ref')
+bare_cell_array   .setName('bare_cell_array')
+cell_array_ref    .setName('cell_array_ref')
+function_call     .setName('function_call')#.setDebug(True)
+func_handle       .setName('func_handle')#.setDebug(True)
+struct_ref        .setName('struct_ref')
+transpose         .setName('transpose')
+operand           .setName('operand')#.setDebug(True)
+expr              .setName('expr')
+cond_expr         .setName('cond_expr')
+assigned_id       .setName('assigned_id')
+assignment        .setName('assignment')#.setDebug(True)
+control_stmt      .setName('control_stmt')
+common_commands   .setName('common_commands')
+command_stmt_arg  .setName('control_stmt_ARG')
+command_stmt      .setName('command_stmt')
+function_def_name .setName('function_def_name')
+function_def_stmt .setName('function_def_stmt')
+single_value      .setName('single_value')
+while_stmt        .setName('while_stmt')
+if_stmt           .setName('if_stmt')
+elseif_stmt       .setName('elseif_stmt')
+else_stmt         .setName('else_stmt')
+return_stmt       .setName('return_stmt')
+break_stmt        .setName('break_stmt')
+continue_stmt     .setName('continue_stmt')
+global_stmt       .setName('global_stmt')
+persistent_stmt   .setName('persistent_stmt')
+for_id            .setName('for_id')
+for_stmt          .setName('for_stmt')
+switch_stmt       .setName('switch_stmt')
+case_stmt         .setName('case_stmt')
+otherwise_stmt    .setName('otherwise_stmt')
+try_stmt          .setName('try_stmt')
+catch_stmt        .setName('catch_stmt')
 END               .setName('END')
-FUNCTION          .setName('FUNCTION')
-STMT              .setName('STMT')
+function          .setName('function')
+stmt              .setName('stmt')
 
 
 # -----------------------------------------------------------------------------
