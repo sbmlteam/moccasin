@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 #
-# Filename    : matlab_parser.py
-# Description : MATLAB parser
-# Author(s)   : Michael Hucka
-# Organization: California Institute of Technology
-# Created     : 2014-07-26
+# @file    matlab_parser.py
+# @brief   MATLAB parser
+# @author  Michael Hucka
 #
 # <!---------------------------------------------------------------------------
 # This software is part of MOCCASIN, the Model ODE Converter for Creating
