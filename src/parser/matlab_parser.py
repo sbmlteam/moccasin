@@ -283,8 +283,6 @@ RPAR               = Literal(")").suppress()
 EQUALS             = Literal('=')
 ELLIPSIS           = Literal('...')
 
-ID_BASE            = Word(alphas, alphanums + '_')
-
 INTEGER            = Word(nums)
 EXPONENT           = Combine(oneOf('E e D d') + Optional(oneOf('+ -')) + Word(nums))
 FLOAT              = ( Combine(Word(nums) + Optional('.' + Word(nums)) + EXPONENT)
@@ -292,21 +290,16 @@ FLOAT              = ( Combine(Word(nums) + Optional('.' + Word(nums)) + EXPONEN
                      | Combine(Word(nums) + '.' + Word(nums))
                      | Combine('.' + Word(nums) + EXPONENT)
                      | Combine('.' + Word(nums))
-                    )
+                     )
 NUMBER             = FLOAT | INTEGER
-
-TRUE               = Keyword('true')
-FALSE              = Keyword('false')
-BOOLEAN            = TRUE | FALSE
-
+BOOLEAN            = Combine(Keyword('true') | Keyword('false'))
 STRING             = QuotedString("'", escQuote="''")
 
-END                = Keyword('end')
+ID_BASE            = Word(alphas, alphanums + '_')
 
 # List of references to identifiers.  Used in function definitions.
 
 ID_REF             = ID_BASE.copy()
-arg_list           = Group(delimitedList(ID_REF))
 
 # Here begins the grammar for expressions.
 
@@ -344,6 +337,7 @@ matrix_ref         = Group(ID_REF + LPAR + Optional(matrix_args) + RPAR)
 
 # Func. handles: http://www.mathworks.com/help/matlab/ref/function_handle.html
 
+arg_list           = Group(delimitedList(ID_REF))
 named_func_handle  = '@' + ID_REF
 anon_func_handle   = '@' + LPAR + Group(Optional(arg_list)) + RPAR + expr
 func_handle        = Group(named_func_handle | anon_func_handle)
@@ -403,6 +397,7 @@ simple_assignment  = assigned_id + EQUALS.suppress() + expr
 other_assignment   = (bare_matrix | matrix_ref | cell_array_ref | struct_ref) + EQUALS.suppress() + expr
 assignment         = other_assignment | simple_assignment
 
+END                = Keyword('end')
 while_stmt         = Group(Keyword('while') + cond_expr)
 if_stmt            = Group(Keyword('if') + cond_expr)
 elseif_stmt        = Group(Keyword('elseif') + cond_expr)
@@ -487,58 +482,46 @@ stmt              .addParseAction(store_stmt)
 
 # -----------------------------------------------------------------------------
 # Annotation of grammar for debugging.
-#
-# You can leave the setName(...) calls as-is.  To see debugging output, add a
-# .setDebug(True) to an element.  Some examples are left commented out below.
 # -----------------------------------------------------------------------------
 
-ELLIPSIS          .setName('ELLIPSIS')
-BOOLEAN           .setName('BOOLEAN')
-STRING            .setName('STRING')
-ID_REF            .setName('ID_REF')#.setDebug(True)
-comment           .setName('comment')#.setDebug(True)
-line_comment      .setName('line_comment')#.setDebug(True)
-arg_list          .setName('arg_list')
-rows              .setName('rows')#.setDebug(True)
-bare_matrix       .setName('bare_matrix')#.setDebug(True)
-matrix_ref        .setName('matrix_ref')
-bare_cell_array   .setName('bare_cell_array')
-cell_array_ref    .setName('cell_array_ref')
-function_call     .setName('function_call')#.setDebug(True)
-func_handle       .setName('func_handle')#.setDebug(True)
-struct_ref        .setName('struct_ref')
-transpose         .setName('transpose')
-operand           .setName('operand')#.setDebug(True)
-expr              .setName('expr')
-cond_expr         .setName('cond_expr')
-assigned_id       .setName('assigned_id')
-assignment        .setName('assignment')#.setDebug(True)
-control_stmt      .setName('control_stmt')
-common_commands   .setName('common_commands')
-command_stmt_arg  .setName('control_stmt_ARG')
-command_stmt      .setName('command_stmt')
-function_def_name .setName('function_def_name')
-function_def_stmt .setName('function_def_stmt')
-single_value      .setName('single_value')
-while_stmt        .setName('while_stmt')
-if_stmt           .setName('if_stmt')
-elseif_stmt       .setName('elseif_stmt')
-else_stmt         .setName('else_stmt')
-return_stmt       .setName('return_stmt')
-break_stmt        .setName('break_stmt')
-continue_stmt     .setName('continue_stmt')
-global_stmt       .setName('global_stmt')
-persistent_stmt   .setName('persistent_stmt')
-for_id            .setName('for_id')
-for_stmt          .setName('for_stmt')
-switch_stmt       .setName('switch_stmt')
-case_stmt         .setName('case_stmt')
-otherwise_stmt    .setName('otherwise_stmt')
-try_stmt          .setName('try_stmt')
-catch_stmt        .setName('catch_stmt')
-END               .setName('END')
-function          .setName('function')
-stmt              .setName('stmt')
+# This next function is from http://stackoverflow.com/a/16139159/743730
+
+def object_name(obj):
+    """Returns the name of a given object."""
+    for name, thing in globals().items():
+        if thing is obj:
+            return name
+
+to_name = [BOOLEAN, COMMA, ELLIPSIS, END, EQUALS, EXPONENT, FLOAT, ID_REF,
+           INTEGER, LBRACE, LBRACKET, LPAR, NUMBER, RBRACE, RBRACKET, RPAR,
+           SEMI, STRING, arg_list, assigned_id, assignment,
+           bare_cell_array, bare_matrix, block_comment, break_stmt, case_stmt,
+           catch_stmt, cell_array_args, cell_array_ref, command_stmt,
+           command_stmt_arg, comment, common_commands, cond_expr, continuation,
+           continue_stmt, control_stmt, delimiter, else_stmt, elseif_stmt, expr,
+           for_id, for_stmt, func_handle, function, function_args,
+           function_args, function_call, function_def_name, function_def_stmt,
+           function_lhs, global_stmt, ids_with_commas, ids_with_spaces,
+           if_stmt, line_comment, matlab_syntax, matrix_args, matrix_ref,
+           multiple_values, named_func_handle, operand, other_assignment,
+           otherwise_stmt, parenthesized_expr, persistent_stmt, return_stmt,
+           rows, simple_assignment, single_row, single_value, stmt,
+           struct_base, struct_ref, switch_stmt, transposables, transpose,
+           try_stmt, while_stmt]
+
+map(lambda x: x.setName(object_name(x)), to_name)
+
+
+# -----------------------------------------------------------------------------
+# Debug tracing
+# -----------------------------------------------------------------------------
+
+# Add symbols to this list to turn on tracing.
+
+to_trace = []
+
+if to_trace:
+    map(lambda x: x.setDebug(True), to_trace)
 
 
 # -----------------------------------------------------------------------------
