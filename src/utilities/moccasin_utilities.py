@@ -30,7 +30,7 @@ def parse_debug_helper(f):
     """
     num_args = len(inspect.getargspec(f).args)
     if num_args > 3:
-        raise ValueError('Input function must take at most 3 parameters.')
+        raise ValueError('Input function must take no more than 3 parameters.')
 
     @functools.wraps(f)
     def action(*args):
