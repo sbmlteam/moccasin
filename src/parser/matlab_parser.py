@@ -23,6 +23,7 @@ import sys
 import math
 import operator
 import pdb
+import getopt
 from pyparsing import *
 
 sys.path.append('../utilities')
@@ -555,29 +556,43 @@ map(lambda x: x.setDebug(True), to_trace)
 # Direct run interface, for testing.
 # -----------------------------------------------------------------------------
 
-if __name__ == '__main__':
-    debug = False
-    print_interpreted = False
-    arg_index = 1
-    while sys.argv[arg_index] in ['-d', '-p']:
-        if sys.argv[arg_index] == '-d':
-            debug = True
-        elif sys.argv[arg_index] == '-p':
-            print_interpreted = True
-        else:
-            break
-        arg_index += 1
+def get_filename_and_options(argv):
+    try:
+        options, args = getopt.getopt(argv[1:], "dp")
+    except:
+        raise SystemExit(main.__doc__)
+    if len(args) > 1 or len(args) < 1 or len(options) > 2:
+        raise SystemExit(main.__doc__)
+    return args[0], options[0]
 
-    path = sys.argv[arg_index]
+
+def main(argv):
+    '''Usage: matlab_parser.py [-p] [-d] FILENAME.m
+Arguments:
+  -p   (Optional) Print a representation of the interpreted input
+  -d   (Optional) Drop into pdb as the final step
+'''
+
+    path, options     = get_filename_and_options(argv)
+    debug             = '-d' in options
+    print_interpreted = '-p' in options
+
     file = open(path, 'r')
     print '----- file ' + path + ' ' + '-'*30
     contents = file.read()
     print contents
+
     print '----- raw parse results ' + '-'*50
     parse_matlab_string(contents, True)
     print ''
+
     if print_interpreted:
         print '----- interpreted output ' + '-'*50
         print_stored_stmts()
+
     if debug:
         pdb.set_trace()
+
+
+if __name__ == '__main__':
+    main(sys.argv)
