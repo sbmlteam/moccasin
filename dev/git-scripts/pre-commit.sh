@@ -19,6 +19,9 @@
 # available online at https://github.com/sbmlteam/moccasin/.
 # ------------------------------------------------------------------------- -->
 
+# For the meanings of these codes, see the following:
+# http://pep8.readthedocs.org/en/latest/intro.html#error-codes
+
 IGNORE=E226,E221,E227,E241,E501,E126
 
 git stash -q --keep-index
