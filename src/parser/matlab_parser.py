@@ -1,7 +1,30 @@
 #!/usr/bin/env python
+#
+# Filename    : matlab_parser.py
+# Description : MATLAB parser
+# Author(s)   : Michael Hucka
+# Organization: California Institute of Technology
+# Created     : 2014-07-26
+#
+# <!---------------------------------------------------------------------------
+# This software is part of MOCCASIN, the Model ODE Converter for Creating
+# Awesome SBML INteroperability. Visit https://github.com/sbmlteam/moccasin/.
+#
+# Copyright (C) 2014 jointly by the following organizations:
+#     1. California Institute of Technology, Pasadena, CA, USA
+#     2. Mount Sinai School of Medicine, New York, NY, USA
+#
+# This is free software; you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation.  A copy of the license agreement is provided in the
+# file named "COPYING.txt" included with this software distribution and also
+# available online at https://github.com/sbmlteam/moccasin/.
+# ------------------------------------------------------------------------- -->
 
-
-import sys, math, operator, pdb
+import sys
+import math
+import operator
+import pdb
 from pyparsing import *
 
 sys.path.append('../utilities')
@@ -54,12 +77,12 @@ def makeLRlike(numterms):
         initlen = 2
         incr = 1
     else:
-        initlen = {0:1,1:2,2:3,3:5}[numterms]
-        incr = {0:1,1:1,2:2,3:4}[numterms]
+        initlen = {0: 1, 1: 2, 2: 3, 3: 5}[numterms]
+        incr = {0: 1, 1: 1, 2: 2, 3: 4}[numterms]
 
     # define parse action for this number of terms,
     # to convert flat list of tokens into nested list
-    def pa(s,l,t):
+    def pa(s, l, t):
         t = t[0]
         if len(t) > initlen:
             ret = ParseResults(t[:initlen])
@@ -103,7 +126,7 @@ def pop_context():
 
 
 def tag_grammar(tokens, tag):
-    if tokens is not None and type(tokens) is ParseResults:
+    if tokens is not None and isinstance(tokens, ParseResults):
         tokens['tag'] = tag
         # pdb.set_trace()
 
@@ -114,8 +137,8 @@ def get_tag(tokens):
 
 def save_function_definition(name, args, output):
     context = get_context()
-    context['functions'][name] = { 'args': args.asList(),
-                                   'output': output.asList() }
+    context['functions'][name] = {'args': args.asList(),
+                                  'output': output.asList()}
 
 
 def save_variable_definition(name, value):
@@ -129,7 +152,7 @@ def save_function_call(fname, args):
 
 
 def search_for(tag, pr):
-    if not pr or type(pr) is not ParseResults:
+    if not pr or not isinstance(pr, ParseResults):
         return None
     if pr['tag'] is not None and pr['tag'] == tag:
         return pr
@@ -146,7 +169,7 @@ def store_stmt(tokens):
     try:
         if not tokens:
             return
-        if type(tokens) is ParseResults:
+        if isinstance(tokens, ParseResults):
             stmt = tokens[0]
         if 'tag' not in stmt.keys():
             return
@@ -187,7 +210,7 @@ def interpret_type(pr):
 def flatten(arg):
     if hasattr(arg, '__iter__'):
         sublist = ''
-        if len(arg) == 1 and type(arg[0]) is str:
+        if len(arg) == 1 and isinstance(arg[0], str):
             return arg[0]
         else:
             for x in arg:
@@ -222,7 +245,7 @@ def print_stored_stmts():
                 if value_type == 'bare matrix':
                     rows = len(value[0])
                     print('      ' + name + ' = (a matrix with ' + str(rows) + ' rows)')
-                elif value_type == None:
+                elif value_type is None:
                     print('      ' + name + ' = ' + stringify_simple_expr(value))
                 else:
                     print('      ' + name)
@@ -245,7 +268,8 @@ def print_tokens(tokens):
     # This gets called once for every matching line.
     # Tokens will be a list; the first element will be the variable.
     global print_tokens
-    if print_tokens: print tokens
+    if print_tokens:
+        print tokens
 
 
 # Use tracer by attaching it as a parse action to a piece of grammar using
@@ -258,7 +282,7 @@ def tracer(tokens):
 
 @parse_debug_helper
 def print_variables(parse_result_object):
-    if parse_result_object == None:
+    if parse_result_object is None:
         print("Empty parse results object?")
     else:
         results = parse_result_object.asDict()
@@ -285,12 +309,12 @@ ELLIPSIS           = Literal('...')
 
 INTEGER            = Word(nums)
 EXPONENT           = Combine(oneOf('E e D d') + Optional(oneOf('+ -')) + Word(nums))
-FLOAT              = ( Combine(Word(nums) + Optional('.' + Word(nums)) + EXPONENT)
-                     | Combine(Word(nums) + '.' + EXPONENT)
-                     | Combine(Word(nums) + '.' + Word(nums))
-                     | Combine('.' + Word(nums) + EXPONENT)
-                     | Combine('.' + Word(nums))
-                     )
+FLOAT              = (Combine(Word(nums) + Optional('.' + Word(nums)) + EXPONENT)
+                      | Combine(Word(nums) + '.' + EXPONENT)
+                      | Combine(Word(nums) + '.' + Word(nums))
+                      | Combine('.' + Word(nums) + EXPONENT)
+                      | Combine('.' + Word(nums))
+                      )
 NUMBER             = FLOAT | INTEGER
 BOOLEAN            = Combine(Keyword('true') | Keyword('false'))
 STRING             = QuotedString("'", escQuote="''")
@@ -364,9 +388,9 @@ transpose          = Group(transposables.leaveWhitespace() + "'")
 # The operator precendece rules in Matlab are listed here:
 # http://www.mathworks.com/help/matlab/matlab_prog/operator-precedence.html
 
-operand            = Group(transpose | function_call | matrix_ref \
-                           | cell_array_ref | struct_ref | func_handle \
-                           | bare_matrix | bare_cell_array \
+operand            = Group(transpose | function_call | matrix_ref
+                           | cell_array_ref | struct_ref | func_handle
+                           | bare_matrix | bare_cell_array
                            | ID_REF | NUMBER | BOOLEAN | STRING)
 
 expr               << operatorPrecedence(operand, [
@@ -484,13 +508,7 @@ stmt              .addParseAction(store_stmt)
 # Annotation of grammar for debugging.
 # -----------------------------------------------------------------------------
 
-# This next function is from http://stackoverflow.com/a/16139159/743730
-
-def object_name(obj):
-    """Returns the name of a given object."""
-    for name, thing in globals().items():
-        if thing is obj:
-            return name
+# This is a list of all the grammar terms defined above.
 
 to_name = [BOOLEAN, COMMA, ELLIPSIS, END, EQUALS, EXPONENT, FLOAT, ID_REF,
            INTEGER, LBRACE, LBRACKET, LPAR, NUMBER, RBRACE, RBRACKET, RPAR,
@@ -509,6 +527,17 @@ to_name = [BOOLEAN, COMMA, ELLIPSIS, END, EQUALS, EXPONENT, FLOAT, ID_REF,
            struct_base, struct_ref, switch_stmt, transposables, transpose,
            try_stmt, while_stmt]
 
+# Function object_name() is based on http://stackoverflow.com/a/16139159/743730
+# The map call below it calls PyParsing's setName() method on every object
+# in the to_name list above, to set every object's name to itself.
+
+
+def object_name(obj):
+    """Returns the name of a given object."""
+    for name, thing in globals().items():
+        if thing is obj:
+            return name
+
 map(lambda x: x.setName(object_name(x)), to_name)
 
 
@@ -516,16 +545,16 @@ map(lambda x: x.setName(object_name(x)), to_name)
 # Debug tracing
 # -----------------------------------------------------------------------------
 
-# Add symbols to this list to turn on tracing.
+# Add grammar symbols to the to_trace list to turn on tracing for that symbol.
+# E.g., to_trace = [bare_matrix] will trace matching for 'bare_matrix'.
 
 to_trace = []
 
-if to_trace:
-    map(lambda x: x.setDebug(True), to_trace)
+map(lambda x: x.setDebug(True), to_trace)
 
 
 # -----------------------------------------------------------------------------
-# Direct run interface
+# Direct run interface, for testing.
 # -----------------------------------------------------------------------------
 
 if __name__ == '__main__':
