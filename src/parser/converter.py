@@ -1,6 +1,28 @@
 #!/usr/bin/env python
+#
+# @file    converter.py
+# @brief   MATLAB converter
+# @author  Michael Hucka
+#
+# <!---------------------------------------------------------------------------
+# This software is part of MOCCASIN, the Model ODE Converter for Creating
+# Awesome SBML INteroperability. Visit https://github.com/sbmlteam/moccasin/.
+#
+# Copyright (C) 2014 jointly by the following organizations:
+#     1. California Institute of Technology, Pasadena, CA, USA
+#     2. Mount Sinai School of Medicine, New York, NY, USA
+#
+# This is free software; you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation.  A copy of the license agreement is provided in the
+# file named "COPYING.txt" included with this software distribution and also
+# available online at https://github.com/sbmlteam/moccasin/.
+# ------------------------------------------------------------------------- -->
 
-import glob, sys, pdb, re
+import glob
+import sys
+import pdb
+import re
 from pyparsing import ParseException, ParseResults
 sys.path.append('..')
 sys.path.append('../../utilities')
@@ -23,7 +45,7 @@ def get_all_variables(mparse):
         if context['name'] == '(default context)':
             default_context = context
             break
-    if default_context == None:
+    if default_context is None:
         return None
     if len(default_context['variables']) == 0:
         return None
@@ -93,7 +115,7 @@ def check(value, message):
     prints an error message constructed using 'message' along with text from
     libSBML explaining the meaning of the code, and exits with status code 1.
     """
-    if value == None:
+    if value is None:
         print('LibSBML returned a null value trying to ' + message + '.')
         print('Exiting.')
         sys.exit(1)
@@ -102,7 +124,7 @@ def check(value, message):
             return
         else:
             print('Error encountered trying to ' + message + '.')
-            print('LibSBML returned error code ' + str(value) + ': "' \
+            print('LibSBML returned error code ' + str(value) + ': "'
                   + OperationReturnValue_toString(value).strip() + '"')
             print('Exiting.')
             sys.exit(1)
@@ -147,7 +169,7 @@ def create_model(mparse):
 
         outer_xname = invocation[-1][0]
 
-        output_var  = declaration['output'][0] # FIXME might have more than one
+        output_var  = declaration['output'][0]  # FIXME might have more than one
         input_vars  = declaration['args']
         inner_xname = input_vars[-1]
 
@@ -182,7 +204,6 @@ def create_model(mparse):
                 check(p.setConstant(False),    'set parameter "constant"')
                 check(p.setValue(0),           'set parameter value')
 
-
     # Create remaining parameters
     parameters = get_all_variables(mparse)
     if parameters is not None:
@@ -198,7 +219,6 @@ def create_model(mparse):
             check(ia,                          'create initial assignment')
             check(ia.setMath(ast),             'set initial assignment formula')
             check(ia.setSymbol(id),            'set initial assignment symbol')
-
 
     # Write the Model
     return writeSBMLToString(document)
