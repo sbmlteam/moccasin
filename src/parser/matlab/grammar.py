@@ -125,7 +125,6 @@ class MatlabGrammar:
                 if tag == 'end':
                     self._pop_context()
                 elif tag == 'function definition':
-                    # pdb.set_trace()
                     content = stmt[0]
                     if len(content) == 2:
                         # Just a function name w/o args or return value.
