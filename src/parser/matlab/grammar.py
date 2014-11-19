@@ -43,7 +43,7 @@ class MatlabGrammar:
         return new_context
 
 
-    def _push_context(self, name = '(default context)'):
+    def _push_context(self, name='(default context)'):
         self._contexts.append(self._create_context(name))
         self._context_index += 1
 
@@ -150,7 +150,8 @@ class MatlabGrammar:
                         args = call_stmt[0][1]
                         self._save_function_call(fname, args)
                 elif tag == 'function call':
-                    pdb.set_trace()                      # FIXME
+                    # FIXME
+                    pass
         except:
             pass
 
@@ -312,9 +313,9 @@ class MatlabGrammar:
     # http://www.mathworks.com/help/matlab/matlab_prog/operator-precedence.html
 
     _operand            = Group(_transpose | _func_call | _matrix_ref
-                               | _cell_array_ref | _struct_ref | _func_handle
-                               | _bare_matrix | _bare_cell_array
-                               | _id_ref | _NUMBER | _BOOLEAN | _STRING)
+                                | _cell_array_ref | _struct_ref | _func_handle
+                                | _bare_matrix | _bare_cell_array
+                                | _id_ref | _NUMBER | _BOOLEAN | _STRING)
 
     _expr               << operatorPrecedence(_operand, [
         (oneOf('- + ~'),            1, opAssoc.RIGHT),
@@ -359,7 +360,7 @@ class MatlabGrammar:
                           | _switch_stmt | _case_stmt | _otherwise_stmt \
                           | _for_stmt | _try_stmt | _catch_stmt \
                           | _CONTINUE | _BREAK | _RETURN \
-                          | _GLOBAL | _PERSISTENT | _END
+                          | _GLOBAL | _PERSISTENT | _END   # noqa
 
     # Examples of Matlab command statements:
     #   figure
