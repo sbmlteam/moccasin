@@ -30,6 +30,16 @@ class Scope:
         self.parse_results = pr
 
 
+    def __repr__(self):
+        if self.parent:
+            p = self.parent.name
+        else:
+            p = ''
+        s = '<scope "{0}": {1} func defs, {2} vars, {3} calls, parent = "{4}">'
+        return s.format(self.name, len(self.functions), len(self.variables),
+                        len(self.calls), p)
+
+
     def copy_scope(self, source):
         if not isinstance(source, Scope):
             raise TypeError('Expected a Scope object')
@@ -58,3 +68,19 @@ class Scope:
 
     def add_function_call(self, name, args):
         self.calls[name] = args
+
+
+# Quick testing interface.
+
+if __name__ == '__main__':
+    x = Scope('scope x')
+    y = Scope('scope y', x)
+    z = Scope('scope y', y)
+    z.variables['var1'] = 111
+    z.variables['var2'] = 222
+    try:
+        print 'x = ' + str(x)
+        print 'y = ' + str(y)
+        print 'z = ' + str(z)
+    except Exception as err:
+        print("error: {0}".format(err))
