@@ -518,13 +518,15 @@ class MatlabGrammar:
 
 
     def print_parse_results(self, results):
+        pdb.set_trace()
         for c in results:
             print('')
-            print('** scope: ' + c['name'] + ' **')
-            if len(c['variables']) > 0:
-                print('    Variables defined in this scope:')
-                for name in c['variables'].keys():
-                    value = c['variables'][name]
+            print('** scope: ' + c.scope.name + ' **')
+            if len(c.scope.assignments) > 0:
+                print('    Variables assigned in this scope:')
+                vars = c.scope.assignments
+                for name in vars.keys():
+                    value = vars[name]
                     value_type = self._interpret_type(value)
                     if value_type == 'bare matrix':
                         rows = len(value[0])
@@ -536,10 +538,11 @@ class MatlabGrammar:
 
             else:
                 print('    No variables defined in this scope.')
-            if len(c['functions']) > 0:
+            if len(c.scope.functions) > 0:
                 print('    Functions defined in this scope:')
-                for name in c['functions'].keys():
-                    fdict = c['functions'][name]
+                functions = c.scope.functions
+                for name in functions.keys():
+                    fdict = functions[name]
                     args = fdict['args']
                     output = fdict['output']
                     print('      ' + ' '.join(output)
