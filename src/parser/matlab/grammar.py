@@ -484,7 +484,7 @@ class MatlabGrammar:
 
 
     # Print low-level PyParsing matching by adding grammar terms to this list:
-    _to_print_raw = [_func_args]
+    _to_print_raw = []
 
     def _init_print_raw(self):
         map(lambda x: x.setDebug(True), self._to_print_raw)
@@ -511,7 +511,6 @@ class MatlabGrammar:
         try:
             pr = self._matlab_syntax.parseString(str, parseAll=True)
             self._duplicate_context(pr)
-            pdb.set_trace()
             return pr
         except ParseException as err:
             print("error: {0}".format(err))
