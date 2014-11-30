@@ -21,70 +21,87 @@ import sys
 import pdb
 from pyparsing import *
 from grammar_utils import *
+from scope import *
 
 
 class MatlabGrammar:
 
     def __init__(self):
         self._do_print_tokens = False
-        self._contexts        = []
-        self._context_index   = -1
+        self._scope           = None
 
 
-    # Context management.
+    # Context and scope management.
+    #
+    # In Matlab, an input file will be either a script, or a function
+    # definition.  A script is distinguished from a function definition
+    # simply by not starting with "function ..." (after any initial comments
+    # in the file).
+    #
+    # Files can contain nested function definitions.  Each of these sets up
+    # scopes, inside of which can be more matlab commands such as variable
+    # assignments.  For our purposes, we're particularly interested in
+    # tracking functions, so the scope-tracking scheme in grammar.py is
+    # organized around function definitions.
+    #
+    # Scopes are recorded by annotating the ParseResults objects returned by
+    # the PyParsing parser with an attribute called 'scope', containing a
+    # Scope object.  This object's main role is to organize the data we need
+    # to track without attaching a whole lot of separate fields directly on
+    # the ParseResults objects.
+    #
+    # To track nested function definitions, grammar.py has a notion of
+    # "contexts".  A context is a Scope object.  It holds the functions,
+    # variables and other definitions found at a particular level of nesting.
+    # A Scope object also holds the ParseResults object returned by the
+    # parser for that level.
+    #
+    # The outermost context is the file, and for that, we initialize the
+    # context-tracking mechanism with a blank ParseResults object.  Each time
+    # a new function declaration is encountered, another context is "pushed".
+    # The context pushed is a Scope object containing the ParseResults object
+    # returned by our PyParsing for a function definition.  When an 'end'
+    # statement is encountered in the input, the current context is popped.
+    #
+    # At the end of a parse, we return the ParseResults object returned by
+    # the PyParsing framework with an added attribute, 'scope', containing a
+    # Scope object instance.  The scope object will have fields for such
+    # things as functions defined in the file.
     # .........................................................................
 
-    def _create_context(self, name):
-        new_context = dict()
-        new_context['variables'] = dict()
-        new_context['functions'] = dict()
-        new_context['calls'] = dict()
-        new_context['name'] = name
-        return new_context
-
-
-    def _push_context(self, name='(default context)'):
-        self._contexts.append(self._create_context(name))
-        self._context_index += 1
+    def _push_context(self, pr, name='(outermost scope)', args=[], returns=[]):
+        # Slightly convoluted: we point to the scope object because that's
+        # all we need in the code below. The ParseResults object gets an
+        # attribute holding the same scope object, and the scope object gets
+        # a pointer back to the ParseResults object that's containing it.
+        pr.scope = Scope(name, self._scope, pr, args, returns)
+        self._scope = pr.scope
 
 
     def _pop_context(self):
-        if self._context_index > 0:
-            self._context_index -= 1
+        self._scope = self._scope.parent
 
 
-    def _get_context(self):
-        if self._contexts:
-            return self._contexts[self._context_index]
-        else:
-            return None
+    def _duplicate_context(self, dest):
+        if not dest.scope:
+            dest.scope = Scope()
+        dest.scope.copy_scope(self._scope)
 
 
-    def _get_all_contexts(self):
-        return self._contexts
+    def _save_function_definition(self, name, args, output, pr):
+        self._scope.add_function_definition(name, args, output, pr)
+
+
+    def _save_variable_assignment(self, name, value):
+        self._scope.add_variable_assignment(name, value)
+
+
+    def _save_function_call(self, fname, args):
+        self._scope.add_function_call(fname, args)
 
 
     # Grammar functions.
     # .........................................................................
-
-    def _save_function_definition(self, name, args, output):
-        context = self._get_context()
-        if args:
-            args = args.asList()
-        if output:
-            output = output.asList()
-        context['functions'][name] = {'args': args, 'output': output}
-
-
-    def _save_variable_definition(self, name, value):
-        context = self._get_context()
-        context['variables'][name] = value
-
-
-    def _save_function_call(self, fname, args):
-        context = self._get_context()
-        context['calls'][fname] = args
-
 
     def _flatten(self, arg):
         if hasattr(arg, '__iter__'):
@@ -100,9 +117,9 @@ class MatlabGrammar:
 
 
     def _search_for(self, tag, pr):
-        if not pr or not isinstance(pr, ParseResults):
+        if not isinstance(pr, ParseResults):
             return None
-        if pr['tag'] is not None and pr['tag'] == tag:
+        if hasattr(pr, 'tag') and pr.tag == tag:
             return pr
         content_list = pr[0]
         for result in content_list:
@@ -112,59 +129,56 @@ class MatlabGrammar:
         return None
 
 
-    def _store_stmt(self, tokens):
-        try:
-            if not tokens:
-                return
-            if isinstance(tokens, ParseResults):
-                stmt = tokens[0]
-            if 'tag' not in stmt.keys():
-                return
-            if stmt['tag'] is not None:
-                tag = stmt['tag']
-                if tag == 'end':
-                    self._pop_context()
-                elif tag == 'function definition':
-                    content = stmt[0]
-                    if len(content) == 2:
-                        # Just a function name w/o args or return value.
-                        name   = content[1]
-                        args   = []
-                        output = []
-                    elif len(content) == 5:
-                        # function y = f(x), where '=' is item 2.
-                        output = content[1]
-                        name = content[3]
-                        args = content[4]
-                    self._save_function_definition(name, args, output)
-                    self._push_context(name)
-                elif tag == 'variable assignment':
-                    name = stmt[0]
-                    rhs = stmt[1]
-                    self._save_variable_definition(name, rhs)
-                elif tag == 'matrix/cell/struct assignment':
-                    rhs = stmt[1]
-                    call_stmt = self._search_for('function call', rhs)
-                    if call_stmt:
-                        fname = call_stmt[0][0]
-                        args = call_stmt[0][1]
-                        self._save_function_call(fname, args)
-                elif tag == 'function call':
-                    # FIXME
-                    pass
-        except:
+    # The following gets called *after* a grammar element has been parsed by
+    # PyParsing.
+
+    def _store_stmt(self, pr):
+        if not isinstance(pr, ParseResults) or not hasattr(pr, 'tag'):
+            return
+        if pr.tag == 'function end':
+            self._pop_context()
+        elif pr.tag == 'function definition':
+            content = pr[0]
+            if len(content) == 2:
+                # Just a function name w/o args or return value.
+                name   = content[1]
+                args   = []
+                output = []
+            elif len(content) == 5:
+                # function y = f(x), where '=' is item 2.
+                output = content[1]
+                name = content[3]
+                args = content[4]
+            self._save_function_definition(name, args, output, pr)
+            self._push_context(pr, name, args, output)
+        elif pr.tag == 'variable assignment':
+            name = pr[0]
+            rhs = pr[1]
+            self._save_variable_assignment(name, rhs)
+        elif pr.tag == 'matrix/cell/struct assignment':
+            rhs = pr[1]
+            # FIXME why isn't this handled by elif functino call below?
+            call_stmt = self._search_for('function call', rhs)
+            if call_stmt:
+                fname = call_stmt[0][0]
+                args = call_stmt[0][1]
+                self._save_function_call(fname, args)
+        elif pr.tag == 'function call':
+            # FIXME
             pass
 
 
-    def _tag(self, tokens, tag):
-        if tokens is not None and isinstance(tokens, ParseResults):
-            tokens['tag'] = tag
-            # pdb.set_trace()
+    def _tag(self, pr, tag):
+        if isinstance(pr, ParseResults):
+            pr.tag = tag
+
+        # if tokens is not None and isinstance(tokens, ParseResults):
+        #     tokens['tag'] = tag
 
 
     def _interpret_type(self, pr):
-        if 'tag' in pr.keys():
-            return pr['tag']
+        if pr is not None and hasattr(pr, 'tag'):
+            return pr.tag
         else:
             return None
 
@@ -451,10 +465,12 @@ class MatlabGrammar:
         self._id_ref           .addParseAction(lambda x: self._tag(x, 'id reference'))
         self._expr             .addParseAction(lambda x: self._tag(x, 'expr'))
         self._function_def_stmt.addParseAction(lambda x: self._tag(x, 'function definition'))
-        self._END              .addParseAction(lambda x: self._tag(x, 'end'))
+        self._END              .addParseAction(lambda x: self._tag(x, 'function end'))
 
+        self._function_def_stmt.addParseAction(self._store_stmt)
         self._func_call        .addParseAction(self._store_stmt)
-        self._stmt             .addParseAction(self._store_stmt)
+        self._assignment       .addParseAction(self._store_stmt)
+        self._END              .addParseAction(self._store_stmt)
 
 
     # Debugging.
@@ -482,7 +498,9 @@ class MatlabGrammar:
         self._init_parse_actions()
         self._init_print_interpreted(do_print_interpreted)
         self._init_print_raw()
-        self._push_context()
+        blank_context = ParseResults([])
+        blank_context.scope = Scope()
+        self._push_context(blank_context)
 
 
     # External interfaces.
@@ -491,8 +509,10 @@ class MatlabGrammar:
     def parse_string(self, str, print_interpreted=False):
         self._set_up_parser(print_interpreted)
         try:
-            self._matlab_syntax.parseString(str, parseAll=True)
-            return self._get_all_contexts()
+            pr = self._matlab_syntax.parseString(str, parseAll=True)
+            self._duplicate_context(pr)
+            pdb.set_trace()
+            return pr
         except ParseException as err:
             print("error: {0}".format(err))
             return None
@@ -501,9 +521,9 @@ class MatlabGrammar:
     def print_parse_results(self, results):
         for c in results:
             print('')
-            print('** context: ' + c['name'] + ' **')
+            print('** scope: ' + c['name'] + ' **')
             if len(c['variables']) > 0:
-                print('    Variables defined in this context:')
+                print('    Variables defined in this scope:')
                 for name in c['variables'].keys():
                     value = c['variables'][name]
                     value_type = self._interpret_type(value)
@@ -516,9 +536,9 @@ class MatlabGrammar:
                         print('      ' + name)
 
             else:
-                print('    No variables defined in this context.')
+                print('    No variables defined in this scope.')
             if len(c['functions']) > 0:
-                print('    Functions defined in this context:')
+                print('    Functions defined in this scope:')
                 for name in c['functions'].keys():
                     fdict = c['functions'][name]
                     args = fdict['args']
@@ -526,4 +546,4 @@ class MatlabGrammar:
                     print('      ' + ' '.join(output)
                           + ' = ' + name + '(' + ' '.join(args) + ')')
             else:
-                print('    No functions defined in this context.')
+                print('    No functions defined in this scope.')
