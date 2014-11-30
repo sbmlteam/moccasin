@@ -19,7 +19,7 @@
 
 class Scope:
     def __init__(self, name='', parent=None, pr=None, args=[], returns=[]):
-        self.assignments   = dict()
+        self.variables     = dict()
         self.functions     = dict()
         self.calls         = dict()
         self.name          = name
@@ -33,7 +33,7 @@ class Scope:
     def copy_scope(self, source):
         if not isinstance(source, Scope):
             raise TypeError('Expected a Scope object')
-        self.assignments   = source.assignments
+        self.variables     = source.variables
         self.functions     = source.functions
         self.calls         = source.calls
         self.name          = source.name
@@ -53,7 +53,7 @@ class Scope:
 
 
     def add_variable_assignment(self, name, value):
-        self.assignments[name] = value
+        self.variables[name] = value
 
 
     def add_function_call(self, name, args):
