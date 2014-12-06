@@ -3,12 +3,16 @@ Git scripts for MOCCASIN
 
 This directory contains scripts for use with our git repository on GitHub.  Please read the following and install any scripts or other items mentioned below as being part of our MOCCASIN project conventions.
 
-pre-commit.sh
--------------
+python.prepare-commit-msg
+-------------------------
 
-The hook is per-user, not global, so you need to install manually it in your copy of the MOCCASIN repository.  To do that, follow these steps:
+This hook script runs pep8 on python files that are about to be committed.  If pep8 reports anything, the report is inserted as comments into the commit message template.  This approach was the best that I could come up with in order to handle the following situation: if you use an editor like Emacs, and your commit message is thrown into an editing buffer, you may not see messages printed on stdout or stderr by the git commit command.  By putting the pep8 output into the commit message template, it helps ensure you see it before committing.
 
-1. copy the file `pre-commit.sh` to the directory `.git/hooks/` at the top level of your MOCCASIN git repository
-2. at the top-level of your repository, execute `git init`
+Running pep8 is not something you want to do on a commit hook, because you may want to ignore pep8's warnings.  Using prepare-commit-msg, you can ignore the warnings by deleting the comments from the commit message.  (But of course, it's better to take the opportunity to go back and fix the issues before completing the commit.)
 
-This is a pre-commit hook for git that runs Python source files through [pep8](https://pypi.python.org/pypi/pep8), a style guide checker.  The hook is invoked when you do a commit; if any issues are reported, it will abort the commit.  To force a commit anyway, you can override the hook by running `git commit --no-verify` instead of a plain `git commit`, but you should try to correct the issues instead.
+To use it, every member of the project needs to do the following:
+
+1. copy the script to the `.git/hooks/` subdirectory of their local git repository
+2. rename the script to `prepare-commit-msg`
+3. make it executable (`chmod +x` on the file)
+
