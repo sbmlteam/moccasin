@@ -21,13 +21,16 @@ import collections
 from pyparsing import ParseResults
 
 
-# This next class def is courtesy of http://stackoverflow.com/a/7760938/743730
+# The ScopeDict clas makes it easier to create dictionary-like properties on
+# Scope objects.  The reason it's necessary is that Python properties are
+# designed around the idea that you do "obj.prop = value", whereas for some
+# properties in Scope, we want the ability to do "obj.prop[key] = value".  This
+# means that obj.prop has to be a custom class that supports the operations.
+#
+# This next class def is based on http://stackoverflow.com/a/7760938/743730
 #
 class ScopeDict(collections.MutableMapping, dict):
     '''Class used to implement Scope properties that are dictionaries.'''
-
-    def __setitem__(self, key, val):
-        self._dict[key] = val
 
     def __getitem__(self, key):
         return dict.__getitem__(self, key)
@@ -49,6 +52,45 @@ class ScopeDict(collections.MutableMapping, dict):
 
 
 class Scope:
+    '''Class for tracking our interpretation of MATLAB parsing results.  Most
+    properties of objects of this class are used to store things that are
+    also in one of our annotated ParseResults structures, but designed to
+    make it easier to access data that we need for our MATLAB translation
+    purposes.  Some properties are things that aren't from ParseResults, such
+    as a link to the parent scope.
+
+    The properties are:
+
+      name:      The name of this scope.  If this is a function, it will be
+                 its name; otherwise, it will be something else indicating
+                 the scope.
+
+      parent:    The parent scope object.
+
+      pr:        The ParseResults object related to this scope.  This Scope
+                 will contain the stuff from which we constructed this instance
+                 of a Scope object.
+
+      args:      If this is a function, a list of the arguments it takes.
+                 This list contains just symbol names, not parse objects.
+
+      returns:   If this is a function, its return values.  This list contains
+                 just symbol names, not parse objects.
+
+      functions: A dictionary of functions defined within this scope.  The
+                 keys are the function names; the values are Scope objects
+                 for the functions.
+
+      variables: A dictionary of the variables assigned within this scope.  The
+                 keys are the variable names; the values are the ParseResults
+                 objects for the RHS.
+
+      calls:     A dictionary of functions called within this scope.  The
+                 keys are the function names; the values are the ParseResults
+                 objects for the RHS.
+
+    Users can access via the normal x.propname approach.
+    '''
 
     def __init__(self, name='', parent=None, pr=None, args=[], returns=[]):
         self.name          = name       # Name of this scope.
@@ -62,7 +104,7 @@ class Scope:
             self.returns   = returns    # If this is a function, return values.
         self.comments      = []         # Comments ahead of this function.
         self.parent        = parent     # Parent scope containing this one.
-        self.parse_results = pr
+        self.parse_results = pr         # The corresponding ParseResults obj.
         self._functions    = ScopeDict()
         self._variables    = ScopeDict()
         self._calls        = ScopeDict()
@@ -78,6 +120,7 @@ class Scope:
 
 
     def copy_scope(self, source):
+        '''Reset all properties of the current object to those of source's.'''
         if not isinstance(source, Scope):
             raise TypeError('Expected a Scope object')
         self.name          = source.name
@@ -93,6 +136,7 @@ class Scope:
 
     @property
     def functions(self):
+        '''Allows access to the 'functions' property as a dictionary.'''
         return self._functions
 
 
@@ -111,6 +155,7 @@ class Scope:
 
     @property
     def variables(self):
+        '''Allows access to the 'variables' property as a dictionary.'''
         return self._variables
 
 
@@ -126,6 +171,7 @@ class Scope:
 
     @property
     def calls(self):
+        '''Allows access to the 'calls' property as a dictionary.'''
         return self._calls
 
 
