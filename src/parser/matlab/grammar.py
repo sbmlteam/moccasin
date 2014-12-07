@@ -79,7 +79,9 @@ class MatlabGrammar:
 
 
     def _pop_context(self):
-        self._scope = self._scope.parent
+        # Don't pop top-most scope.
+        if self._scope.parent:
+            self._scope = self._scope.parent
 
 
     def _duplicate_context(self, dest):
@@ -211,6 +213,7 @@ class MatlabGrammar:
 
     _EOL        = LineEnd().suppress()
     _SOL        = LineStart().suppress()
+    _TILDE      = Literal('~').suppress()
     _SEMI       = Literal(';').suppress()
     _COMMA      = Literal(',').suppress()
     _LPAR       = Literal("(").suppress()
@@ -222,6 +225,9 @@ class MatlabGrammar:
     _BANG       = Literal('!').suppress()
     _EQUALS     = Literal('=')
     _ELLIPSIS   = Literal('...')
+
+    # This totally ignores imaginary numbers, because they're not used in our
+    # application area.
 
     _INTEGER    = Word(nums)
     _EXPONENT   = Combine(oneOf('E e D d') + Optional(oneOf('+ -')) + Word(nums))
@@ -299,8 +305,12 @@ class MatlabGrammar:
     _matrix_ref        = Group(_id_ref + _LPAR + Optional(_matrix_args) + _RPAR)
 
     # Func. handles: http://www.mathworks.com/help/matlab/ref/function_handle.html
+    # In all function arguments, you can use a bare tilde to indicate a value
+    # that can be ignored.  This is not obvious from the functional
+    # documentation, but it seems to be the case when I try it.  (It's the
+    # case for function defs and function return values too.)
 
-    _arg_list          = Group(delimitedList(_id_ref))
+    _arg_list          = Group(delimitedList(_id_ref | _TILDE))
     _named_func_handle = '@' + _id_ref
     _anon_func_handle  = '@' + _LPAR + Group(Optional(_arg_list)) + _RPAR + _expr
     _func_handle       = Group(_named_func_handle | _anon_func_handle)
@@ -390,7 +400,11 @@ class MatlabGrammar:
     _command_stmt_arg   = Word(alphanums + "_")
     _command_stmt       = _common_commands | _id_ref + _command_stmt_arg
 
-    _single_value       = _id_ref
+    # When a function returns multiple values and the LHS is an array
+    # expression in square brackets, a bare tilde can be put in place of an
+    # argument value to indicate that the value is to be ignored.
+
+    _single_value       = _id_ref | _TILDE
     _ids_commas         = delimitedList(_single_value)
     _ids_spaces         = OneOrMore(_single_value)
     _multiple_values    = _LBRACKET + (_ids_spaces | _ids_commas) + _RBRACKET
@@ -484,7 +498,7 @@ class MatlabGrammar:
     # Debugging.
     # .........................................................................
 
-    _to_print = [_comment, _stmt, _shell_cmd]
+    _to_print = [_comment, _stmt]
 
     def _init_print_interpreted(self, do_print_interpreted):
         self._set_print_tokens(do_print_interpreted)
