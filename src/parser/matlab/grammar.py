@@ -519,11 +519,13 @@ class MatlabGrammar:
 
     def print_parse_results(self, results):
         for c in results:
+            if c.tag != 'function definition':
+                continue
             print('')
             print('** scope: ' + c.scope.name + ' **')
-            if len(c.scope.assignments) > 0:
+            if len(c.scope.variables) > 0:
                 print('    Variables assigned in this scope:')
-                vars = c.scope.assignments
+                vars = c.scope.variables
                 for name in vars.keys():
                     value = vars[name]
                     value_type = self._interpret_type(value)
@@ -539,12 +541,8 @@ class MatlabGrammar:
                 print('    No variables defined in this scope.')
             if len(c.scope.functions) > 0:
                 print('    Functions defined in this scope:')
-                functions = c.scope.functions
-                for name in functions.keys():
-                    fdict = functions[name]
-                    args = fdict['args']
-                    output = fdict['output']
-                    print('      ' + ' '.join(output)
-                          + ' = ' + name + '(' + ' '.join(args) + ')')
+                for fname, fscope in c.scope.functions.items():
+                    print('      ' + ' '.join(fscope.returns)
+                          + ' = ' + fname + '(' + ' '.join(fscope.args) + ')')
             else:
                 print('    No functions defined in this scope.')
