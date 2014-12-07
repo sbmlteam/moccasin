@@ -35,64 +35,75 @@ from matlab import MatlabGrammar
 # Parsing-related stuff.
 # -----------------------------------------------------------------------------
 
+def get_function_scope(mparse):
+    # If the outermost scope contains no variables but does contain a single
+    # function, it means the whole file is a function definition.  We want to
+    # get at the scope object for the parse results of that function.
+    #
+    # FIXME: still need to make this deal with the case where the file is a
+    # script, not a function definition.
+    scope = mparse.scope
+    if len(scope.functions) == 1 and len(scope.variables) == 0:
+        inner_scope = scope.functions.itervalues().next()
+        if inner_scope:
+            return inner_scope.parse_results.scope
+    else:
+        return scope
+
+
 # We turn simple assignments in the outer portion of the file into global
 # parameters in the SBML model.
 
 def get_all_variables(mparse):
-    # Look for the default context
-    default_context = None
-    for context in mparse:
-        if context['name'] == '(default context)':
-            default_context = context
-            break
-    if default_context is None:
-        return None
-    if len(default_context['variables']) == 0:
+    scope = get_function_scope(mparse)
+    if not scope:
         return None
 
     # Loop through the variables and create a dictionary to return.
     parameters = {}
-    for id, value in default_context['variables'].items():
+    for id, value in scope.variables.items():
         # If the variable is an array, we split it by rows.
         if len(value[0]) > 1:
             i = 1
             for row in value[0]:
                 new_id = id + "_" + str(i)
-                parameters[new_id] = translate_parsed_formula(row)
+                parameters[new_id] = translate_formula(row)
                 i += 1
         else:
-            parameters[id] = translate_parsed_formula(value)
+            parameters[id] = translate_formula(value)
     return parameters
 
 
 def get_all_function_calls(mparse):
+    scope = get_function_scope(mparse)
+    if not scope:
+        return None
+
     calls = {}
-    for context in mparse:
-        if len(context['calls']) == 0:
-            continue
-        for fname, rhs in context['calls'].items():
-            calls[fname] = rhs
+    for fname, rhs in scope.calls.items():
+        calls[fname] = rhs
+
+    for fname, fscope in scope.functions.items():
+        calls.update(get_all_function_calls(fscope.parse_results))
     return calls
 
 
-def get_function_declaration(name, context):
-    if len(context['functions']) == 0:
-        return None
-    if name in context['functions']:
-        return context['functions'].get(name)
+def get_function_declaration(name, scope):
+    if scope and name in scope.functions:
+        return scope.functions.get(name)
     return None
 
 
-def get_variable(name, context):
-    if name in context['variables']:
-        return context['variables'].get(name)
+def get_variable(name, scope):
+    if scope and name in scope.variables:
+        return scope.variables.get(name)
     return None
 
 
 def search_for(tag, pr):
     if not pr or not isinstance(pr, ParseResults):
         return None
-    if pr['tag'] is not None and pr['tag'] == tag:
+    if hasattr(pr, 'tag') and pr.tag == tag:
         return pr
     content_list = pr[0]
     for result in content_list:
@@ -103,9 +114,15 @@ def search_for(tag, pr):
 
 
 def find_function(fname, mparse):
-    for context in mparse:
-        if context['name'] == fname:
-            return context
+    # FIXME: this is crossing scopes, which isn't right. Temporary till the
+    # grammar is made statement-oriented rather than line oriented.
+
+    if fname == mparse.scope.name:
+        return mparse.scope
+    else:
+        if fname in mparse.scope.functions:
+            return mparse.scope.functions[fname]
+    return None
 
 
 def matrix_rows_as_list(pr):
@@ -191,12 +208,15 @@ def create_model(mparse):
 
     calls = get_all_function_calls(mparse)
     handle = None
+    pdb.set_trace()
+
     for name, rhs in calls.items():
         if name.startswith('ode'):
             # Look up the function it calls inside its body.
             called_function = search_for('function handle', rhs)
             invocation = rhs
             break
+
     if called_function:
         fname = called_function[0][1]
 
