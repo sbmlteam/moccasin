@@ -208,8 +208,6 @@ def create_model(mparse):
 
     calls = get_all_function_calls(mparse)
     handle = None
-    pdb.set_trace()
-
     for name, rhs in calls.items():
         if name.startswith('ode'):
             # Look up the function it calls inside its body.
