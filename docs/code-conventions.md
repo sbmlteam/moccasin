@@ -14,6 +14,7 @@ Coding guidelines
     - E241: multiple spaces after a comma.  This again is a case where it flags situations in which you may want to align code across multiple lines for readability reasons.
     - E303: too many blank lines.  If you have more than one blank line anywhere in your file, this will cause `pep8` to flag it.  This is frankly ridiculous.  File readability is often enhanced by having more than one line between parts of a file.
     - E501: line too long.  Sometimes it makes sense to let a line be longer than 80 characters.
+* If there's a line of code that knowingly breaks the `pep8` conventions, you can write the comment `# noqa` at the end of the line to make `pep8` shut up about it.
 
 
 Git and GitHub guidelines
