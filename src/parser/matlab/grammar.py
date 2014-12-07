@@ -89,15 +89,15 @@ class MatlabGrammar:
 
 
     def _save_function_definition(self, name, args, output, pr):
-        self._scope.add_function_definition(name, args, output, pr)
+        self._scope.functions[name] = Scope(name, self._scope, pr, args, output)
 
 
     def _save_variable_assignment(self, name, value):
-        self._scope.add_variable_assignment(name, value)
+        self._scope.variables[name] = value
 
 
     def _save_function_call(self, fname, args):
-        self._scope.add_function_call(fname, args)
+        self._scope.calls[fname] = args
 
 
     # Grammar functions.
