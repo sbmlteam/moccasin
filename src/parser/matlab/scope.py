@@ -29,14 +29,14 @@ class ScopeDict(collections.MutableMapping, dict):
     def __setitem__(self, key, val):
         self._dict[key] = val
 
-    def __getitem__(self,key):
-        return dict.__getitem__(self,key)
+    def __getitem__(self, key):
+        return dict.__getitem__(self, key)
 
     def __setitem__(self, key, value):
-        dict.__setitem__(self,key,value)
+        dict.__setitem__(self, key, value)
 
     def __delitem__(self, key):
-        dict.__delitem__(self,key)
+        dict.__delitem__(self, key)
 
     def __iter__(self):
         return dict.__iter__(self)
@@ -45,7 +45,7 @@ class ScopeDict(collections.MutableMapping, dict):
         return dict.__len__(self)
 
     def __contains__(self, x):
-        return dict.__contains__(self,x)
+        return dict.__contains__(self, x)
 
 
 class Scope:
