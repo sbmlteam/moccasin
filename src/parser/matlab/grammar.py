@@ -219,6 +219,7 @@ class MatlabGrammar:
     _RBRACKET   = Literal(']').suppress()
     _LBRACE     = Literal('{').suppress()
     _RBRACE     = Literal('}').suppress()
+    _BANG       = Literal('!').suppress()
     _EQUALS     = Literal('=')
     _ELLIPSIS   = Literal('...')
 
@@ -402,12 +403,19 @@ class MatlabGrammar:
     _block_comment      = Group('%{' + SkipTo('%}', include=True))
     _comment            = (_block_comment | _line_comment)
     _delimiter          = _COMMA | _SEMI
-    _continuation       = Combine(_ELLIPSIS.leaveWhitespace() + _EOL + _SOL)
+
     _stmt               = Group(_function_def_stmt | _control_stmt
                                 | _assignment | _command_stmt | _expr)
 
-    _matlab_syntax      = ZeroOrMore(_stmt | _delimiter | _comment)
-    _matlab_syntax.ignore(_continuation)
+    # Most statements can be continued with the ellipses continuation sequence.
+    _continuation       = Combine(_ELLIPSIS.leaveWhitespace() + _EOL + _SOL)
+    _stmt.ignore(_continuation)
+
+    # Comments and shell commands don't treat ellipses specially.
+    _shell_cmd          = Group(_BANG + restOfLine + _EOL)
+
+    # Finally, we bring it all together into the root element of our grammar.
+    _matlab_syntax      = ZeroOrMore(_stmt | _shell_cmd | _delimiter | _comment)
 
     # This is supposed to be for optimization, but unless I call this, the parser
     # simply never finishes parsing even simple inputs.
@@ -434,7 +442,7 @@ class MatlabGrammar:
                 _ids_spaces, _if_stmt, _line_comment, _matlab_syntax,
                 _matrix_args, _matrix_ref, _multiple_values,
                 _named_func_handle, _operand, _other_assignment,
-                _otherwise_stmt, _parenthesized_expr, _rows,
+                _otherwise_stmt, _parenthesized_expr, _rows, _shell_cmd,
                 _simple_assignment, _one_row, _single_value, _stmt,
                 _struct_base, _struct_ref, _switch_stmt, _transposables,
                 _transpose, _try_stmt, _while_stmt]
@@ -476,7 +484,7 @@ class MatlabGrammar:
     # Debugging.
     # .........................................................................
 
-    _to_print = [_comment, _stmt]
+    _to_print = [_comment, _stmt, _shell_cmd]
 
     def _init_print_interpreted(self, do_print_interpreted):
         self._set_print_tokens(do_print_interpreted)
