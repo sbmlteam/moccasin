@@ -22,6 +22,6 @@
 # For the meanings of these codes, see the following:
 # http://pep8.readthedocs.org/en/latest/intro.html#error-codes
 
-IGNORE=E226,E221,E227,E241,E303,E501,E126
+IGNORE=E221,E226,E241,E303,E501
 
 pep8 --ignore $IGNORE $*
