@@ -518,7 +518,6 @@ class MatlabGrammar:
 
 
     def print_parse_results(self, results):
-        pdb.set_trace()
         for c in results:
             print('')
             print('** scope: ' + c.scope.name + ' **')
