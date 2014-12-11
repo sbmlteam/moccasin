@@ -144,6 +144,11 @@ class MatlabGrammar:
                 name   = content[1]
                 args   = []
                 output = []
+            elif len(content) == 4:
+                # Just a function name w/o args but a return value.
+                name   = content[3]
+                args   = []
+                output = content[1]
             elif len(content) == 5:
                 # function y = f(x), where '=' is item 2.
                 output = content[1]

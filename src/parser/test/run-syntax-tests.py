@@ -1,19 +1,22 @@
 #!/usr/bin/env python
 
-import glob, sys
+import glob
+import sys
 from pyparsing import ParseException, ParseResults
-sys.path.append('..')
-sys.path.append('../../utilities')
-from matlab_parser import parse_matlab_string
+sys.path.append('../matlab')
+from grammar import *
 
-for f in glob.glob("syntax-test-cases/valid*.m"):
-    print '===== ' + f + ' ' + '='*30
-    file = open(f, 'r')
+for path in glob.glob("syntax-test-cases/valid*.m"):
+    file = open(path, 'r')
+    print '----- file ' + path + ' ' + '-'*30
     contents = file.read()
     print contents.rstrip()
+
     print '----- output ' + '-'*30
     try:
-        parse_matlab_string(contents, True)
+        parser  = MatlabGrammar()
+        results = parser.parse_string(contents, False)
     except ParseException as err:
         print("error: {0}".format(err))
-    print ''
+    file.close()
+    print results
