@@ -1,0 +1,9 @@
+[submodule "other/matlab-parsers/mclab"]
+	path = other/matlab-parsers/mclab
+	url = https://github.com/Sable/mclab
+[submodule "other/matlab-parsers/smop"]
+	path = other/matlab-parsers/smop
+	url = https://github.com/victorlei/smop
+[submodule "other/matlab-parsers/Mat2py"]
+	path = other/matlab-parsers/Mat2py
+	url = https://github.com/miaoever/Mat2py
