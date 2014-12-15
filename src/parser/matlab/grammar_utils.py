@@ -19,6 +19,7 @@
 
 import functools
 import inspect
+from pyparsing import ParseResults
 
 
 #
