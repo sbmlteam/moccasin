@@ -14,7 +14,7 @@ The second thing to note is that the grammar is designed to attach PyParsing "re
 
 Here's an example using a simple assignment.  Suppose a file contains this:
 
-```python
+```matlab
     a = 1
 ```
 
@@ -69,7 +69,7 @@ The key `'number'` corresponds to another terminal entity in `MatlabGrammar`.  I
 
 Now, let's examine what happens if we have something slightly more complicated in the file, such as the following:
 
-```python
+```matlab
     a = [1 2; 3 4]
 ```
 
@@ -138,7 +138,7 @@ As expected, we are down to the terminal parts of the expression, and here we ha
 As a final example, let's take a look at a mathematical expression.
 Suppose our file contains the following:
 
-```python
+```matlab
     a = 1 + 2
 ```
 
