@@ -3,8 +3,19 @@ MOCCASIN MATLAB parser module
 
 The Python module `matlab` in this directory defines a class, `MatlabGrammar`, that implements a parser for MATLAB files.  The parser is implemented using [PyParsing](http://pyparsing.wikispaces.com), a Python parsing framework.
 
-Summary of basic principles
+First words and assumptions
 ---------------------------
+
+MATLAB is a complex system, and the language is complex.  No parser can fully interpret MATLAB input except MATLAB.  MOCCASIN's parser is designed to parse a lot of the MATLAB language, but not all of it.  The goal of MOCCASIN is to allow interpretation and translation of certain kinds of MATLAB files common in MOCCASIN's domain; for this purpose, it does not need to handle all possible MATLAB inputs.  (In fact, it already exceeds the minimum it would really need, because the authors have a tendency to overdo things....)  In keeping with this standpoint, it's worth being upfront about the following:
+
+* The parser is more permissive than MATLAB would be.  After all, the input is assumed to be valid MATLAB in the first place, so the parser implementation can afford to be a little bit looser and thus a little bit simpler.
+* There is no support for imaginary numbers.  (In MOCCASIN's domain of application, imaginary numbers are never used.)
+
+That said, we welcome anyone who would like to improve and expand the MATLAB parser in MOCCASIN.
+
+
+Summary of basic usage principles
+---------------------------------
 
 The main entry point is `MatlabGrammar.parse_string()`.  There are a few other public methods on `MatlabGrammar` for debugging and other tasks, but the basic goal of `MatlabGrammar` is to provide `MatlabGrammar.parse_string()`, a function to produce a data structure that a caller can examine to determine what was found in a given MATLAB file.
 
@@ -35,7 +46,7 @@ In this example, there's only one line in the file, so the length of the `ParseR
     ['assignment']
 ```
 
-This first line of the file was labeled as an 'assignment', which is `MatlabGrammar`'s way of identifying (you guessed it) an assignment statement.  Now let's look inside of it:
+This first line of the file was labeled as an `'assignment'`, which is `MatlabGrammar`'s way of identifying (you guessed it) an assignment statement.  Now let's look inside of it:
 
 ```python
     (Pdb) content['assignment'].keys()
@@ -124,6 +135,10 @@ Both of them have lists of their own.  These work in the same way as the row lis
     ['number']
     (Pdb) row1[0]['number']
     '1'
+    (Pdb) row1[1].keys()
+    ['number']
+    (Pdb) row1[1]['number']
+    '2'
 ```
 
 As expected, we are down to the terminal parts of the expression, and here we have indexed into the first element of the first row of the matrix.  All of the rest of the entries in the matrix are accessed in the same way.  For example,
@@ -157,7 +172,7 @@ we once again have an assignment, as expected.  Let's take a look at the right-h
     []
 ```
 
-This time, the right-hand side does not have a key.  This is the tip-off that the right-hand side is an expression: in `MatlabGrammar`, if there is no key on an object, it means that the object is an expression or a list.  Expressions are lists: when you encounter them, it means the next step is to iterate over the elements.
+This time, the right-hand side does not have a key.  This is the tip-off that the right-hand side is an expression: in `MatlabGrammar`, if there is no key on an object, it always means that _the object is either an expression or a list_.  And actually, expressions _are_ lists too: when you encounter an expression, it means the next step is to iterate over the elements.
 
 ```python
     (Pdb) len(content['assignment']['rhs'])
@@ -172,4 +187,53 @@ This time, the right-hand side does not have a key.  This is the tip-off that th
 
 In this simple expression, the elements inside the expression list are terminal objects, but in general, they could be anything, including more expressions.  The rule for traversing expressions is the same: inspect the keys of each object, do whatever is appropriate for kind of object it is, and if there are no keys, it's another expression, so traverse it recursively.
 
-And that summarizes the basic process for working with MatlabGrammar parse results.  `MatlabGrammar.parse_string()` returns a list of objects results for the lines in the file; each has a dictionary, which you inspect to figure out what kind of objects were extracted, and then you dig into the object's dictionaries recursively until you reach terminal entities.  Sometimes the values for dictionaries are lists, in which case you iterate over the values, applying the same principle.
+And that is the basic process for working with MatlabGrammar parse results.  In summary:
+
+1. The function  `MatlabGrammar.parse_string()` returns a list of objects results for the lines in the file.  You iterate over each one.
+2. Each has a dictionary, which you inspect to figure out what kind of objects were extracted.
+3. You dig into the objects' dictionaries recursively until you reach terminal entities. Sometimes the values for dictionaries are lists, in which case you iterate over the values, applying the same principle.
+
+
+Debugging aids
+--------------
+
+The parser module directory, `matlab`, contains a simple test driver in the form of the file `test.py`.  It accepts a MATLAB file as a required argument and a couple of optional arguments.  When executed, it parses the file using `MatlabGrammar.parse_string()` and prints an annotated representation of the interpreted input.  This representation is not particularly useful for anything except human inspection, but it does let you see what `MatlabGrammar.parse_string()` thought of a given input file.  If given the optional argument `-s`, the function invokes the Python `pdb` debugger after parsing the input, thus allowing you to inspect the resulting data structure interactively.
+
+The `MatlabGrammar` class itself implements the printing facility in the form of two methods that callers can invoke if desired:
+
+* `interpret_parse_results()`: takes as a single argument the output from `MatlabGrammar.parse_string()` and returns a string containing an annotated representation of the parse results.
+* `print_parse_results`: takes as a single argument the output from `MatlabGrammar.parse_string()`, calls `interpret_parse_results()` on it, and prints the result using Python's regular `print()` function.
+
+
+Parsed object types returned by MatlabGrammar
+---------------------------------------------
+
+### Terminal entities
+
+The values of terminal entities are always strings, even if the item is a number or a single character such as `:`.
+
+* 'identifier'
+* 'number'
+* 'string'
+* 'boolean' 
+* 'colon'
+* 'tilde'
+* 'colon operator'
+* 'unary operator'
+* 'binary operator'
+
+### Structured data types
+
+### Function calls
+
+### Function definitions
+
+### Expressions
+
+### Flow control statements
+
+### Commands and other statements
+
+
+The `Scope` class and facility
+------------------------------
