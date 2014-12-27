@@ -4,6 +4,7 @@
 # @brief   Object to hold information about a function or file
 # @author  Michael Hucka
 #
+# <!---------------------------------------------------------------------------
 # This software is part of MOCCASIN, the Model ODE Converter for Creating
 # Awesome SBML INteroperability. Visit https://github.com/sbmlteam/moccasin/.
 #
@@ -16,6 +17,7 @@
 # Software Foundation.  A copy of the license agreement is provided in the
 # file named "COPYING.txt" included with this software distribution and also
 # available online at https://github.com/sbmlteam/moccasin/.
+# ------------------------------------------------------------------------- -->
 
 import collections
 from pyparsing import ParseResults
@@ -28,7 +30,7 @@ from pyparsing import ParseResults
 # means that obj.prop has to be a custom class that supports the operations.
 #
 # This next class def is based on http://stackoverflow.com/a/7760938/743730
-#
+
 class ScopeDict(collections.MutableMapping, dict):
     '''Class used to implement Scope properties that are dictionaries.'''
 
@@ -61,35 +63,46 @@ class Scope:
 
     The properties are:
 
-      name:      The name of this scope.  If this is a function, it will be
-                 its name; otherwise, it will be something else indicating
-                 the scope.
+      name:        The name of this scope.  If this is a function, it will be
+                   its name; otherwise, it will be something else indicating
+                   the scope.
 
-      parent:    The parent scope object.
+      parent:      The parent scope object.
 
-      pr:        The ParseResults object related to this scope.  This Scope
-                 will contain the stuff from which we constructed this instance
-                 of a Scope object.
+      pr:          The ParseResults object related to this scope.  This Scope
+                   will contain the stuff from which we constructed this
+                   instance of a Scope object.
 
-      args:      If this is a function, a list of the arguments it takes.
-                 This list contains just symbol names, not parse objects.
+      args:        If this is a function, a list of the arguments it takes.
+                   This list contains just symbol names, not parse objects.
 
-      returns:   If this is a function, its return values.  This list contains
-                 just symbol names, not parse objects.
+      returns:     If this is a function, its return values.  This list
+                   contains just symbol names, not parse objects.
 
-      functions: A dictionary of functions defined within this scope.  The
-                 keys are the function names; the values are Scope objects
-                 for the functions.
+      functions:   A dictionary of functions defined within this scope.  The
+                   keys are the function names; the values are Scope objects
+                   for the functions.
 
-      variables: A dictionary of the variables assigned within this scope.  The
-                 keys are the variable names; the values are the ParseResults
-                 objects for the RHS.
+      assignments: A dictionary of the assignment statements within this
+                   scope.  For simple variables (a = ...), the keys are the
+                   variable names.  In the case of matrices, the keys are
+                   assumed to be string representations of the matrix, with
+                   the following features.  If it's a bare matrix, square
+                   braces surround the matrix, semicolons separate rows,
+                   commas separate index terms within rows, and all spaces
+                   are removed.  If it's a matrix reference, it is similar
+                   but starts with a name and uses regular parentheses
+                   instead of square braces.  So, e.g., [a b] is turned into
+                   '[a,b]', '[ a ; b ; c]' is turned into '[a;b;c]', 'foo(1,
+                   2)' is turned into 'foo(1,2)', and so on.  The dict values
+                   are the ParseResults objects for the RHS.
 
-      calls:     A dictionary of functions called within this scope.  The
-                 keys are the function names; the values are the ParseResults
-                 objects for the RHS.
+      calls:       A dictionary of functions called within this scope.  The
+                   keys are the function names; the values is a list of the
+                   arguments (as annotated ParseResults objects).
 
     Users can access via the normal x.propname approach.
+
     '''
 
     def __init__(self, name='', parent=None, pr=None, args=[], returns=[]):
@@ -106,7 +119,7 @@ class Scope:
         self.parent        = parent     # Parent scope containing this one.
         self.parse_results = pr         # The corresponding ParseResults obj.
         self._functions    = ScopeDict()
-        self._variables    = ScopeDict()
+        self._assignments  = ScopeDict()
         self._calls        = ScopeDict()
 
 
@@ -114,8 +127,8 @@ class Scope:
         parent_name = ''
         if self.parent:
             parent_name = self.parent.name
-        s = '<scope "{0}": {1} func defs, {2} vars, {3} calls, parent = "{4}">'
-        return s.format(self.name, len(self._functions), len(self._variables),
+        s = '<scope "{0}": {1} func defs, {2} assignments, {3} calls, parent = "{4}">'
+        return s.format(self.name, len(self._functions), len(self._assignments),
                         len(self._calls), parent_name)
 
 
@@ -130,8 +143,8 @@ class Scope:
         self.parent        = source.parent
         self.parse_results = source.parse_results
         self._functions    = source._functions
-        self._variables    = source._variables
-        self._calls        = source.calls
+        self._assignments  = source._assignments
+        self._calls        = source._calls
 
 
     @property
@@ -154,19 +167,19 @@ class Scope:
 
 
     @property
-    def variables(self):
-        '''Allows access to the 'variables' property as a dictionary.'''
-        return self._variables
+    def assignments(self):
+        '''Allows access to the 'assignments' property as a dictionary.'''
+        return self._assignments
 
 
-    @variables.setter
-    def variables(self, key, value):
-        self._variables[key] = value
+    @assignments.setter
+    def assignments(self, key, value):
+        self._assignments[key] = value
 
 
-    @variables.getter
-    def variables(self):
-        return self._variables
+    @assignments.getter
+    def assignments(self):
+        return self._assignments
 
 
     @property
@@ -185,14 +198,16 @@ class Scope:
         return self._calls
 
 
+
 # Quick testing interface.
 
 if __name__ == '__main__':
     x = Scope('scope x')
     y = Scope('scope y', x)
     z = Scope('scope y', y)
-    z.variables['var1'] = 111
-    z.variables['var2'] = 222
+    z.assignments['var1'] = 111
+    z.assignments['var2'] = 222
+
     try:
         print 'x = ' + str(x)
         print 'y = ' + str(y)
