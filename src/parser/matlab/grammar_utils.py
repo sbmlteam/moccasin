@@ -4,6 +4,7 @@
 # @brief   Utilities used by our PyParsing grammar for MATLAB
 # @author  Michael Hucka
 #
+# <!---------------------------------------------------------------------------
 # This software is part of MOCCASIN, the Model ODE Converter for Creating
 # Awesome SBML INteroperability. Visit https://github.com/sbmlteam/moccasin/.
 #
@@ -16,6 +17,7 @@
 # Software Foundation.  A copy of the license agreement is provided in the
 # file named "COPYING.txt" included with this software distribution and also
 # available online at https://github.com/sbmlteam/moccasin/.
+# ------------------------------------------------------------------------- -->
 
 import functools
 import inspect
