@@ -6,8 +6,6 @@ This is an evolving set of guidelines for working on the project.
 GitHub repository workflow model
 --------------------------------
 
-We use a 
-
 * We use the approach of keeping two main branches in the GitHub central repository:
 ** `master`: the main branch; here, the source code at `HEAD` should always reflect a usage, production-ready state. 
 ** `develop`: where development takes place; developers should create their branches from the `develop` branch, and should push their changes back to it.  (Other projects might call this an _integration_ branch.)
