@@ -7,8 +7,8 @@ GitHub repository workflow model
 --------------------------------
 
 * We use the approach of keeping two main branches in the GitHub central repository:
-** `master`: the main branch; here, the source code at `HEAD` should always reflect a usage, production-ready state. 
-** `develop`: where development takes place; developers should create their branches from the `develop` branch, and should push their changes back to it.  (Other projects might call this an _integration_ branch.)
+    - `master`: the main branch; here, the source code at `HEAD` should always reflect a usage, production-ready state. 
+    - `develop`: where development takes place; developers should create their branches from the `develop` branch, and should push their changes back to it.  (Other projects might call this an _integration_ branch.)
 * Feature branches live in the repositories of developers and are generally short-lived (existing only for the length of the development of a given feature).  They are branched off of `develop` and merged back into `develop` when completed, after which developers can delete them from their private repositories.
 * Merges from feature development branches to `develop` are performed with the `--no-ff` flag (i.e., `git merge --no-ff featurebranchname`), so that the merge always creates a new commit and preserves the history of the individual commits on the feature development branch.  Here's a summary of the basic process:
 ```csh
