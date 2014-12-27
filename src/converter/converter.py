@@ -23,6 +23,7 @@ import glob
 import sys
 import pdb
 import re
+import getopt
 from pyparsing import ParseException, ParseResults
 from libsbml import *
 
@@ -36,32 +37,33 @@ from matlab import MatlabGrammar
 # -----------------------------------------------------------------------------
 
 def get_function_scope(mparse):
-    # If the outermost scope contains no variables but does contain a single
+    # If the outermost scope contains no assignments but does contain a single
     # function, it means the whole file is a function definition.  We want to
     # get at the scope object for the parse results of that function.
     #
     # FIXME: still need to make this deal with the case where the file is a
     # script, not a function definition.
-    scope = mparse.scope
-    if len(scope.functions) == 1 and len(scope.variables) == 0:
-        inner_scope = scope.functions.itervalues().next()
-        if inner_scope:
-            return inner_scope.parse_results.scope
+    if mparse and mparse.scope:
+        scope = mparse.scope
+        if len(scope.functions) == 1 and len(scope.assignments) == 0:
+            return scope.functions.itervalues().next()
+        else:
+            return scope
     else:
-        return scope
+        return None
 
 
 # We turn simple assignments in the outer portion of the file into global
 # parameters in the SBML model.
 
-def get_all_variables(mparse):
+def get_all_assignments(mparse):
     scope = get_function_scope(mparse)
     if not scope:
         return None
 
     # Loop through the variables and create a dictionary to return.
     parameters = {}
-    for id, value in scope.variables.items():
+    for id, value in scope.assignments.items():
         # If the variable is an array, we split it by rows.
         if len(value[0]) > 1:
             i = 1
@@ -77,81 +79,77 @@ def get_all_variables(mparse):
 def get_all_function_calls(mparse):
     scope = get_function_scope(mparse)
     if not scope:
-        return None
+        return {}
 
     calls = {}
-    for fname, rhs in scope.calls.items():
-        calls[fname] = rhs
+    for fname, arglist in scope.calls.items():
+        calls[fname] = arglist
 
     for fname, fscope in scope.functions.items():
         calls.update(get_all_function_calls(fscope.parse_results))
     return calls
 
 
-def get_function_declaration(name, scope):
-    if scope and name in scope.functions:
-        return scope.functions.get(name)
-    return None
+def name_is_structured(name):
+    return ('[' in name or '(' in name or '{' in name)
 
 
-def get_variable(name, scope):
-    if scope and name in scope.variables:
-        return scope.variables.get(name)
-    return None
+def name_mentioned_in_rhs(name, mparse):
+    for item in mparse:
+        if len(item) > 1:
+            # It's an expression.  Look inside each piece recursively.
+            if name_mentioned_in_rhs(name, item):
+                return True
+            else:
+                continue
+        if len(item) == 1:
+            if 'matrix or function' in item:
+                item = item['matrix or function']
+                if name_mentioned_in_rhs(name, item['argument list']):
+                    return True
+            elif 'identifier' in item:
+                if name == item['identifier']:
+                    return True
+    return False
 
 
-def search_for(tag, pr):
-    if not pr or not isinstance(pr, ParseResults):
+def get_lhs_for_rhs(name, mparse):
+    scope = get_function_scope(mparse)
+    if not scope:
         return None
-    if hasattr(pr, 'tag') and pr.tag == tag:
-        return pr
-    content_list = pr[0]
-    for result in content_list:
-        result = search_for(tag, content_list)
-        if result is not None:
-            return result
+    for lhs, rhs in scope.assignments.items():
+        if name_mentioned_in_rhs(name, rhs):
+            return lhs
     return None
 
 
-def find_function(fname, mparse):
-    # FIXME: this is crossing scopes, which isn't right. Temporary till the
-    # grammar is made statement-oriented rather than line oriented.
-
-    if fname == mparse.scope.name:
-        return mparse.scope
-    else:
-        if fname in mparse.scope.functions:
-            return mparse.scope.functions[fname]
+def get_function_declaration(name, mparse):
+    scope = get_function_scope(mparse)
+    if scope and name in scope.functions:
+        return scope.functions[name]
     return None
 
 
-def matrix_rows_as_list(pr):
-    result = []
-    for row in pr[0]:
-        pr_formula = row[0][0]
-        result.append(translate_formula(pr_formula))
-    return result
+def terminal_value(pr):
+    if 'identifier' in pr:
+        return pr['identifier']
+    elif 'number' in pr:
+        return float(pr['number'])
+    return None
 
 
-def flatten(arg):
-    if hasattr(arg, '__iter__'):
-        sublist = ''
-        if len(arg) == 1 and isinstance(arg[0], str):
-            return arg[0]
-        else:
-            for x in arg:
-                sublist += flatten(x)
-            return '(' + sublist + ')'
+def row_vector(matrix):
+    return len(matrix['row list']) == 1 \
+        and len(matrix['row list'][0]['index list']) >= 1
+
+
+def initial_cond_matrix_size(matrix):
+    # Apparently it doesn't matter if the initial conditions matrix passed to
+    # ode45 is a row or column vector.  So this checks for either case.
+    if row_vector(matrix):
+        return len(matrix['row list'][0]['index list'])
     else:
-        return arg
-
-
-def stringify_simple_expr(pr):
-    return flatten(pr.asList())
-
-
-def translate_formula(pr):
-    return stringify_simple_expr(pr)
+        return len(matrix['row list'])
 
 
 # -----------------------------------------------------------------------------
@@ -183,142 +181,320 @@ def check(value, message):
         return
 
 
-def create_model(mparse):
+def create_sbml_document():
     # Create model structure
     try:
-        document = SBMLDocument(3, 1)
+        return SBMLDocument(3, 1)
     except ValueError:
         print('Could not create SBMLDocumention object')
         sys.exit(1)
+
+
+def create_sbml_model(document):
     model = document.createModel()
     check(model, 'create model')
+    return model
 
-    # Create default compartment
+
+def create_sbml_compartment(model, id, size):
     c = model.createCompartment()
-    check(c,                              'create compartment')
-    check(c.setId('comp1'),               'set compartment id')
-    check(c.setConstant(True),            'set compartment "constant"')
-    check(c.setSize(1),                   'set compartment "size"')
-    check(c.setSpatialDimensions(3),      'set compartment dimensions')
+    check(c,                         'create compartment')
+    check(c.setId(id),               'set compartment id')
+    check(c.setConstant(True),       'set compartment "constant"')
+    check(c.setSize(size),           'set compartment "size"')
+    check(c.setSpatialDimensions(3), 'set compartment dimensions')
+    return c
 
-    # Pull out the ODE function information and create rate rules.
-    # We need this because we'll do some translation on var names later.
 
-    # FIXME massive assumptions on the structure here. This is just a start.
+def create_sbml_species(model, id, value):
+    comp = model.getCompartment(0)
+    s = model.createSpecies()
+    check(s,                                 'create species')
+    check(s.setId(id),                       'set species id')
+    check(s.setCompartment(comp.getId()),    'set species compartment')
+    check(s.setConstant(False),              'set species "constant"')
+    check(s.setInitialConcentration(value),  'set species initial concentration')
+    check(s.setBoundaryCondition(False),     'set species "boundaryCondition"')
+    check(s.setHasOnlySubstanceUnits(False), 'set species "hasOnlySubstanceUnits"')
+    return s
 
+
+def create_sbml_parameter(model, id, value):
+    p = model.createParameter()
+    check(p,                   'create parameter')
+    check(p.setId(id),         'set parameter id')
+    check(p.setConstant(True), 'set parameter "constant"')
+    check(p.setValue(value),   'set parameter value')
+    return p
+
+
+def create_sbml_initial_assignment(model, id, ast):
+    ia = model.createInitialAssignment()
+    check(ia,               'create initial assignment')
+    check(ia.setMath(ast),  'set initial assignment formula')
+    check(ia.setSymbol(id), 'set initial assignment symbol')
+    return ia
+
+
+def create_sbml_raterule(model, id, ast):
+    rr = model.createRateRule()
+    check(rr,                  'create raterule')
+    check(rr.setVariable(id),  'set raterule variable')
+    check(rr.setMath(ast),     'set raterule formula')
+    return rr
+
+
+# -----------------------------------------------------------------------------
+# Translation code.
+# -----------------------------------------------------------------------------
+#
+# Principles for the SBML "RateRule"-based version of the converter
+# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+#
+# Matlab's ode* functions handle the following general problem:
+#
+#     Given a set of differential equations (with X denoting a vector),
+#         dX/dt = f(t, X)
+#     with initial values X(t_0) = xinit,
+#     find the values of the variables X at different times t.
+#
+# The function defining the differential equations is given as "f" in a call
+# to an ode* function such as ode45.  We assume the user provides a Matlab
+# file such as the following (and here, the specific formula in the function
+# "f" is just an example -- our code does not depend on the details of the
+# function, and this is merely a realistic example from a real use case):
+#
+#     tspan  = [0 300];
+#     xinit  = [0; 0];
+#     a      = 0.01 * 60;
+#     b      = 0.0058 * 60;
+#     c      = 0.006 * 60;
+#     d      = 0.000192 * 60;
+#
+#     [t, x] = ode45(@f, tspan, xinit);
+#
+#     function dx = f(t, x)
+#       dx = [a - b * x(1); c * x(1) - d * x(2)];
+#     end
+#
+# In the above, the function "f" passed to Matlab's ode45 is the function "f"
+# in the general problem statement.  The body of "f" defines a vector of
+# formulas for dx/dt for each variable x. The values of x at different times
+# t is what the ode45 function computes.
+#
+# In create_raterule_model() below, we translate this directly into an SBML
+# format that uses "rate rules" to directly encode the dx/dt expressions.
+# This uses the name of the variable in the LHS matrix used in the assignment
+# of the call to ode45 as the name of the independent variable.  So in other
+# words, in the sample above, "x" will be the basis of the species or parameter
+# names and the rate rules generated because that's what is used in [t, x] =...
+
+def create_raterule_model(mparse, use_species=False):
+    # This assumes there's only one call to an ode* function in the file.  We
+    # start by finding that call (wherever it is -- whether it's at the top
+    # level, or inside some other function), then inspecting the call, and
+    # saving the name of the function handle passed to it as an argument.  We
+    # also save the name of the 3rd argument (a vector of initial conditions).
+
+    # Quick summary of pieces we'll gather.  Assume a file like this:
+    #   xzero = [num1 num2 ...]                 --> "xzero" is initial_cond_var
+    #   [t, y] = ode45(@odefunc, tspan, xzero)  --> "y" is assigned_var
+    #   function dy = odefunc(t, x)             --> "x" is dependent_var
+    #       dy = [row1; row2; ...]              --> "dy" is output_var
+    #   end                                     --> "odefunc" is handle_name
+
+    ode_function = None
+    call_arglist = None
     calls = get_all_function_calls(mparse)
-    handle = None
-    for name, rhs in calls.items():
-        if name.startswith('ode'):
-            # Look up the function it calls inside its body.
-            called_function = search_for('function handle', rhs)
-            invocation = rhs
+    for name, arglist in calls.items():
+        if isinstance(name, str) and name.startswith('ode'):
+            # Found the invocation of an ode function.
+            call_arglist = arglist
+            ode_function = name
             break
 
-    if called_function:
-        fname = called_function[0][1]
+    if not ode_function:
+        fail('Could not locate a call to a Matlab function in the file.')
 
-        # The function def will appear in the parent context of this one.
-        parent_context = mparse[len(mparse) - 2]
-        declaration = get_function_declaration(fname, parent_context)
+    # Identify the variables to which the output of the ode call is assigned.
+    # It'll be a matrix of the form [t, y].  We want the name of the 2nd
+    # variable.  Since it has to be a name, we can extract it using a regexp.
+    # This will be the name of the independent variable for the ODE's.
+    call_lhs = get_lhs_for_rhs(ode_function, mparse)
+    assigned_var = re.sub(r'\[[^\]]+,([^\]]+)\]', r'\1', call_lhs)
 
-        outer_xname = invocation[-1][0]
+    # Matlab ode functions take a handle as 1st arg & initial cond. var as 3rd.
+    # FIXME: handle case where function handle is an anonymous function.
+    if 'function handle' in call_arglist[0]:
+        handle_name = call_arglist[0]['function handle']['name']['identifier']
+        initial_cond_var = call_arglist[2]['identifier']
 
-        output_var  = declaration['output'][0]  # FIXME might have more than one
-        input_vars  = declaration['args']
-        inner_xname = input_vars[-1]
+    if not handle_name:
+        fail('Could not extract the function handle in the {} call'.format(ode_function))
 
-        context = find_function(fname, mparse)
-        if context:
-            # We found a function definition matching the name of what's called
-            # by the ode function.  In this simple version of the converter, we
-            # only look for a variable of the same name as the one being
-            # returned by this function.  This variable will be a vector.
-            # We take apart the vector, using each row as an ODE definition.
-            var_def = get_variable(output_var, context)
-            rows = matrix_rows_as_list(var_def)
-            i = 1
-            for row in rows:
-                rule_var = output_var + "_" + str(i)
+    # Now locate our scope object for the function definition.  It'll be
+    # defined either at the top level (if this file is a script) or inside
+    # the scope of the file's overall function (if the file is a function).
+    function_scope = get_function_declaration(handle_name, mparse)
 
-                # Minor hiccup: the row formulas will contain array variable
-                # references, corresponding to the input var.
-                xnameregexp = inner_xname + r'\((\d+)\)'
-                newnametranform = outer_xname + r'_\1'
-                formula = re.sub(xnameregexp, newnametranform, row)
+    # The function form will have to be f(t, y), because that's what Matlab
+    # requires.  We want to find out the name of the parameter 'y' in the
+    # actual definition, so that we can locate this variable inside the
+    # formula within the function.  We don't know what the user will call it,
+    # so we have to use the position of the argument in the function def.
+    dependent_var = function_scope.args[1]
 
-                i += 1
-                r = model.createRateRule()
-                check(r,                       'create rate rule')
-                check(r.setVariable(rule_var), 'set rule variable')
-                check(r.setFormula(formula),   'set rule formula')
+    # Find the assignment to the initial condition variable.  The value will
+    # be a matrix.  Among other things, we want to find its length, because
+    # that tells us the expected length of the output vector, and thus the
+    # number of SBML parameters we have to create.
+    working_scope = get_function_scope(mparse)
+    initial_cond = working_scope.assignments[initial_cond_var]
+    if 'matrix' not in initial_cond.keys():
+        fail('Failed to parse the assignment of the initial value matrix')
+    output_size = initial_cond_matrix_size(initial_cond['matrix'])
 
-                # We also have to create the output variables.
-                p = model.createParameter()
-                check(p.setId(rule_var),        'set parameter id')
-                check(p.setConstant(False),    'set parameter "constant"')
-                check(p.setValue(0),           'set parameter value')
+    # If we get this far, let's start generating some SBML.
 
-    # Create remaining parameters
-    parameters = get_all_variables(mparse)
-    if parameters is not None:
-        for id, math in parameters.iteritems():
-            p = model.createParameter()
-            check(p,                           'create parameter')
-            check(p.setId(id),                 'set parameter id')
-            check(p.setConstant(True),         'set parameter "constant"')
+    document = create_sbml_document()
+    model = create_sbml_model(document)
+    compartment = create_sbml_compartment(model, 'comp1', 1)
 
-            ast = parseL3Formula(math)
-            if ast is not None:
-                ia = model.createInitialAssignment()
-            check(ia,                          'create initial assignment')
-            check(ia.setMath(ast),             'set initial assignment formula')
-            check(ia.setSymbol(id),            'set initial assignment symbol')
+    # Create either parameters or species (depending on the run-time selection)
+    # for the dependent variables and set their initial values.
+    is_row_vector = row_vector(initial_cond['matrix'])
+    for i in range(0, output_size):
+        if is_row_vector:
+            the_value = terminal_value(initial_cond['matrix'][0]['index list'][i])
+        else:
+            the_value = terminal_value(initial_cond['matrix'][i]['index list'][0])
+        the_name = assigned_var + '_' + str(i + 1)
+        # FIXME assumes the_value is a number, but it could be a variable, in
+        # which case we should look up that variable's value elsewhere.
+        if use_species:
+            create_sbml_species(model, the_name, the_value)
+        else:
+            p = create_sbml_parameter(model, the_name, the_value)
+            p.setConstant(False)
+
+    # Now, look inside the function definition and find the assignment to the
+    # function's output variable. (It corresponds to assigned_var, but inside
+    # the function.)  This defines the formula for the ODE.  We expect this
+    # to be a vector.  We take it apart, using each row as an ODE definition,
+    # and use this to create SBML "rate rules" for the output variables.
+    output_var = function_scope.returns[0]
+    var_def = function_scope.assignments[output_var]
+    if 'matrix' not in var_def:
+        fail('Failed to parse the body of the function {}'.format(handle_name))
+    matrix = var_def['matrix']
+    i = 1
+    for row in matrix['row list']:
+        # Currently, this assumes there's only one math expression per row,
+        # meaning, one index value per row, so we index [0] directly.  FIXME.
+        if 'index list' not in row:
+            fail('Failed to parse the matrix assigned to {}'.format(output_def))
+        parsed_formula = row['index list'][0]
+        string_formula = MatlabGrammar.make_formula(parsed_formula)
+        if not string_formula:
+            fail('Failed to parse the formula for row {}'.format(i))
+
+        # We need to rewrite matrix references "x(n)" to the form "x_n", and
+        # rename the variable to the name used for the results assignment
+        # in the call to the ode* function.
+        xnameregexp = dependent_var + r'\((\d+)\)'
+        newnametranform = assigned_var + r'_\1'
+        formula = re.sub(xnameregexp, newnametranform, string_formula)
+
+        # Finally, write the rate rule.
+        rule_var = assigned_var + "_" + str(i)
+        ast = parseL3Formula(formula)
+        create_sbml_raterule(model, rule_var, ast)
+        i += 1
+
+    # Create remaining parameters.  Here, we have to decide what to do about
+    # possible duplicate variable names showing up inside the function and
+    # outside.  The approach here is to have the ones inside the function
+    # shadow the ones outside, but we should really check if something more
+    # complicated is going on in the Matlab code.
+    # FIXME doesn't handle matrices on the LHS.
+
+    for var, rhs in dict(working_scope.assignments.items()
+                         + function_scope.assignments.items()).items():
+        if not name_is_structured(var):
+            if 'number' in rhs:
+                create_sbml_parameter(model, var, terminal_value(rhs))
+            elif 'matrix' not in rhs:
+                create_sbml_parameter(model, var, 0)
+                formula = MatlabGrammar.make_formula(rhs)
+                ast = parseL3Formula(formula)
+                if ast is not None:
+                    create_sbml_initial_assignment(model, var, ast)
 
     # Write the Model
     return writeSBMLToString(document)
 
 
-#
+# -----------------------------------------------------------------------------
 # Driver
-#
+# -----------------------------------------------------------------------------
 
-if __name__ == '__main__':
-    debug = False
-    echo_raw_parse = False
-    path = None
+def get_filename_and_options(argv):
+    try:
+        options, path = getopt.getopt(argv[1:], "dpqs")
+    except:
+        raise SystemExit(main.__doc__)
+    if len(path) != 1 or len(options) > 2:
+        raise SystemExit(main.__doc__)
+    debug       = any(['-d' in y for y in options])
+    do_print    = any(['-p' in y for y in options])
+    quiet       = any(['-q' in y for y in options])
+    use_species = any(['-s' in y for y in options])
+    return path[0], debug, quiet, do_print, use_species
 
-    if len(sys.argv) < 2:
-        print("Must be given at least one argument: the file to convert")
-        sys.exit(1)
 
-    for arg in sys.argv[1:]:
-        if arg == '-d':
-            debug = True
-        elif arg == '-p':
-            echo_raw_parse = True
-        else:
-            path = arg
+def main(argv):
+    '''Usage: converter.py [-d] [-p] [-q] [-s] FILENAME.m
+Arguments:
+ -d  (Optional) Drop into pdb before starting to parse the MATLAB input
+ -p  (Optional) Print a debugging representation of the interpreted MATLAB
+ -q  (Optional) Be quiet; just produce SBML, nothing else
+ -s  (Optional) Turn variables into species (default: make them parameters)
+'''
+    path, debug, quiet, print_parse, use_species = get_filename_and_options(argv)
 
     file = open(path, 'r')
-
-    print('----- file ' + path + ' ' + '-'*30)
     file_contents = file.read()
-    print(file_contents)
+    file.close()
+
+    if not quiet:
+        print('----- file ' + path + ' ' + '-'*30)
+        print(file_contents)
 
     if debug:
         pdb.set_trace()
+
     try:
-        if echo_raw_parse:
-            print('')
-            print('----- interpreted output ' + '-'*50)
-
         parser = MatlabGrammar()
-        mparse = parser.parse_string(file_contents, echo_raw_parse)
-
-        print('')
-        print('----- SBML output ' + '-'*50)
-        sbml = create_model(mparse)
+        parse_results = parser.parse_string(file_contents)
     except ParseException as err:
         print("error: {0}".format(err))
+
+    if print_parse and not quiet:
+        print('')
+        print('----- interpreted output ' + '-'*50)
+        parser.print_parse_results(parse_results)
+
+    if not quiet:
+        print('')
+        print('----- SBML output ' + '-'*50)
+
+    sbml = create_raterule_model(parse_results, use_species)
     print sbml
+
+
+def fail(msg):
+    raise SystemExit(msg)
+
+
+if __name__ == '__main__':
+    main(sys.argv)
