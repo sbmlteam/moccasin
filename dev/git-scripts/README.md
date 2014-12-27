@@ -15,4 +15,3 @@ To use it, every member of the project needs to do the following:
 1. copy the script to the `.git/hooks/` subdirectory of their local git repository
 2. rename the script to `prepare-commit-msg`
 3. make it executable (`chmod +x` on the file)
-
