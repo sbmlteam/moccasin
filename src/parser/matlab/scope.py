@@ -97,6 +97,13 @@ class Scope:
                    2)' is turned into 'foo(1,2)', and so on.  The dict values
                    are the ParseResults objects for the RHS.
 
+      types:       A dictionary of data types associated with objects.  For
+                   example, when MatlabGrammar encounters an assignment
+                   statement or a function definition, it stores the
+                   identifier of the assigned variable or parameter in this
+                   dictionary and sets the value to 'variable', to distinguish
+                   it from a 'function'.
+
       calls:       A dictionary of functions called within this scope.  The
                    keys are the function names; the values is a list of the
                    arguments (as annotated ParseResults objects).
@@ -121,6 +128,7 @@ class Scope:
         self._functions    = ScopeDict()
         self._assignments  = ScopeDict()
         self._calls        = ScopeDict()
+        self._types        = ScopeDict()
 
 
     def __repr__(self):
@@ -196,6 +204,22 @@ class Scope:
     @calls.getter
     def calls(self):
         return self._calls
+
+
+    @property
+    def types(self):
+        '''Allows access to the 'types' property as a dictionary.'''
+        return self._types
+
+
+    @types.setter
+    def types(self, key, value):
+        self._types[key] = value
+
+
+    @types.getter
+    def types(self):
+        return self._types
 
 
 
