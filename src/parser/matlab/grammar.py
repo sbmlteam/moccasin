@@ -1039,9 +1039,8 @@ class MatlabGrammar:
 
 
     def _format_op(self, pr):
-        if not ('unary operator' in pr.keys()
-                or 'binary operator' in pr.keys()
-                or 'colon operator' in pr.keys()):
+        if not {'unary operator', 'binary operator',
+                'colon operator'} & set(pr.keys()):
             self._warn('ParseResults not an operator type')
         op_key = pr.keys()[0]
         if 'colon operator' in pr.keys():
@@ -1419,11 +1418,9 @@ class MatlabGrammar:
         form, for use as a key in dictionaries such as Scope.assignments.
         '''
         def terminal(thing):
-            return ('identifier' in thing or 'number' in thing
-                    or 'colon' in thing or 'tilde' in thing
-                    or 'string' in thing or 'boolean' in thing
-                    or 'colon operator' in thing or 'unary operator' in thing
-                    or 'binary operator' in thing)
+            return {'identifier', 'number', 'colon', 'tilde', 'string',
+                    'boolean', 'colon operator', 'unary operator', 'binary',
+                    'operator'} & set(thing.keys())
 
         def row_to_string(row):
             list = []
@@ -1523,9 +1520,8 @@ class MatlabGrammar:
             return results['unary operator']
         elif 'binary operator' in results:
             return results['binary operator']
-        elif 'matrix' in results or 'matrix or function' in results \
-             or 'cell array' in results or 'struct' in results \
-             or 'function handle' in results or 'transpose' in results:
+        elif {'matrix', 'matrix or function', 'cell array', 'struct',
+              'function handle', 'transpose'} & set(results.keys()):
             return MatlabGrammar.make_key(results)
         elif len(results) == 1 and results.keys() == 0:
             return make_formula(results[0])
