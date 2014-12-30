@@ -341,6 +341,17 @@ class MatlabGrammar:
         self._scope.calls[name] = content['argument list']
 
 
+    def _save_type(self, thing, type):
+        self._scope.types[thing] = type
+
+
+    def _get_type(self, thing):
+        if thing in self._scope.types:
+            return self._scope.types[thing]
+        else:
+            return None
+
+
     # Grammar functions.
     # .........................................................................
 
@@ -363,6 +374,47 @@ class MatlabGrammar:
             # Syntactically, we can't tell the difference. Treat them as calls.
             content = pr['matrix or function']
             self._save_function_call(content)
+
+
+    def _remember_type(self, pr):
+        if not isinstance(pr, ParseResults):
+            return
+        if 'assignment' in pr:
+            lhs = pr['assignment']['lhs']
+            rhs = pr['assignment']['rhs']
+            if 'identifier' in lhs:
+                if {'matrix', 'number', 'boolean', 'string'} & set(rhs.keys()):
+                    self._save_type(lhs['identifier'], 'variable')
+            elif 'matrix' in lhs:
+                matrix = lhs['matrix']
+                if 'name' in matrix:
+                    self._save_type(name['identifier'], 'variable')
+        elif 'function definition':
+            func = pr['function definition']
+            if 'output list' in func:
+                for var in func['output list']:
+                    # The output parameter names are a safe bet to assume to
+                    # be variables.
+                    self._save_type(var['identifier'], 'variable')
+            if 'parameter list' in func:
+                for param in func['parameter list']:
+                    # FIXME this labels parameters as variables, but the
+                    # parameter could be a function name or handle when it's
+                    # called.  Need to correlate what's done here with the
+                    # arguments used in the call to the function.
+                    self._save_type(param['identifier'], 'variable')
+
+
+    def _convert_type(self, pr):
+        if not isinstance(pr, ParseResults) or 'matrix or function' not in pr:
+            return
+        content = pr['matrix or function']
+        if 'name' in content:
+            if self._get_type(content['name']['identifier']) == 'variable':
+                # We have seen this name before, and it's not a function.
+                content = pr.pop('matrix or function')
+                pr['matrix'] = content
+                content['index list'] = content.pop('argument list')
 
 
     # Start of grammar definition.
@@ -818,6 +870,15 @@ class MatlabGrammar:
         self._end_stmt      .addParseAction(self._store_stmt)
 
 
+    # Add actions to support weak data type inferencing
+    # .........................................................................
+
+    def _init_type_inference(self):
+        self._assignment    .addParseAction(self._remember_type)
+        self._fun_def_stmt  .addParseAction(self._remember_type)
+        self._fun_mat_call  .addParseAction(self._convert_type)
+
+
     # Debugging.
     # .........................................................................
 
@@ -1056,8 +1117,9 @@ class MatlabGrammar:
             rows = self._stringify_rowlist(content['row list'])
             return '{{matrix: [ {} ]}}'.format(rows)
         elif 'index list' in content.keys():
+            name = self._format_pr(content['name'])
             indexes = self._stringify_indexes(content['index list'])
-            return '{{matrix: [ {} ]}}'.format(indexes)
+            return '{{matrix {}: [ {} ]}}'.format(name, indexes)
         else:
             # No row list or index list => empty matrix.
             return '{{matrix: [] }}'
@@ -1288,6 +1350,7 @@ class MatlabGrammar:
         self._reset()
         self._init_grammar_names()
         self._init_parse_actions()
+        self._init_type_inference()
         self._init_print_interpreted()
         self._init_print_raw()
         self._init_printer()
