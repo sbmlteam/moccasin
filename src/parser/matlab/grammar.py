@@ -314,10 +314,10 @@ class MatlabGrammar:
     def _save_function_definition(self, content, pr):
         name = content['name']['identifier']
         params = []
-        if 'parameter list' in content.keys():
+        if 'parameter list' in content:
             params = [term[0] for term in content['parameter list']]
         outputs = []
-        if 'output list' in content.keys():
+        if 'output list' in content:
             outputs = [term[0] for term in content['output list']]
         newscope = Scope(name, self._scope, pr, params, outputs)
         self._scope.functions[name] = newscope
@@ -331,12 +331,12 @@ class MatlabGrammar:
 
 
     def _save_function_call(self, content):
-        if 'name' in content.keys():
+        if 'name' in content:
             name_part = content['name']
-            if 'cell array' in name_part.keys():
+            if 'cell array' in name_part:
                 # FIXME this is not right -- need handle this properly
                 name = name_part['cell array']['name']
-            elif 'identifier' in name_part.keys():
+            elif 'identifier' in name_part:
                 name = name_part['identifier']
         self._scope.calls[name] = content['argument list']
 
@@ -363,15 +363,15 @@ class MatlabGrammar:
     def _store_stmt(self, pr):
         if not isinstance(pr, ParseResults):
             return
-        if 'assignment' in pr.keys():
+        if 'assignment' in pr:
             content = pr['assignment']
             self._save_assignment(content)
-        elif 'function definition' in pr.keys():
+        elif 'function definition' in pr:
             content = pr['function definition']
             self._push_context(self._save_function_definition(content, pr))
-        elif 'end statement' in pr.keys():
+        elif 'end statement' in pr:
             self._pop_context()
-        elif 'matrix or function' in pr.keys():
+        elif 'matrix or function' in pr:
             # This could be a matrix value access or a function call.
             # Syntactically, we can't tell the difference. Treat them as calls.
             content = pr['matrix or function']
@@ -1046,12 +1046,12 @@ class MatlabGrammar:
                 'colon operator'} & set(pr.keys()):
             self._warn('ParseResults not an operator type')
         op_key = pr.keys()[0]
-        if 'colon operator' in pr.keys():
+        if 'colon operator' in pr:
             text = '{colon}'
         else:
-            if 'unary operator' in pr.keys():
+            if 'unary operator' in pr:
                 op = 'unary op'
-            elif 'binary operator' in pr.keys():
+            elif 'binary operator' in pr:
                 op = 'binary op'
             text = '{{{}: {}}}'.format(op, pr[op_key])
         return text
@@ -1096,7 +1096,7 @@ class MatlabGrammar:
         i = 1
         text = ''
         for row in arglist:
-            if 'index list' not in row.keys():
+            if 'index list' not in row:
                 self._warn('did not find index list key ParseResults')
                 return 'ERROR'
             indexes = row['index list']
@@ -1115,10 +1115,10 @@ class MatlabGrammar:
         # managed to determine it's a matrix access (and not the more
         # ambiguous function call or matrix access).  If we have a row list,
         # it's the former; if we have an index list, it's the latter.
-        if 'row list' in content.keys():
+        if 'row list' in content:
             rows = self._stringify_rowlist(content['row list'])
             return '{{matrix: [ {} ]}}'.format(rows)
-        elif 'index list' in content.keys():
+        elif 'index list' in content:
             name = self._format_pr(content['name'])
             indexes = self._stringify_indexes(content['index list'])
             return '{{matrix {}: [ {} ]}}'.format(name, indexes)
@@ -1132,7 +1132,7 @@ class MatlabGrammar:
             return
         content = pr['cell array']
         rows = self._stringify_rowlist(content['row list'])
-        if 'name' in content.keys():
+        if 'name' in content:
             name = content['name']
             return '{{cell array: {} [ {} ]}}'.format(self._format_pr(name), rows)
         else:
@@ -1144,13 +1144,13 @@ class MatlabGrammar:
             return
         content = pr['function definition']
         name = self._format_pr(content['name'])
-        if 'output list' in content.keys():
+        if 'output list' in content:
             output = self._format_simple_list(content['output list'])
             if len(content['output list']) > 1:
                 output = '[ ' + output + ' ]'
         else:
             output = 'none'
-        if 'parameter list' in content.keys():
+        if 'parameter list' in content:
             param = self._format_simple_list(content['parameter list'])
         else:
             param = 'none'
@@ -1162,7 +1162,7 @@ class MatlabGrammar:
         if not self._verified_pr(pr, 'function handle'):
             return
         content = pr['function handle']
-        if 'name' in content.keys():
+        if 'name' in content:
             name = content['name']
             return '{{function @ handle: {}}}'.format(self._format_pr(name))
         else:
@@ -1339,7 +1339,7 @@ class MatlabGrammar:
         if len(pr) > 1:
             self._warn('expected 1 ParseResults, but got {}'.format(len(pr)))
             return False
-        if type not in pr.keys():
+        if type not in pr:
             self._warn('ParseResults not of type {}'.format(type))
             return False
         return True
