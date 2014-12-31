@@ -31,7 +31,6 @@ sys.path.append('..')
 sys.path.append('../parser')
 from matlab import MatlabGrammar
 
-
 
 # -----------------------------------------------------------------------------
 # Parsing-related stuff.
@@ -170,7 +169,6 @@ def underscores(scope):
 
 def rename(base, tail='', num_underscores=1):
     return ''.join([base, '_'*num_underscores, tail])
-
 
 
 # -----------------------------------------------------------------------------
