@@ -32,6 +32,7 @@ sys.path.append('../parser')
 from matlab import MatlabGrammar
 
 
+
 # -----------------------------------------------------------------------------
 # Parsing-related stuff.
 # -----------------------------------------------------------------------------
@@ -40,9 +41,6 @@ def get_function_scope(mparse):
     # If the outermost scope contains no assignments but does contain a single
     # function, it means the whole file is a function definition.  We want to
     # get at the scope object for the parse results of that function.
-    #
-    # FIXME: still need to make this deal with the case where the file is a
-    # script, not a function definition.
     if mparse and mparse.scope:
         scope = mparse.scope
         if len(scope.functions) == 1 and len(scope.assignments) == 0:
@@ -53,40 +51,22 @@ def get_function_scope(mparse):
         return None
 
 
-# We turn simple assignments in the outer portion of the file into global
-# parameters in the SBML model.
-
-def get_all_assignments(mparse):
-    scope = get_function_scope(mparse)
-    if not scope:
-        return None
-
+def get_all_assignments(scope):
     # Loop through the variables and create a dictionary to return.
-    parameters = {}
-    for id, value in scope.assignments.items():
-        # If the variable is an array, we split it by rows.
-        if len(value[0]) > 1:
-            i = 1
-            for row in value[0]:
-                new_id = id + "_" + str(i)
-                parameters[new_id] = translate_formula(row)
-                i += 1
-        else:
-            parameters[id] = translate_formula(value)
-    return parameters
+    assignments = {}
+    for var, rhs in scope.assignments.items():
+        assignments[var] = rhs
+    for fname, fscope in scope.functions.items():
+        assignments.update(get_all_assignments(fscope))
+    return assignments
 
 
-def get_all_function_calls(mparse):
-    scope = get_function_scope(mparse)
-    if not scope:
-        return {}
-
+def get_all_function_calls(scope):
     calls = {}
     for fname, arglist in scope.calls.items():
         calls[fname] = arglist
-
     for fname, fscope in scope.functions.items():
-        calls.update(get_all_function_calls(fscope.parse_results))
+        calls.update(get_all_function_calls(fscope))
     return calls
 
 
@@ -113,18 +93,14 @@ def name_mentioned_in_rhs(name, mparse):
     return False
 
 
-def get_lhs_for_rhs(name, mparse):
-    scope = get_function_scope(mparse)
-    if not scope:
-        return None
+def get_lhs_for_rhs(name, scope):
     for lhs, rhs in scope.assignments.items():
         if name_mentioned_in_rhs(name, rhs):
             return lhs
     return None
 
 
-def get_function_declaration(name, mparse):
-    scope = get_function_scope(mparse)
+def get_function_declaration(name, scope):
     if scope and name in scope.functions:
         return scope.functions[name]
     return None
@@ -138,20 +114,65 @@ def terminal_value(pr):
     return None
 
 
-def row_vector(matrix):
+def matrix_dimensions(matrix):
+    if len(matrix['row list']) == 1:
+        return 1
+    elif len(matrix['row list'][0]['index list']) == 1:
+        return 1
+    else:
+        return 2
+
+
+def is_row_vector(matrix):
     return len(matrix['row list']) == 1 \
         and len(matrix['row list'][0]['index list']) >= 1
 
 
-def initial_cond_matrix_size(matrix):
-    # Apparently it doesn't matter if the initial conditions matrix passed to
-    # ode45 is a row or column vector.  So this checks for either case.
-    if row_vector(matrix):
+def vector_length(matrix):
+    if is_row_vector(matrix):
         return len(matrix['row list'][0]['index list'])
     else:
         return len(matrix['row list'])
 
 
+def vector_size(matrix):
+    # Apparently it doesn't matter if the initial conditions matrix passed to
+    # ode45 is a row or column vector.  So this checks for either case.
+    if matrix_dimensions(matrix):
+        return len(matrix['row list'][0]['index list'])
+    else:
+        return len(matrix['row list'])
+
+
+def inferred_type(name, scope, recursive=False):
+    if name in scope.types:
+        return scope.types[name]
+    elif recursive and hasattr(scope, 'parent') and scope.parent:
+        return inferred_type(name, scope.parent, True)
+    else:
+        return None
+
+
+def underscores(scope):
+    # Look if any variables use underscores in their name.  Count the longest
+    # sequence of underscores found.  Recursively looks in subscopes too.
+    longest = 0
+    for name in scope.assignments:
+        if '_' in name:
+            this_longest = len(max(re.findall('(_+)', name), key=len))
+            longest = max(longest, this_longest)
+    if scope.functions:
+        for subscope in scope.functions.itervalues():
+            longest_among_children = underscores(subscope)
+            longest = max(longest_among_children, longest)
+    return longest
+
+
+def rename(base, tail='', num_underscores=1):
+    return ''.join([base, '_'*num_underscores, tail])
+
+
+
 # -----------------------------------------------------------------------------
 # SBML-specific stuff.
 # -----------------------------------------------------------------------------
@@ -243,7 +264,7 @@ def create_sbml_raterule(model, id, ast):
     check(rr.setMath(ast),     'set raterule formula')
     return rr
 
-
+
 # -----------------------------------------------------------------------------
 # Translation code.
 # -----------------------------------------------------------------------------
@@ -296,16 +317,14 @@ def create_raterule_model(mparse, use_species=False):
     # saving the name of the function handle passed to it as an argument.  We
     # also save the name of the 3rd argument (a vector of initial conditions).
 
-    # Quick summary of pieces we'll gather.  Assume a file like this:
-    #   xzero = [num1 num2 ...]                 --> "xzero" is initial_cond_var
-    #   [t, y] = ode45(@odefunc, tspan, xzero)  --> "y" is assigned_var
-    #   function dy = odefunc(t, x)             --> "x" is dependent_var
-    #       dy = [row1; row2; ...]              --> "dy" is output_var
-    #   end                                     --> "odefunc" is handle_name
+    # Gather some preliminary info.
+    working_scope = get_function_scope(mparse)
+    num_underscores = underscores(working_scope) + 1
 
+    # Look for a call to a MATLAB ode* function.
     ode_function = None
     call_arglist = None
-    calls = get_all_function_calls(mparse)
+    calls = get_all_function_calls(working_scope)
     for name, arglist in calls.items():
         if isinstance(name, str) and name.startswith('ode'):
             # Found the invocation of an ode function.
@@ -316,11 +335,18 @@ def create_raterule_model(mparse, use_species=False):
     if not ode_function:
         fail('Could not locate a call to a Matlab function in the file.')
 
+    # Quick summary of pieces we'll gather.  Assume a file like this:
+    #   xzero = [num1 num2 ...]                 --> "xzero" is initial_cond_var
+    #   [t, y] = ode45(@odefunc, tspan, xzero)  --> "y" is assigned_var
+    #   function dy = odefunc(t, x)             --> "x" is dependent_var
+    #       dy = [row1; row2; ...]              --> "dy" is output_var
+    #   end                                     --> "odefunc" is handle_name
+
     # Identify the variables to which the output of the ode call is assigned.
     # It'll be a matrix of the form [t, y].  We want the name of the 2nd
     # variable.  Since it has to be a name, we can extract it using a regexp.
     # This will be the name of the independent variable for the ODE's.
-    call_lhs = get_lhs_for_rhs(ode_function, mparse)
+    call_lhs = get_lhs_for_rhs(ode_function, working_scope)
     assigned_var = re.sub(r'\[[^\]]+,([^\]]+)\]', r'\1', call_lhs)
 
     # Matlab ode functions take a handle as 1st arg & initial cond. var as 3rd.
@@ -335,7 +361,7 @@ def create_raterule_model(mparse, use_species=False):
     # Now locate our scope object for the function definition.  It'll be
     # defined either at the top level (if this file is a script) or inside
     # the scope of the file's overall function (if the file is a function).
-    function_scope = get_function_declaration(handle_name, mparse)
+    function_scope = get_function_declaration(handle_name, working_scope)
 
     # The function form will have to be f(t, y), because that's what Matlab
     # requires.  We want to find out the name of the parameter 'y' in the
@@ -348,11 +374,10 @@ def create_raterule_model(mparse, use_species=False):
     # be a matrix.  Among other things, we want to find its length, because
     # that tells us the expected length of the output vector, and thus the
     # number of SBML parameters we have to create.
-    working_scope = get_function_scope(mparse)
     initial_cond = working_scope.assignments[initial_cond_var]
     if 'matrix' not in initial_cond.keys():
         fail('Failed to parse the assignment of the initial value matrix')
-    output_size = initial_cond_matrix_size(initial_cond['matrix'])
+    output_size = vector_size(initial_cond['matrix'])
 
     # If we get this far, let's start generating some SBML.
 
@@ -362,19 +387,19 @@ def create_raterule_model(mparse, use_species=False):
 
     # Create either parameters or species (depending on the run-time selection)
     # for the dependent variables and set their initial values.
-    is_row_vector = row_vector(initial_cond['matrix'])
+    row_vector = is_row_vector(initial_cond['matrix'])
     for i in range(0, output_size):
-        if is_row_vector:
-            the_value = terminal_value(initial_cond['matrix'][0]['index list'][i])
+        if row_vector:
+            p_value = terminal_value(initial_cond['matrix'][0]['index list'][i])
         else:
-            the_value = terminal_value(initial_cond['matrix'][i]['index list'][0])
-        the_name = assigned_var + '_' + str(i + 1)
-        # FIXME assumes the_value is a number, but it could be a variable, in
+            p_value = terminal_value(initial_cond['matrix'][i]['index list'][0])
+        p_name = rename(assigned_var, str(i + 1), num_underscores)
+        # FIXME assumes p_value is a number, but it could be a variable, in
         # which case we should look up that variable's value elsewhere.
         if use_species:
-            create_sbml_species(model, the_name, the_value)
+            create_sbml_species(model, p_name, p_value)
         else:
-            p = create_sbml_parameter(model, the_name, the_value)
+            p = create_sbml_parameter(model, p_name, p_value)
             p.setConstant(False)
 
     # Now, look inside the function definition and find the assignment to the
@@ -394,7 +419,8 @@ def create_raterule_model(mparse, use_species=False):
         if 'index list' not in row:
             fail('Failed to parse the matrix assigned to {}'.format(output_def))
         parsed_formula = row['index list'][0]
-        string_formula = MatlabGrammar.make_formula(parsed_formula)
+        mr = lambda pr: munge_reference(pr, function_scope, num_underscores)
+        string_formula = MatlabGrammar.make_formula(parsed_formula, mattrans=mr)
         if not string_formula:
             fail('Failed to parse the formula for row {}'.format(i))
 
@@ -402,7 +428,7 @@ def create_raterule_model(mparse, use_species=False):
         # rename the variable to the name used for the results assignment
         # in the call to the ode* function.
         xnameregexp = dependent_var + r'\((\d+)\)'
-        newnametranform = assigned_var + r'_\1'
+        newnametranform = assigned_var + '_'*num_underscores + r'\1'
         formula = re.sub(xnameregexp, newnametranform, string_formula)
 
         # Finally, write the rate rule.
@@ -411,29 +437,88 @@ def create_raterule_model(mparse, use_species=False):
         create_sbml_raterule(model, rule_var, ast)
         i += 1
 
-    # Create remaining parameters.  Here, we have to decide what to do about
-    # possible duplicate variable names showing up inside the function and
-    # outside.  The approach here is to have the ones inside the function
-    # shadow the ones outside, but we should really check if something more
-    # complicated is going on in the Matlab code.
-    # FIXME doesn't handle matrices on the LHS.
+    # Create remaining parameters.  This breaks up matrix assignments by
+    # looking up the value assigned to the variable; if it's a matrix value,
+    # then the variable is turned into parameters named foo_1, foo_2, etc.
+    # Also, we have to decide what to do about duplicate variable names
+    # showing up inside the function body and outside.  The approach here is
+    # to have variables inside the function shadow ones outside, but we
+    # should really check if something more complicated is going on in the
+    # Matlab code.  The shadowing is done by virtue of the fact that the
+    # creation of the dict() object for the next for-loop uses the sum of
+    # the working scope and function scope dictionaries, with the function
+    # scope taken second (which means its values are the final ones).
 
     for var, rhs in dict(working_scope.assignments.items()
                          + function_scope.assignments.items()).items():
-        if not name_is_structured(var):
-            if 'number' in rhs:
-                create_sbml_parameter(model, var, terminal_value(rhs))
-            elif 'matrix' not in rhs:
+        # FIXME currently doesn't handle matrices on LHS.
+        if name_is_structured(var):
+            continue
+        if 'number' in rhs:
+            create_sbml_parameter(model, var, terminal_value(rhs))
+        elif 'matrix' in rhs:
+            matrix = rhs['matrix']
+            row_vector = is_row_vector(matrix)
+            for i in range(0, vector_length(matrix)):
+                if row_vector:
+                    element = matrix['row list'][0]['index list'][i]
+                else:
+                    element = matrix['row list'][i]['index list'][0]
+                i += 1
+                new_var = rename(var, str(i), num_underscores)
+                if 'number' in element:
+                    value = terminal_value(element)
+                    create_sbml_parameter(model, new_var, value)
+                else:
+                    mr = lambda pr: munge_reference(pr, function_scope, num_underscores)
+                    formula = MatlabGrammar.make_formula(element, mattrans=mr)
+                    ast = parseL3Formula(formula)
+                    if ast is not None:
+                        create_sbml_parameter(model, new_var, 0)
+                        create_sbml_initial_assignment(model, new_var, ast)
+        elif 'matrix' not in rhs:
+            mr = lambda pr: munge_reference(pr, function_scope, num_underscores)
+            formula = MatlabGrammar.make_formula(rhs, mattrans=mr)
+            ast = parseL3Formula(formula)
+            if ast is not None:
                 create_sbml_parameter(model, var, 0)
-                formula = MatlabGrammar.make_formula(rhs)
-                ast = parseL3Formula(formula)
-                if ast is not None:
-                    create_sbml_initial_assignment(model, var, ast)
+                create_sbml_initial_assignment(model, var, ast)
 
     # Write the Model
     return writeSBMLToString(document)
 
 
+# FIXME only handles 1-D matrices.
+# FIXME grungy part for looking up identifier -- clean up & handle more depth
+
+def munge_reference(pr, scope, num_underscores):
+    matrix = pr['matrix']
+    name = matrix['name']['identifier']
+    if inferred_type(name, scope) != 'variable':
+        return MatlabGrammar.make_key(pr)
+    # Base name starts with one less underscore because the loop process
+    # adds one in front of each number.
+    constructed = name + '_'*(num_underscores - 1)
+    for i in range(0, len(matrix['index list'])):
+        element = matrix['index list'][i]
+        i += 1
+        if 'number' in element:
+            constructed += '_' + str(element['number'])
+        elif 'identifier' in element:
+            # The index is not a number.  If it's a simple variable and we've
+            # seen its value, we can handle it by looking up its value.
+            assignments = get_all_assignments(scope)
+            var_name = element['identifier']
+            if var_name not in assignments:
+                raise ValueError('Unable to handle matrix "' + name + '"')
+            assigned_value = assignments[var_name]
+            if 'number' in assigned_value:
+                constructed += '_' + str(assigned_value['number'])
+            else:
+                raise ValueError('Unable to handle matrix "' + name + '"')
+    return constructed
+
+
 # -----------------------------------------------------------------------------
 # Driver
 # -----------------------------------------------------------------------------
