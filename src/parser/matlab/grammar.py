@@ -345,9 +345,11 @@ class MatlabGrammar:
         self._scope.types[thing] = type
 
 
-    def _get_type(self, thing):
-        if thing in self._scope.types:
-            return self._scope.types[thing]
+    def _get_type(self, thing, scope, recursive=False):
+        if thing in scope.types:
+            return scope.types[thing]
+        elif recursive and hasattr(scope, 'parent') and scope.parent:
+            return self._get_type(thing, scope.parent, True)
         else:
             return None
 
@@ -410,7 +412,8 @@ class MatlabGrammar:
             return
         content = pr['matrix or function']
         if 'name' in content:
-            if self._get_type(content['name']['identifier']) == 'variable':
+            name = content['name']['identifier']
+            if self._get_type(name, self._scope, True) == 'variable':
                 # We have seen this name before, and it's not a function.
                 content = pr.pop('matrix or function')
                 pr['matrix'] = content
@@ -1496,14 +1499,22 @@ class MatlabGrammar:
 
 
     @staticmethod
-    def make_formula(results, spaces=True, parens=True):
+    def make_formula(results, spaces=True, parens=True, mattrans=None):
         '''Converted a mathematical expression into libSBML-style string form.
-        The default behavior is to put spaces between terms and operators;
-        if the optional flag 'spaces' is False, then no spaces are introduced.
-        The default between is also to surround the expression with parentheses
-        but if the optional flag 'parens' is False, the outermost parentheses
-        are omitted.
+        The default behavior is to put spaces between terms and operators; if
+        the optional flag 'spaces' is False, then no spaces are introduced.
+        The default between is also to surround the expression with
+        parentheses but if the optional flag 'parens' is False, the outermost
+        parentheses (but not other parentheses) are omitted.  Finally, if
+        given a function for parameter 'mattrans' (default: none), it will
+        call that function when it encounters matrix references.  The function
+        will be given one argument, the matrix object, and should return a
+        text string corresponding to the value to be used in place of the
+        matrix.  If no 'mattrans' is given, the default behavior is to render
+        matrices and arrays like they would appear in Matlab text: e.g.,
+        "foo(2,3)".
         '''
+
         if 'identifier' in results:
             return results['identifier']
         elif 'number' in results:
@@ -1520,13 +1531,19 @@ class MatlabGrammar:
             return results['unary operator']
         elif 'binary operator' in results:
             return results['binary operator']
-        elif {'matrix', 'matrix or function', 'cell array', 'struct',
+        elif 'matrix' in results:
+            if 'name' in results['matrix']:
+                return mattrans(results)
+            else:
+                return MatlabGrammar.make_key(results)
+        elif {'matrix or function', 'cell array', 'struct',
               'function handle', 'transpose'} & set(results.keys()):
             return MatlabGrammar.make_key(results)
         elif len(results) == 1 and results.keys() == 0:
             return make_formula(results[0])
         elif len(results) > 1:
-            list = [MatlabGrammar.make_formula(term, spaces) for term in results]
+            list = [MatlabGrammar.make_formula(term, spaces, parens, mattrans)
+                    for term in results]
             sep = ''
             if spaces:
                 sep = ' '
