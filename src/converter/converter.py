@@ -414,7 +414,7 @@ def create_raterule_model(mparse, use_species=False):
     # actual definition, so that we can locate this variable inside the
     # formula within the function.  We don't know what the user will call it,
     # so we have to use the position of the argument in the function def.
-    dependent_var = function_scope.args[1]
+    dependent_var = function_scope.parameters[1]
 
     # Find the assignment to the initial condition variable.  The value will
     # be a matrix.  Among other things, we want to find its length, because
