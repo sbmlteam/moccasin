@@ -153,9 +153,9 @@
 #     (Pdb) row1 = matrix['row list'][0]
 #     (Pdb) row2 = matrix['row list'][1]
 #     (Pdb) row1.keys()
-#     ['index list']
+#     ['subscript list']
 #     (Pdb) row2.keys()
-#     ['index list']
+#     ['subscript list']
 #
 # Both of them have lists of their own.  These work in the same way as the
 # row lists: you first find out their length, and then index into them to get
@@ -234,8 +234,8 @@
 
 import sys
 import pdb
-import pyparsing                        # Need this for version check, so DON'T
-from pyparsing import *                 # ... MERGE THIS and previous stmt!
+import pyparsing                        # Need this for version check, so ...
+from pyparsing import *                 # ... DON'T merge this & previous stmt!
 from distutils.version import LooseVersion
 from grammar_utils import *
 from scope import *
@@ -417,7 +417,7 @@ class MatlabGrammar:
                 # We have seen this name before, and it's not a function.
                 content = pr.pop('matrix or function')
                 pr['matrix'] = content
-                content['index list'] = content.pop('argument list')
+                content['subscript list'] = content.pop('argument list')
 
 
     # Start of grammar definition.
@@ -584,9 +584,9 @@ class MatlabGrammar:
 
     ParserElement.setDefaultWhitespaceChars(' \t')
 
-    _one_index     = Group(_COLON('colon')) | _expr
-    _comma_indexes = _one_index + ZeroOrMore(_COMMA + _one_index)
-    _space_indexes = _one_index + ZeroOrMore(_WHITE.suppress() + _one_index).leaveWhitespace()
+    _one_sub       = Group(_COLON('colon')) | _expr
+    _comma_subs    = _one_sub + ZeroOrMore(_COMMA + _one_sub)
+    _space_subs    = _one_sub + ZeroOrMore(_WHITE.suppress() + _one_sub).leaveWhitespace()
     _call_args     = delimitedList(_expr)
     _fun_params    = delimitedList(Group(_TILDE) | Group(_ID))
 
@@ -595,7 +595,7 @@ class MatlabGrammar:
     # input to be valid Matlab, we don't expect to have to verify that property.
 
     _row_sep       = _SEMI | _EOL | _comment.suppress()
-    _one_row       = _comma_indexes('index list') ^ _space_indexes('index list')
+    _one_row       = _comma_subs('subscript list') ^ _space_subs('subscript list')
     _rows          = Group(_one_row) + ZeroOrMore(_row_sep + Group(_one_row))
     _bare_matrix   = Group(_LBRACKET + Optional(_rows('row list')) + _RBRACKET
                           ).setResultsName('matrix')  # noqa
@@ -603,7 +603,7 @@ class MatlabGrammar:
     ParserElement.setDefaultWhitespaceChars(' \t\n\r')
 
     # Cell arrays.  You can write {} by itself, but a reference has to have at
-    # least one indexing term: "somearray{}" is not valid.  Newlines don't
+    # least one subscript: "somearray{}" is not valid.  Newlines don't
     # seem to be allowed in args to references, but a bare ':' is allowed.
     # Now the hard parts:
     # - The following parses as a cell reference:        a{1}
@@ -648,9 +648,9 @@ class MatlabGrammar:
                           ).setResultsName('matrix or function')  # noqa
 
     _matrix_name   = Group(_ID)
-    _matrix_args   = Group(_comma_indexes)
+    _matrix_args   = Group(_comma_subs)
     _matrix_access = Group(_matrix_name('name')
-                           + _LPAR + _matrix_args('index list') + _RPAR
+                           + _LPAR + _matrix_args('subscript list') + _RPAR
                           ).setResultsName('matrix')  # noqa
 
     # Func. handles: http://www.mathworks.com/help/matlab/ref/function_handle.html
@@ -901,7 +901,7 @@ class MatlabGrammar:
                 _WHITE, _anon_handle, _assignment, _bare_cell, _bare_matrix,
                 _block_c_end, _block_c_start, _block_comment, _call_args,
                 _case_stmt, _catch_stmt, _cell_access, _cell_array,
-                _cell_name, _cmd_args, _cmd_name, _cmd_stmt, _comma_indexes,
+                _cell_name, _cmd_args, _cmd_name, _cmd_stmt, _comma_subs,
                 _comma_values, _comment, _cond_expr, _continuation,
                 _control_stmt, _delimiter, _elseif_stmt, _expr, _for_stmt,
                 _fun_access, _fun_def_stmt, _fun_handle, _fun_mat_call,
@@ -913,7 +913,7 @@ class MatlabGrammar:
                 _operand, _other_assign, _otherwise_stmt, _paren_expr,
                 _plusminus, _power, _row_sep, _rows, _shell_cmd,
                 _shell_cmd_cmd, _simple_assign, _single_value,
-                _space_indexes, _space_values, _stmt, _struct_access,
+                _space_subs, _space_values, _stmt, _struct_access,
                 _struct_base, _struct_field, _switch_stmt, _timesdiv,
                 _transp_what, _transpose, _transpose_op, _try_stmt,
                 _uplusminusneg, _while_stmt, _otherwise_stmt, _else_stmt,
@@ -1087,8 +1087,8 @@ class MatlabGrammar:
         return '{{function/matrix: {} ( {} )}}'.format(self._format_pr(name), args)
 
 
-    def _stringify_indexes(self, indexes):
-        return ', '.join([self._format_pr(thing) for thing in indexes])
+    def _stringify_subscripts(self, subscripts):
+        return ', '.join([self._format_pr(thing) for thing in subscripts])
 
 
     def _stringify_rowlist(self, arglist):
@@ -1096,11 +1096,11 @@ class MatlabGrammar:
         i = 1
         text = ''
         for row in arglist:
-            if 'index list' not in row:
-                self._warn('did not find index list key ParseResults')
+            if 'subscript list' not in row:
+                self._warn('did not find "subscript list" key in ParseResults')
                 return 'ERROR'
-            indexes = row['index list']
-            text += '{{row {}: {}}}'.format(i, self._stringify_indexes(indexes))
+            subscripts = row['subscript list']
+            text += '{{row {}: {}}}'.format(i, self._stringify_subscripts(subscripts))
             if i <= last:
                 text += '; '
             i += 1
@@ -1114,16 +1114,16 @@ class MatlabGrammar:
         # Two kinds of matrix situations: a bare matrix, and one where we
         # managed to determine it's a matrix access (and not the more
         # ambiguous function call or matrix access).  If we have a row list,
-        # it's the former; if we have an index list, it's the latter.
+        # it's the former; if we have an subscript list, it's the latter.
         if 'row list' in content:
             rows = self._stringify_rowlist(content['row list'])
             return '{{matrix: [ {} ]}}'.format(rows)
-        elif 'index list' in content:
+        elif 'subscript list' in content:
             name = self._format_pr(content['name'])
-            indexes = self._stringify_indexes(content['index list'])
-            return '{{matrix {}: [ {} ]}}'.format(name, indexes)
+            subscripts = self._stringify_subscripts(content['subscript list'])
+            return '{{matrix {}: [ {} ]}}'.format(name, subscripts)
         else:
-            # No row list or index list => empty matrix.
+            # No row list or subscript list => empty matrix.
             return '{{matrix: [] }}'
 
 
@@ -1445,12 +1445,13 @@ class MatlabGrammar:
             matrix = thing['matrix']
             if 'row list' in matrix:
                 # Bare matrix, like [a,b].
-                rowlist = [row_to_string(row['index list']) for row in matrix['row list']]
+                rowlist = [row_to_string(row['subscript list'])
+                           for row in matrix['row list']]
                 return '[' + ';'.join(rowlist) + ']'
-            elif 'index list' in matrix:
+            elif 'subscript list' in matrix:
                 # Matrix reference, like foo(2,3).
                 name = matrix['name']['identifier']
-                return name + '(' + row_to_string(matrix['index list']) + ')'
+                return name + '(' + row_to_string(matrix['subscript list']) + ')'
         elif 'matrix or function' in thing:
             func = thing['matrix or function']
             name = func['name']['identifier']
