@@ -134,19 +134,12 @@ def vector_length(matrix):
         return len(matrix['row list'])
 
 
-def vector_size(matrix):
-    # Apparently it doesn't matter if the initial conditions matrix passed to
-    # ode45 is a row or column vector.  So this checks for either case.
-    if is_row_vector(matrix):
-        return len(matrix['row list'][0]['subscript list'])
-    else:
-        return len(matrix['row list'])
-
-
 def mloop(matrix, func):
+    # Calls function 'func' on a row or column of values from the matrix.
+    # Note: the argument 'i' is 0-based, not 1-based like Matlab vectors.
     # FIXME: this only handles 1-D row or column vectors.
     row_vector = is_row_vector(matrix)
-    row_length = vector_size(matrix)
+    row_length = vector_length(matrix)
     base = matrix['row list']
     for i in range(0, row_length):
         if row_vector:
@@ -175,8 +168,7 @@ def num_underscores(scope):
             longest = max(longest, this_longest)
     if scope.functions:
         for subscope in scope.functions.itervalues():
-            longest_among_children = num_underscores(subscope)
-            longest = max(longest_among_children, longest)
+            longest = max(num_underscores(subscope), longest)
     return longest
 
 
