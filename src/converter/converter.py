@@ -422,18 +422,13 @@ def create_raterule_model(mparse, use_species=False):
     # so we have to use the position of the argument in the function def.
     dependent_var = function_scope.parameters[1]
 
-    # Find the assignment to the initial condition variable.  The value will
-    # be a matrix.  Among other things, we want to find its length, because
-    # that tells us the expected length of the output vector, and thus the
-    # number of SBML parameters or species we have to create.
+    # Find the assignment to the initial condition variable, then create
+    # either parameters or species (depending on the run-time selection) for
+    # each entry.  The initial value of the parameter/species will be the
+    # value in the matrix.
     init_cond = working_scope.assignments[init_cond_var]
     if 'matrix' not in init_cond.keys():
         fail('Failed to parse the assignment of the initial value matrix')
-    output_size = vector_length(init_cond['matrix'])
-
-    # Create either parameters or species (depending on the run-time
-    # selection) for each entry in the dependent variable matrix.  The
-    # initial value of the parameter/species will be the value in the matrix.
     mloop(init_cond['matrix'],
           lambda idx, item: make_indexed(assigned_var, idx, item, use_species,
                                          model, underscores, function_scope))
