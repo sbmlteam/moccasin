@@ -137,10 +137,23 @@ def vector_length(matrix):
 def vector_size(matrix):
     # Apparently it doesn't matter if the initial conditions matrix passed to
     # ode45 is a row or column vector.  So this checks for either case.
-    if matrix_dimensions(matrix):
+    if is_row_vector(matrix):
         return len(matrix['row list'][0]['subscript list'])
     else:
         return len(matrix['row list'])
+
+
+def mloop(matrix, func):
+    # FIXME: this only handles 1-D row or column vectors.
+    row_vector = is_row_vector(matrix)
+    row_length = vector_size(matrix)
+    base = matrix['row list']
+    for i in range(0, row_length):
+        if row_vector:
+            entry = base[0]['subscript list'][i]
+        else:
+            entry = base[i]['subscript list'][0]
+        func(i, entry)
 
 
 def inferred_type(name, scope, recursive=False):
@@ -152,7 +165,7 @@ def inferred_type(name, scope, recursive=False):
         return None
 
 
-def underscores(scope):
+def num_underscores(scope):
     # Look if any variables use underscores in their name.  Count the longest
     # sequence of underscores found.  Recursively looks in subscopes too.
     longest = 0
@@ -162,7 +175,7 @@ def underscores(scope):
             longest = max(longest, this_longest)
     if scope.functions:
         for subscope in scope.functions.itervalues():
-            longest_among_children = underscores(subscope)
+            longest_among_children = num_underscores(subscope)
             longest = max(longest_among_children, longest)
     return longest
 
@@ -262,6 +275,49 @@ def create_sbml_raterule(model, id, ast):
     check(rr.setMath(ast),     'set raterule formula')
     return rr
 
+
+def make_indexed(var, index, content, species, model, underscores, scope):
+    name = rename(var, str(index + 1), underscores)
+    if 'number' in content:
+        value = terminal_value(content)
+        if species:
+            item = create_sbml_species(model, name, value)
+            item.setConstant(False)
+        else:
+            item = create_sbml_parameter(model, name, value)
+    else:
+        if species:
+            item = create_sbml_species(model, name, 0)
+            item.setConstant(False)
+        else:
+            item = create_sbml_parameter(model, name, 0)
+        mr = lambda pr: munge_reference(pr, scope, underscores)
+        formula = MatlabGrammar.make_formula(content, mattrans=mr)
+        ast = parseL3Formula(formula)
+        create_sbml_initial_assignment(model, name, ast)
+
+
+def make_raterule(assigned_var, dep_var, index, content, model, underscores, scope):
+    # Currently, this assumes there's only one math expression per row or
+    # column, meaning, one subscript value per row or column.
+
+    mr = lambda pr: munge_reference(pr, scope, underscores)
+    string_formula = MatlabGrammar.make_formula(content, mattrans=mr)
+    if not string_formula:
+        fail('Failed to parse the formula for row {}'.format(index + 1))
+
+    # We need to rewrite matrix references "x(n)" to the form "x_n", and
+    # rename the variable to the name used for the results assignment
+    # in the call to the ode* function.
+    xnameregexp = dep_var + r'\((\d+)\)'
+    newnametranform = assigned_var + '_'*underscores + r'\1'
+    formula = re.sub(xnameregexp, newnametranform, string_formula)
+
+    # Finally, write the rate rule.
+    rule_var = assigned_var + "_" + str(index + 1)
+    ast = parseL3Formula(formula)
+    create_sbml_raterule(model, rule_var, ast)
+
 
 # -----------------------------------------------------------------------------
 # Translation code.
@@ -317,7 +373,7 @@ def create_raterule_model(mparse, use_species=False):
 
     # Gather some preliminary info.
     working_scope = get_function_scope(mparse)
-    num_underscores = underscores(working_scope) + 1
+    underscores = num_underscores(working_scope) + 1
 
     # Look for a call to a MATLAB ode* function.
     ode_function = None
@@ -334,7 +390,7 @@ def create_raterule_model(mparse, use_species=False):
         fail('Could not locate a call to a Matlab function in the file.')
 
     # Quick summary of pieces we'll gather.  Assume a file like this:
-    #   xzero = [num1 num2 ...]                 --> "xzero" is initial_cond_var
+    #   xzero = [num1 num2 ...]                 --> "xzero" is init_cond_var
     #   [t, y] = ode45(@odefunc, tspan, xzero)  --> "y" is assigned_var
     #   function dy = odefunc(t, x)             --> "x" is dependent_var
     #       dy = [row1; row2; ...]              --> "dy" is output_var
@@ -351,7 +407,7 @@ def create_raterule_model(mparse, use_species=False):
     # FIXME: handle case where function handle is an anonymous function.
     if 'function handle' in call_arglist[0]:
         handle_name = call_arglist[0]['function handle']['name']['identifier']
-        initial_cond_var = call_arglist[2]['identifier']
+        init_cond_var = call_arglist[2]['identifier']
 
     if not handle_name:
         fail('Could not extract the function handle in the {} call'.format(ode_function))
@@ -372,10 +428,10 @@ def create_raterule_model(mparse, use_species=False):
     # be a matrix.  Among other things, we want to find its length, because
     # that tells us the expected length of the output vector, and thus the
     # number of SBML parameters we have to create.
-    initial_cond = working_scope.assignments[initial_cond_var]
-    if 'matrix' not in initial_cond.keys():
+    init_cond = working_scope.assignments[init_cond_var]
+    if 'matrix' not in init_cond.keys():
         fail('Failed to parse the assignment of the initial value matrix')
-    output_size = vector_size(initial_cond['matrix'])
+    output_size = vector_size(init_cond['matrix'])
 
     # If we get this far, let's start generating some SBML.
 
@@ -385,20 +441,9 @@ def create_raterule_model(mparse, use_species=False):
 
     # Create either parameters or species (depending on the run-time selection)
     # for the dependent variables and set their initial values.
-    row_vector = is_row_vector(initial_cond['matrix'])
-    for i in range(0, output_size):
-        if row_vector:
-            p_value = terminal_value(initial_cond['matrix'][0]['subscript list'][i])
-        else:
-            p_value = terminal_value(initial_cond['matrix'][i]['subscript list'][0])
-        p_name = rename(assigned_var, str(i + 1), num_underscores)
-        # FIXME assumes p_value is a number, but it could be a variable, in
-        # which case we should look up that variable's value elsewhere.
-        if use_species:
-            create_sbml_species(model, p_name, p_value)
-        else:
-            p = create_sbml_parameter(model, p_name, p_value)
-            p.setConstant(False)
+    mloop(init_cond['matrix'],
+          lambda idx, item: make_indexed(assigned_var, idx, item, use_species,
+                                         model, underscores, function_scope))
 
     # Now, look inside the function definition and find the assignment to the
     # function's output variable. (It corresponds to assigned_var, but inside
@@ -409,31 +454,9 @@ def create_raterule_model(mparse, use_species=False):
     var_def = function_scope.assignments[output_var]
     if 'matrix' not in var_def:
         fail('Failed to parse the body of the function {}'.format(handle_name))
-    matrix = var_def['matrix']
-    i = 1
-    for row in matrix['row list']:
-        # Currently, this assumes there's only one math expression per row,
-        # meaning, one subscript value per row, so we use index [0].  FIXME.
-        if 'subscript list' not in row:
-            fail('Failed to parse the matrix assigned to {}'.format(output_def))
-        parsed_formula = row['subscript list'][0]
-        mr = lambda pr: munge_reference(pr, function_scope, num_underscores)
-        string_formula = MatlabGrammar.make_formula(parsed_formula, mattrans=mr)
-        if not string_formula:
-            fail('Failed to parse the formula for row {}'.format(i))
-
-        # We need to rewrite matrix references "x(n)" to the form "x_n", and
-        # rename the variable to the name used for the results assignment
-        # in the call to the ode* function.
-        xnameregexp = dependent_var + r'\((\d+)\)'
-        newnametranform = assigned_var + '_'*num_underscores + r'\1'
-        formula = re.sub(xnameregexp, newnametranform, string_formula)
-
-        # Finally, write the rate rule.
-        rule_var = assigned_var + "_" + str(i)
-        ast = parseL3Formula(formula)
-        create_sbml_raterule(model, rule_var, ast)
-        i += 1
+    mloop(var_def['matrix'],
+          lambda idx, item: make_raterule(assigned_var, dependent_var, idx, item,
+                                          model, underscores, function_scope))
 
     # Create remaining parameters.  This breaks up matrix assignments by
     # looking up the value assigned to the variable; if it's a matrix value,
@@ -455,27 +478,11 @@ def create_raterule_model(mparse, use_species=False):
         if 'number' in rhs:
             create_sbml_parameter(model, var, terminal_value(rhs))
         elif 'matrix' in rhs:
-            matrix = rhs['matrix']
-            row_vector = is_row_vector(matrix)
-            for i in range(0, vector_length(matrix)):
-                if row_vector:
-                    element = matrix['row list'][0]['subscript list'][i]
-                else:
-                    element = matrix['row list'][i]['subscript list'][0]
-                i += 1
-                new_var = rename(var, str(i), num_underscores)
-                if 'number' in element:
-                    value = terminal_value(element)
-                    create_sbml_parameter(model, new_var, value)
-                else:
-                    mr = lambda pr: munge_reference(pr, function_scope, num_underscores)
-                    formula = MatlabGrammar.make_formula(element, mattrans=mr)
-                    ast = parseL3Formula(formula)
-                    if ast is not None:
-                        create_sbml_parameter(model, new_var, 0)
-                        create_sbml_initial_assignment(model, new_var, ast)
+            mloop(rhs['matrix'],
+                  lambda idx, item: make_indexed(var, idx, item, False, model,
+                                                 underscores, function_scope))
         elif 'matrix' not in rhs:
-            mr = lambda pr: munge_reference(pr, function_scope, num_underscores)
+            mr = lambda pr: munge_reference(pr, function_scope, underscores)
             formula = MatlabGrammar.make_formula(rhs, mattrans=mr)
             ast = parseL3Formula(formula)
             if ast is not None:
@@ -489,14 +496,14 @@ def create_raterule_model(mparse, use_species=False):
 # FIXME only handles 1-D matrices.
 # FIXME grungy part for looking up identifier -- clean up & handle more depth
 
-def munge_reference(pr, scope, num_underscores):
+def munge_reference(pr, scope, underscores):
     matrix = pr['matrix']
     name = matrix['name']['identifier']
     if inferred_type(name, scope) != 'variable':
         return MatlabGrammar.make_key(pr)
     # Base name starts with one less underscore because the loop process
     # adds one in front of each number.
-    constructed = name + '_'*(num_underscores - 1)
+    constructed = name + '_'*(underscores - 1)
     for i in range(0, len(matrix['subscript list'])):
         element = matrix['subscript list'][i]
         i += 1
