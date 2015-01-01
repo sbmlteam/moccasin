@@ -73,7 +73,7 @@ class Scope:
                    will contain the stuff from which we constructed this
                    instance of a Scope object.
 
-      args:        If this is a function, a list of the arguments it takes.
+      parameters:  If this is a function, a list of the parameters it takes.
                    This list contains just symbol names, not parse objects.
 
       returns:     If this is a function, its return values.  This list
@@ -112,23 +112,23 @@ class Scope:
 
     '''
 
-    def __init__(self, name='', parent=None, pr=None, args=[], returns=[]):
-        self.name          = name       # Name of this scope.
-        if isinstance(args, ParseResults):
-            self.args      = args.asList()
+    def __init__(self, name='', parent=None, pr=None, parameters=[], returns=[]):
+        self.name           = name      # Name of this scope.
+        if isinstance(parameters, ParseResults):
+            self.parameters = parameters.asList()
         else:
-            self.args      = args       # If this is a function, its arg list.
+            self.parameters = parameters  # If this is a function, its arg list.
         if isinstance(returns, ParseResults):
-            self.returns   = returns.asList()
+            self.returns    = returns.asList()
         else:
-            self.returns   = returns    # If this is a function, return values.
-        self.comments      = []         # Comments ahead of this function.
-        self.parent        = parent     # Parent scope containing this one.
-        self.parse_results = pr         # The corresponding ParseResults obj.
-        self._functions    = ScopeDict()
-        self._assignments  = ScopeDict()
-        self._calls        = ScopeDict()
-        self._types        = ScopeDict()
+            self.returns    = returns  # If this is a function, return values.
+        self.comments       = []       # Comments ahead of this function.
+        self.parent         = parent   # Parent scope containing this one.
+        self.parse_results  = pr       # The corresponding ParseResults obj.
+        self._functions     = ScopeDict()
+        self._assignments   = ScopeDict()
+        self._calls         = ScopeDict()
+        self._types         = ScopeDict()
 
 
     def __repr__(self):
@@ -145,7 +145,7 @@ class Scope:
         if not isinstance(source, Scope):
             raise TypeError('Expected a Scope object')
         self.name          = source.name
-        self.args          = source.args
+        self.parameters    = source.parameters
         self.returns       = source.returns
         self.comments      = source.comments
         self.parent        = source.parent
