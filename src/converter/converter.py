@@ -423,7 +423,7 @@ def create_raterule_model(mparse, use_species=False):
     init_cond = working_scope.assignments[init_cond_var]
     if 'matrix' not in init_cond.keys():
         fail('Failed to parse the assignment of the initial value matrix')
-    output_size = vector_size(init_cond['matrix'])
+    output_size = vector_length(init_cond['matrix'])
 
     # If we get this far, let's start generating some SBML.
 
