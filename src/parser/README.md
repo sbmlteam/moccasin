@@ -121,9 +121,9 @@ keyed by `'row list'`.  Accessing them is simple:
     (Pdb) row1 = matrix['row list'][0]
     (Pdb) row2 = matrix['row list'][1]
     (Pdb) row1.keys()
-    ['index list']
+    ['subscript list']
     (Pdb) row2.keys()
-    ['index list']
+    ['subscript list']
 ```
 
 Both of them have lists of their own.  These work in the same way as the row lists: you first find out their length, and then index into them to get the values.
