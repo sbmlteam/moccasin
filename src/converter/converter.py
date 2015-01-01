@@ -116,20 +116,20 @@ def terminal_value(pr):
 def matrix_dimensions(matrix):
     if len(matrix['row list']) == 1:
         return 1
-    elif len(matrix['row list'][0]['index list']) == 1:
+    elif len(matrix['row list'][0]['subscript list']) == 1:
         return 1
     else:
         return 2
 
 
 def is_row_vector(matrix):
-    return len(matrix['row list']) == 1 \
-        and len(matrix['row list'][0]['index list']) >= 1
+    return (len(matrix['row list']) == 1
+            and len(matrix['row list'][0]['subscript list']) >= 1)
 
 
 def vector_length(matrix):
     if is_row_vector(matrix):
-        return len(matrix['row list'][0]['index list'])
+        return len(matrix['row list'][0]['subscript list'])
     else:
         return len(matrix['row list'])
 
@@ -138,7 +138,7 @@ def vector_size(matrix):
     # Apparently it doesn't matter if the initial conditions matrix passed to
     # ode45 is a row or column vector.  So this checks for either case.
     if matrix_dimensions(matrix):
-        return len(matrix['row list'][0]['index list'])
+        return len(matrix['row list'][0]['subscript list'])
     else:
         return len(matrix['row list'])
 
@@ -388,9 +388,9 @@ def create_raterule_model(mparse, use_species=False):
     row_vector = is_row_vector(initial_cond['matrix'])
     for i in range(0, output_size):
         if row_vector:
-            p_value = terminal_value(initial_cond['matrix'][0]['index list'][i])
+            p_value = terminal_value(initial_cond['matrix'][0]['subscript list'][i])
         else:
-            p_value = terminal_value(initial_cond['matrix'][i]['index list'][0])
+            p_value = terminal_value(initial_cond['matrix'][i]['subscript list'][0])
         p_name = rename(assigned_var, str(i + 1), num_underscores)
         # FIXME assumes p_value is a number, but it could be a variable, in
         # which case we should look up that variable's value elsewhere.
@@ -413,10 +413,10 @@ def create_raterule_model(mparse, use_species=False):
     i = 1
     for row in matrix['row list']:
         # Currently, this assumes there's only one math expression per row,
-        # meaning, one index value per row, so we index [0] directly.  FIXME.
-        if 'index list' not in row:
+        # meaning, one subscript value per row, so we use index [0].  FIXME.
+        if 'subscript list' not in row:
             fail('Failed to parse the matrix assigned to {}'.format(output_def))
-        parsed_formula = row['index list'][0]
+        parsed_formula = row['subscript list'][0]
         mr = lambda pr: munge_reference(pr, function_scope, num_underscores)
         string_formula = MatlabGrammar.make_formula(parsed_formula, mattrans=mr)
         if not string_formula:
@@ -459,9 +459,9 @@ def create_raterule_model(mparse, use_species=False):
             row_vector = is_row_vector(matrix)
             for i in range(0, vector_length(matrix)):
                 if row_vector:
-                    element = matrix['row list'][0]['index list'][i]
+                    element = matrix['row list'][0]['subscript list'][i]
                 else:
-                    element = matrix['row list'][i]['index list'][0]
+                    element = matrix['row list'][i]['subscript list'][0]
                 i += 1
                 new_var = rename(var, str(i), num_underscores)
                 if 'number' in element:
@@ -497,14 +497,14 @@ def munge_reference(pr, scope, num_underscores):
     # Base name starts with one less underscore because the loop process
     # adds one in front of each number.
     constructed = name + '_'*(num_underscores - 1)
-    for i in range(0, len(matrix['index list'])):
-        element = matrix['index list'][i]
+    for i in range(0, len(matrix['subscript list'])):
+        element = matrix['subscript list'][i]
         i += 1
         if 'number' in element:
             constructed += '_' + str(element['number'])
         elif 'identifier' in element:
-            # The index is not a number.  If it's a simple variable and we've
-            # seen its value, we can handle it by looking up its value.
+            # The subscript is not a number.  If it's a simple variable and
+            # we've seen its value, we can handle it by looking up its value.
             assignments = get_all_assignments(scope)
             var_name = element['identifier']
             if var_name not in assignments:
