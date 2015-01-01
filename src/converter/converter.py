@@ -274,15 +274,15 @@ def make_indexed(var, index, content, species, model, underscores, scope):
         value = terminal_value(content)
         if species:
             item = create_sbml_species(model, name, value)
-            item.setConstant(False)
         else:
             item = create_sbml_parameter(model, name, value)
+        item.setConstant(False)
     else:
         if species:
             item = create_sbml_species(model, name, 0)
-            item.setConstant(False)
         else:
             item = create_sbml_parameter(model, name, 0)
+        item.setConstant(False)
         mr = lambda pr: munge_reference(pr, scope, underscores)
         formula = MatlabGrammar.make_formula(content, mattrans=mr)
         ast = parseL3Formula(formula)
@@ -301,9 +301,9 @@ def make_raterule(assigned_var, dep_var, index, content, model, underscores, sco
     # We need to rewrite matrix references "x(n)" to the form "x_n", and
     # rename the variable to the name used for the results assignment
     # in the call to the ode* function.
-    xnameregexp = dep_var + r'\((\d+)\)'
-    newnametranform = assigned_var + '_'*underscores + r'\1'
-    formula = re.sub(xnameregexp, newnametranform, string_formula)
+    xnameregexp = dep_var + '_'*underscores + r'(\d+)'
+    newnametransform = assigned_var + '_'*underscores + r'\1'
+    formula = re.sub(xnameregexp, newnametransform, string_formula)
 
     # Finally, write the rate rule.
     rule_var = assigned_var + "_" + str(index + 1)
@@ -404,6 +404,12 @@ def create_raterule_model(mparse, use_species=False):
     if not handle_name:
         fail('Could not extract the function handle in the {} call'.format(ode_function))
 
+    # If we get this far, let's start generating some SBML.
+
+    document = create_sbml_document()
+    model = create_sbml_model(document)
+    compartment = create_sbml_compartment(model, 'comp1', 1)
+
     # Now locate our scope object for the function definition.  It'll be
     # defined either at the top level (if this file is a script) or inside
     # the scope of the file's overall function (if the file is a function).
@@ -419,20 +425,15 @@ def create_raterule_model(mparse, use_species=False):
     # Find the assignment to the initial condition variable.  The value will
     # be a matrix.  Among other things, we want to find its length, because
     # that tells us the expected length of the output vector, and thus the
-    # number of SBML parameters we have to create.
+    # number of SBML parameters or species we have to create.
     init_cond = working_scope.assignments[init_cond_var]
     if 'matrix' not in init_cond.keys():
         fail('Failed to parse the assignment of the initial value matrix')
     output_size = vector_length(init_cond['matrix'])
 
-    # If we get this far, let's start generating some SBML.
-
-    document = create_sbml_document()
-    model = create_sbml_model(document)
-    compartment = create_sbml_compartment(model, 'comp1', 1)
-
-    # Create either parameters or species (depending on the run-time selection)
-    # for the dependent variables and set their initial values.
+    # Create either parameters or species (depending on the run-time
+    # selection) for each entry in the dependent variable matrix.  The
+    # initial value of the parameter/species will be the value in the matrix.
     mloop(init_cond['matrix'],
           lambda idx, item: make_indexed(assigned_var, idx, item, use_species,
                                          model, underscores, function_scope))
@@ -462,8 +463,11 @@ def create_raterule_model(mparse, use_species=False):
     # the working scope and function scope dictionaries, with the function
     # scope taken second (which means its values are the final ones).
 
+    skip_vars = [init_cond_var, output_var, assigned_var, call_arglist[1]['identifier']]
     for var, rhs in dict(working_scope.assignments.items()
                          + function_scope.assignments.items()).items():
+        if var in skip_vars:
+            continue
         # FIXME currently doesn't handle matrices on LHS.
         if name_is_structured(var):
             continue
