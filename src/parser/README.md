@@ -8,7 +8,7 @@ First words and assumptions
 
 MATLAB is a complex system, and the language is complex.  No parser can fully interpret MATLAB input except MATLAB.  MOCCASIN's parser is designed to parse a lot of the MATLAB language, but not all of it.  The goal of MOCCASIN is to allow interpretation and translation of certain kinds of MATLAB files common in MOCCASIN's domain; for this purpose, it does not need to handle all possible MATLAB inputs.  (In fact, it already exceeds the minimum it would really need, because the authors have a tendency to overdo things....)  In keeping with this standpoint, it's worth being upfront about the following:
 
-* The parser is more permissive than MATLAB would be.  After all, the input is assumed to be valid MATLAB in the first place, so the parser implementation can afford to be a little bit looser and thus a little bit simpler.
+* The parser is more permissive than MATLAB would be.  After all, the input is assumed to be valid MATLAB in the first place, so the parser implementation can afford to be a little bit looser and thus a little bit simpler.  An implication of this is that what the parser accepts as valid is not necessarily what MATLAB would accept as valid.
 * There is no support for imaginary numbers.  (In MOCCASIN's domain of application, imaginary numbers are never used.)
 
 That said, we welcome anyone who would like to improve and expand the MATLAB parser in MOCCASIN.
@@ -194,6 +194,20 @@ And that is the basic process for working with MatlabGrammar parse results.  In 
 3. You dig into the objects' dictionaries recursively until you reach terminal entities. Sometimes the values for dictionaries are lists, in which case you iterate over the values, applying the same principle.
 
 
+Matrices and functions in MATLAB
+--------------------------------
+
+Syntactically, a matrix or array access such as `foo(1, 2)` or `foo(x)` looks identical to a function call in MATLAB.  This poses a problem for the MOCCASIN parser: in many situations it can't tell if something is a matrix or a function, so it can't properly label the object in the parsing results.
+
+The way MOCCASIN approaches this problem is the following:
+
+1. If it can determine unambiguously that something must be a matrix access based on how it is used syntactically, then it will label it as `'matrix'`.  Specifically, this is the case when a matrix access appears on the left-hand side of an assignment statement, and when the access uses a bare colon character (`:`) for a subscript (because bare colons cannot be used as an argument to a function call).
+2. If it can _infer_ that an object is most likely a matrix access, it will again label it as `'matrix'`.  MOCCASIN does simple type inference by remembering variables it has seen used in assignments and the names of arguments and output variables in function definitions.  When those are used in other expressions, MOCCASIN can infer they must be variable names and not function names.
+3. In all other cases, it will label the object `'matrix or function`'.
+
+Users will need to do their own processing when something comes back labeled as `'matrix or function`' to determine what kind of thing the object is.  In the most general case, MOCCASIN can't tell from syntax alone whether something could be a function, because without running MATLAB (and doing it _in the user's environment_, since the user's environment affects the functions and scripts that MATLAB knows about), it simply cannot know.
+
+
 Debugging aids
 --------------
 
@@ -212,19 +226,27 @@ Parsed object types returned by MatlabGrammar
 
 The values of terminal entities are always strings, even if the item is a number or a single character such as `:`.
 
-* 'identifier'
-* 'number'
-* 'string'
-* 'boolean' 
-* 'colon'
-* 'tilde'
-* 'colon operator'
-* 'unary operator'
-* 'binary operator'
+* `'identifier'`
+* `'number'`
+* `'string'`
+* `'boolean'`
+* `'colon'`
+* `'tilde'`
+* `'colon operator'`
+* `'unary operator'`
+* `'binary operator'`
 
 ### Structured data types
 
+The MOCCASIN parser understands the following MATLAB array types:
+
+* `'matrix'`: a bare matrix such as `[1, 2]` or a matrix access such as `a(1,2)`.  MOCCASIN tries to do some simple type inferencing, but in general, it cannot tell if something is a matrix access or a function call because syntactically they are almost identical in MATLAB.  In cases it can't tell, it labels them `'matrix or function'`.
+* `'struct'`: a struct array reference, of the form `something.field`.
+* `'cell array'`: something typically of the form `something{args}`.
+
 ### Function calls
+
+Function calls are labeled `'matrix or function'`; this is something of the form `foo(args)` when it is not clear that `foo` is a matrix.
 
 ### Function definitions
 
