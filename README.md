@@ -4,7 +4,7 @@ MOCCASIN
 *MOCCASIN* stands for *"Model ODE Converter for Creating Awesome SBML INteroperability"*.  It is a project to develop a user-assisted converter that can take MATLAB or Octave ODE-based models in biology and translate them into [SBML](http://sbml.org) format.
 
 ----
-*Authors*:      [Michael Hucka](http://www.cds.caltech.edu/~mhucka), [Sarah Keating](http://www.ebi.ac.uk/about/people/sarah-keating), and [Harold Gómez](http://www.bu.edu/computationalimmunology/people/harold-gomez/).
+*Authors*:      [Michael Hucka](http://www.cds.caltech.edu/~mhucka), [Sarah Keating](http://www.ebi.ac.uk/about/people/sarah-keating), and [Harold G&oacute;mez](http://www.bu.edu/computationalimmunology/people/harold-gomez/).
 
 *Copyright*:    Copyright (C) 2014 by the California Institute of Technology, Pasadena, USA.
 
