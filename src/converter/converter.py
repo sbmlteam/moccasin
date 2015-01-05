@@ -82,8 +82,8 @@ def name_mentioned_in_rhs(name, mparse):
             else:
                 continue
         if len(item) == 1:
-            if 'matrix or function' in item:
-                item = item['matrix or function']
+            if 'array or function' in item:
+                item = item['array or function']
                 if name_mentioned_in_rhs(name, item['argument list']):
                     return True
             elif 'identifier' in item:
@@ -283,8 +283,8 @@ def make_indexed(var, index, content, species, model, underscores, scope):
         else:
             item = create_sbml_parameter(model, name, 0)
         item.setConstant(False)
-        mr = lambda pr: munge_reference(pr, scope, underscores)
-        formula = MatlabGrammar.make_formula(content, mattrans=mr)
+        translator = lambda pr: munge_reference(pr, scope, underscores)
+        formula = MatlabGrammar.make_formula(content, atrans=translator)
         ast = parseL3Formula(formula)
         create_sbml_initial_assignment(model, name, ast)
 
@@ -293,8 +293,8 @@ def make_raterule(assigned_var, dep_var, index, content, model, underscores, sco
     # Currently, this assumes there's only one math expression per row or
     # column, meaning, one subscript value per row or column.
 
-    mr = lambda pr: munge_reference(pr, scope, underscores)
-    string_formula = MatlabGrammar.make_formula(content, mattrans=mr)
+    translator = lambda pr: munge_reference(pr, scope, underscores)
+    string_formula = MatlabGrammar.make_formula(content, atrans=translator)
     if not string_formula:
         fail('Failed to parse the formula for row {}'.format(index + 1))
 
@@ -402,7 +402,7 @@ def create_raterule_model(mparse, use_species=False):
         init_cond_var = call_arglist[2]['identifier']
 
     if not handle_name:
-        fail('Could not extract the function handle in the {} call'.format(ode_function))
+        fail('Could not extract function handle from {} call'.format(ode_function))
 
     # If we get this far, let's start generating some SBML.
 
@@ -427,9 +427,9 @@ def create_raterule_model(mparse, use_species=False):
     # each entry.  The initial value of the parameter/species will be the
     # value in the matrix.
     init_cond = working_scope.assignments[init_cond_var]
-    if 'matrix' not in init_cond.keys():
+    if 'array' not in init_cond.keys():
         fail('Failed to parse the assignment of the initial value matrix')
-    mloop(init_cond['matrix'],
+    mloop(init_cond['array'],
           lambda idx, item: make_indexed(assigned_var, idx, item, use_species,
                                          model, underscores, function_scope))
 
@@ -440,9 +440,9 @@ def create_raterule_model(mparse, use_species=False):
     # and use this to create SBML "rate rules" for the output variables.
     output_var = function_scope.returns[0]
     var_def = function_scope.assignments[output_var]
-    if 'matrix' not in var_def:
+    if 'array' not in var_def:
         fail('Failed to parse the body of the function {}'.format(handle_name))
-    mloop(var_def['matrix'],
+    mloop(var_def['array'],
           lambda idx, item: make_raterule(assigned_var, dependent_var, idx, item,
                                           model, underscores, function_scope))
 
@@ -468,13 +468,13 @@ def create_raterule_model(mparse, use_species=False):
             continue
         if 'number' in rhs:
             create_sbml_parameter(model, var, terminal_value(rhs))
-        elif 'matrix' in rhs:
-            mloop(rhs['matrix'],
+        elif 'array' in rhs:
+            mloop(rhs['array'],
                   lambda idx, item: make_indexed(var, idx, item, False, model,
                                                  underscores, function_scope))
-        elif 'matrix' not in rhs:
-            mr = lambda pr: munge_reference(pr, function_scope, underscores)
-            formula = MatlabGrammar.make_formula(rhs, mattrans=mr)
+        elif 'array' not in rhs:
+            translator = lambda pr: munge_reference(pr, function_scope, underscores)
+            formula = MatlabGrammar.make_formula(rhs, atrans=translator)
             ast = parseL3Formula(formula)
             if ast is not None:
                 create_sbml_parameter(model, var, 0)
@@ -488,7 +488,7 @@ def create_raterule_model(mparse, use_species=False):
 # FIXME grungy part for looking up identifier -- clean up & handle more depth
 
 def munge_reference(pr, scope, underscores):
-    matrix = pr['matrix']
+    matrix = pr['array']
     name = matrix['name']['identifier']
     if inferred_type(name, scope) != 'variable':
         return MatlabGrammar.make_key(pr)

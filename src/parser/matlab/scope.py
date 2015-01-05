@@ -85,8 +85,8 @@ class Scope:
 
       assignments: A dictionary of the assignment statements within this
                    scope.  For simple variables (a = ...), the keys are the
-                   variable names.  In the case of matrices, the keys are
-                   assumed to be string representations of the matrix, with
+                   variable names.  In the case of arrays, the keys are
+                   assumed to be string representations of the array, with
                    the following features.  If it's a bare matrix, square
                    braces surround the matrix, semicolons separate rows,
                    commas separate index terms within rows, and all spaces
