@@ -96,30 +96,30 @@ we once again have an assignment, as expected.  Let's take a look at the right-h
 
 ```python
     (Pdb) content['assignment']['rhs'].keys()
-    ['matrix']
+    ['array']
 ```
 
-This time, `MatlabGrammar` has helpfully identified the object on the right-hand side as a matrix.  Let's traverse the structure it produced:
+This time, MatlabGrammar has helpfully identified the object on the right-hand side as an array.  In the MATLAB world, a _matrix_ is a two-dimensional array, but the MatlabGrammar grammar is not able to determine the number of dimensions of an array object; consequently, all of the homogeneous array objects (vectors, matrices, and arrays) are labeled as simply `'array'`.  (MATLAB cell arrays are labeled `'cell array'`.)  Now let's traverse the structure it produced:
 
 ```python
-    (Pdb) matrix = content['assignment']['rhs']['matrix']
-    (Pdb) matrix.keys()
+    (Pdb) array = content['assignment']['rhs']['array']
+    (Pdb) array.keys()
     ['row list']
-    (Pdb) matrix['row list'].keys()
+    (Pdb) array['row list'].keys()
     []
 ```
 
 This time, the object has no keys.  The reason for this is the following: some objects stored under the dictionary keys are actually lists.  The name `'row list'` is meant to suggest this possibility.  When a value created by `MatlabGrammar` is a list, the first thing to do is to find out its length:
 
-    (Pdb) len(matrix['row list'])
+    (Pdb) len(array['row list'])
     2
 
-What this means is that the matrix has two row entries stored in a list
+What this means is that the array has two row entries stored in a list
 keyed by `'row list'`.  Accessing them is simple:
 
 ```python
-    (Pdb) row1 = matrix['row list'][0]
-    (Pdb) row2 = matrix['row list'][1]
+    (Pdb) row1 = array['row list'][0]
+    (Pdb) row2 = array['row list'][1]
     (Pdb) row1.keys()
     ['subscript list']
     (Pdb) row2.keys()
@@ -141,7 +141,7 @@ Both of them have lists of their own.  These work in the same way as the row lis
     '2'
 ```
 
-As expected, we are down to the terminal parts of the expression, and here we have indexed into the first element of the first row of the matrix.  All of the rest of the entries in the matrix are accessed in the same way.  For example,
+As expected, we are down to the terminal parts of the expression, and here we have indexed into the first element of the first row of the array.  All of the rest of the entries in the array are accessed in the same way.  For example,
 
 ```python
     (Pdb) row2[1].keys()
@@ -197,15 +197,15 @@ And that is the basic process for working with MatlabGrammar parse results.  In 
 Matrices and functions in MATLAB
 --------------------------------
 
-Syntactically, a matrix or array access such as `foo(1, 2)` or `foo(x)` looks identical to a function call in MATLAB.  This poses a problem for the MOCCASIN parser: in many situations it can't tell if something is a matrix or a function, so it can't properly label the object in the parsing results.
+Syntactically, an array access such as `foo(1, 2)` or `foo(x)` looks identical to a function call in MATLAB.  This poses a problem for the MOCCASIN parser: in many situations it can't tell if something is an array or a function, so it can't properly label the object in the parsing results.
 
 The way MOCCASIN approaches this problem is the following:
 
-1. If it can determine unambiguously that something must be a matrix access based on how it is used syntactically, then it will label it as `'matrix'`.  Specifically, this is the case when a matrix access appears on the left-hand side of an assignment statement, and when the access uses a bare colon character (`:`) for a subscript (because bare colons cannot be used as an argument to a function call).
-2. If it can _infer_ that an object is most likely a matrix access, it will again label it as `'matrix'`.  MOCCASIN does simple type inference by remembering variables it has seen used in assignments and the names of arguments and output variables in function definitions.  When those are used in other expressions, MOCCASIN can infer they must be variable names and not function names.
-3. In all other cases, it will label the object `'matrix or function`'.
+1. If it can determine unambiguously that something must be an array access based on how it is used syntactically, then it will label it as `'array'`.  Specifically, this is the case when an array access appears on the left-hand side of an assignment statement, and in other situations when the access uses a bare colon character (`:`) for a subscript (because bare colons cannot be used as an argument to a function call).
+2. If it can _infer_ that an object is most likely an array access, it will again label it as `'array'`.  MOCCASIN does simple type inference by remembering variables it has seen used in assignments and the names of arguments and output variables in function definitions.  When those are used in other expressions, MOCCASIN can infer they must be variable names and not function names.
+3. In all other cases, it will label the object `'array or function`'.
 
-Users will need to do their own processing when something comes back labeled as `'matrix or function`' to determine what kind of thing the object is.  In the most general case, MOCCASIN can't tell from syntax alone whether something could be a function, because without running MATLAB (and doing it _in the user's environment_, since the user's environment affects the functions and scripts that MATLAB knows about), it simply cannot know.
+Users will need to do their own processing when something comes back labeled as `'array or function`' to determine what kind of thing the object is.  In the most general case, MOCCASIN can't tell from syntax alone whether something could be a function, because without running MATLAB (and doing it _in the user's environment_, since the user's environment affects the functions and scripts that MATLAB knows about), it simply cannot know.
 
 
 Debugging aids
@@ -240,13 +240,13 @@ The values of terminal entities are always strings, even if the item is a number
 
 The MOCCASIN parser understands the following MATLAB array types:
 
-* `'matrix'`: a bare matrix such as `[1, 2]` or a matrix access such as `a(1,2)`.  MOCCASIN tries to do some simple type inferencing, but in general, it cannot tell if something is a matrix access or a function call because syntactically they are almost identical in MATLAB.  In cases it can't tell, it labels them `'matrix or function'`.
+* `'array'`: a bare array such as `[1, 2]` or an array access such as `a(1,2)`.  MOCCASIN tries to do some simple type inferencing, but in general, it cannot tell if something is an array access or a function call because syntactically they are almost identical in MATLAB.  In cases it can't tell, it labels them `'array or function'`.
 * `'struct'`: a struct array reference, of the form `something.field`.
 * `'cell array'`: something typically of the form `something{args}`.
 
 ### Function calls
 
-Function calls are labeled `'matrix or function'`; this is something of the form `foo(args)` when it is not clear that `foo` is a matrix.
+Function calls are labeled `'array or function'`; this is something of the form `foo(args)` when it is not clear that `foo` is an array.
 
 ### Function definitions
 
