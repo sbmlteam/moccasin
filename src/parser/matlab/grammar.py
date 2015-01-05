@@ -114,7 +114,7 @@
 #
 #     a = [1 2; 3 4]
 #
-# This is an assignment to a matrix that has two rows, each of which have two
+# This is an assignment to an array that has two rows, each of which have two
 # items.  Applying MatlabGrammar.parse_string(...) to this input will once
 # again yield a ParseResults object that itself contains a list of
 # ParseResults objects, where the list will only have length one.  If we
@@ -128,15 +128,20 @@
 # right-hand side of this one:
 #
 #     (Pdb) content['assignment']['rhs'].keys()
-#     ['matrix']
+#     ['array']
 #
 # This time, MatlabGrammar has helpfully identified the object on the
-# right-hand side as a matrix.  Let's traverse the structure it produced:
+# right-hand side as an array.  In the MATLAB world, a "matrix" is a
+# two-dimensional array, but the MatlabGrammar grammar is not able to
+# determine the number of dimensions of an array object; consequently, all of
+# the homogeneous array objects (vectors, matrices, and arrays) are labeled
+# as simply 'array'.  (MATLAB cell arrays are labeled 'cell array'.)  Now
+# let's traverse the structure it produced:
 #
-#     (Pdb) matrix = content['assignment']['rhs']['matrix']
-#     (Pdb) matrix.keys()
+#     (Pdb) array = content['assignment']['rhs']['array']
+#     (Pdb) array.keys()
 #     ['row list']
-#     (Pdb) matrix['row list'].keys()
+#     (Pdb) array['row list'].keys()
 #     []
 #
 # This time, the object has no keys.  The reason for this is the following:
@@ -144,14 +149,14 @@
 # 'row list' is meant to suggest this possibility.  When a value created by
 # MatlabGrammar is a list, the first thing to do is to find out its length:
 #
-#     (Pdb) len(matrix['row list'])
+#     (Pdb) len(array['row list'])
 #     2
 #
-# What this means is that the matrix has two row entries stored in a list
+# What this means is that the array has two row entries stored in a list
 # keyed by 'row list'.  Accessing them is simple:
 #
-#     (Pdb) row1 = matrix['row list'][0]
-#     (Pdb) row2 = matrix['row list'][1]
+#     (Pdb) row1 = array['row list'][0]
+#     (Pdb) row2 = array['row list'][1]
 #     (Pdb) row1.keys()
 #     ['subscript list']
 #     (Pdb) row2.keys()
@@ -169,8 +174,8 @@
 #     '1'
 #
 # As expected, we are down to the terminal parts of the expression, and here
-# we have indexed into the first element of the first row of the matrix.  All
-# of the rest of the entries in the matrix are accessed in the same way.  For
+# we have indexed into the first element of the first row of the array.  All
+# of the rest of the entries in the array are accessed in the same way.  For
 # example,
 #
 #     (Pdb) row2[1].keys()
@@ -371,10 +376,10 @@ class MatlabGrammar:
             self._push_context(self._save_function_definition(content, pr))
         elif 'end statement' in pr:
             self._pop_context()
-        elif 'matrix or function' in pr:
-            # This could be a matrix value access or a function call.
+        elif 'array or function' in pr:
+            # This could be an array value access or a function call.
             # Syntactically, we can't tell the difference. Treat them as calls.
-            content = pr['matrix or function']
+            content = pr['array or function']
             self._save_function_call(content)
 
 
@@ -385,11 +390,11 @@ class MatlabGrammar:
             lhs = pr['assignment']['lhs']
             rhs = pr['assignment']['rhs']
             if 'identifier' in lhs:
-                if {'matrix', 'number', 'boolean', 'string'} & set(rhs.keys()):
+                if {'array', 'number', 'boolean', 'string'} & set(rhs.keys()):
                     self._save_type(lhs['identifier'], 'variable')
-            elif 'matrix' in lhs:
-                matrix = lhs['matrix']
-                if 'name' in matrix:
+            elif 'array' in lhs:
+                array = lhs['array']
+                if 'name' in array:
                     self._save_type(name['identifier'], 'variable')
         elif 'function definition':
             func = pr['function definition']
@@ -408,15 +413,15 @@ class MatlabGrammar:
 
 
     def _convert_type(self, pr):
-        if not isinstance(pr, ParseResults) or 'matrix or function' not in pr:
+        if not isinstance(pr, ParseResults) or 'array or function' not in pr:
             return
-        content = pr['matrix or function']
+        content = pr['array or function']
         if 'name' in content:
             name = content['name']['identifier']
             if self._get_type(name, self._scope, True) == 'variable':
                 # We have seen this name before, and it's not a function.
-                content = pr.pop('matrix or function')
-                pr['matrix'] = content
+                content = pr.pop('array or function')
+                pr['array'] = content
                 content['subscript list'] = content.pop('argument list')
 
 
@@ -567,7 +572,7 @@ class MatlabGrammar:
     _block_comment = Group(_block_c_start + SkipTo(_block_c_end, include=True))
     _comment       = Group(_block_comment('comment') | _line_comment('comment'))
 
-    # Comma-separated arguments to matrix/array/cell constructs can have ':'
+    # Comma-separated arguments to matrix/array/cell arrays can have ':'
     # in arguments, but arguments to function calls can't.  Parameter lists in
     # some other situations (like function return values) can have '~', but
     # the other elements can only be identifiers, not expressions.  The
@@ -597,8 +602,8 @@ class MatlabGrammar:
     _row_sep       = _SEMI | _EOL | _comment.suppress()
     _one_row       = _comma_subs('subscript list') ^ _space_subs('subscript list')
     _rows          = Group(_one_row) + ZeroOrMore(_row_sep + Group(_one_row))
-    _bare_matrix   = Group(_LBRACKET + Optional(_rows('row list')) + _RBRACKET
-                          ).setResultsName('matrix')  # noqa
+    _bare_array    = Group(_LBRACKET + Optional(_rows('row list')) + _RBRACKET
+                          ).setResultsName('array')  # noqa
 
     ParserElement.setDefaultWhitespaceChars(' \t\n\r')
 
@@ -625,7 +630,7 @@ class MatlabGrammar:
     #    f x
     # Spaces are allowed in the first form too:
     #    f (x)
-    # Unfortunately, the forms using parentheses look identical to matrix
+    # Unfortunately, the forms using parentheses look identical to matrix/array
     # accesses, and there's no way to tell them apart except by determining
     # whether 'f' is a function or command.  This means it's ultimately
     # run-time dependent, and depends on the functions and scripts that the
@@ -635,25 +640,26 @@ class MatlabGrammar:
     # cases.  For that reason, the ':' case is split out below.  Not yet sure
     # if it's worth it.
     #
-    # Another complication: you can put function names or matrices inside a
-    # cell array, reference into the array, and hand it arguments.  E.g.:
+    # Another complication: you can put function names or arrays inside a
+    # cell array, reference into that array to get the function, and hand it
+    # arguments.  E.g.:
     #    x = fcnArray{3}(y)
     #    x = somearray{1}(2,3)
     # That's the reason for _cell_access in the definition of _fun_access.
 
-    _fun_mat_name  = Group(_ID)
-    _fun_access    = _fun_mat_name ^ Group(_cell_access('cell array'))
-    _fun_mat_call  = Group(_fun_access('name')
-                           + _LPAR + _call_args('argument list') + _RPAR
-                          ).setResultsName('matrix or function')  # noqa
+    _fun_arr_name     = Group(_ID)
+    _fun_access       = _fun_arr_name ^ Group(_cell_access('cell array'))
+    _funcall_or_array = Group(_fun_access('name')
+                              + _LPAR + _call_args('argument list') + _RPAR
+                             ).setResultsName('array or function')  # noqa
 
-    _matrix_name   = Group(_ID)
-    _matrix_args   = Group(_comma_subs)
-    _matrix_access = Group(_matrix_name('name')
-                           + _LPAR + _matrix_args('subscript list') + _RPAR
-                          ).setResultsName('matrix')  # noqa
+    _array_name       = Group(_ID)
+    _array_args       = Group(_comma_subs)
+    _array_access     = Group(_array_name('name')
+                              + _LPAR + _array_args('subscript list') + _RPAR
+                             ).setResultsName('array')  # noqa
 
-    # Func. handles: http://www.mathworks.com/help/matlab/ref/function_handle.html
+    # Handles: http://www.mathworks.com/help/matlab/ref/function_handle.html
     # In all function arguments, you can use a bare tilde to indicate a value
     # that can be ignored.  This is not obvious from the functional
     # documentation, but it seems to be the case when I try it.  (It's the
@@ -669,11 +675,12 @@ class MatlabGrammar:
     # actually be a full expression that yields a struct.  Here, to avoid an
     # infinitely recursive grammar, we only allow a specific set of objects
     # and exclude a full expr.  (Doing the obvious thing, expr + "." + _ID,
-    # results in an infinitely-recursive grammar.)
+    # results in an infinitely-recursive grammar.)  Also note _bare_array is
+    # deliberately not part of the following because [1].foo is not legal.
 
     _struct_base   = Group(_cell_access
-                           | _fun_mat_call
-                           | _matrix_access
+                           | _funcall_or_array
+                           | _array_access
                            | _fun_handle
                            | _ID)
     _struct_field  = Group(_ID)
@@ -687,9 +694,9 @@ class MatlabGrammar:
 
     _paren_expr    = _LPAR + _expr + _RPAR
     _transp_what   = _paren_expr ^ Group(_cell_array
-                                         | _fun_mat_call
-                                         | _bare_matrix
-                                         | _matrix_access
+                                         | _funcall_or_array
+                                         | _bare_array
+                                         | _array_access
                                          | _fun_handle
                                          | _BOOLEAN | _ID | _NUMBER | _STRING)
     _transpose_op  = _NC_TRANSP ^ _CC_TRANSP
@@ -700,9 +707,9 @@ class MatlabGrammar:
 
     _operand       = Group(_struct_access
                            | _transpose
-                           | _bare_matrix
-                           | _fun_mat_call
-                           | _matrix_access
+                           | _bare_array
+                           | _funcall_or_array
+                           | _array_access
                            | _cell_array
                            | _fun_handle
                            | _BOOLEAN | _ID | _NUMBER | _STRING)
@@ -746,7 +753,7 @@ class MatlabGrammar:
 
     _lhs_var        = Group(_ID)
     _simple_assign  = Group(_lhs_var('lhs') + _EQUALS + _expr('rhs'))
-    _lhs_array      = Group(_bare_matrix | _matrix_access | _cell_array | _struct_access)
+    _lhs_array      = Group(_bare_array | _array_access | _cell_array | _struct_access)
     _other_assign   = Group(_lhs_array('lhs') + _EQUALS + _expr('rhs'))
     _assignment     = (_other_assign | _simple_assign).setResultsName('assignment')
 
@@ -866,20 +873,20 @@ class MatlabGrammar:
     # .........................................................................
 
     def _init_parse_actions(self):
-        self._fun_def_stmt  .addParseAction(self._store_stmt)
-        self._fun_mat_call  .addParseAction(self._store_stmt)
-        self._assignment    .addParseAction(self._store_stmt)
-        self._cmd_stmt      .addParseAction(self._store_stmt)
-        self._end_stmt      .addParseAction(self._store_stmt)
+        self._fun_def_stmt    .addParseAction(self._store_stmt)
+        self._funcall_or_array.addParseAction(self._store_stmt)
+        self._assignment      .addParseAction(self._store_stmt)
+        self._cmd_stmt        .addParseAction(self._store_stmt)
+        self._end_stmt        .addParseAction(self._store_stmt)
 
 
     # Add actions to support weak data type inferencing
     # .........................................................................
 
     def _init_type_inference(self):
-        self._assignment    .addParseAction(self._remember_type)
-        self._fun_def_stmt  .addParseAction(self._remember_type)
-        self._fun_mat_call  .addParseAction(self._convert_type)
+        self._assignment      .addParseAction(self._remember_type)
+        self._fun_def_stmt    .addParseAction(self._remember_type)
+        self._funcall_or_array.addParseAction(self._convert_type)
 
 
     # Debugging.
@@ -898,17 +905,17 @@ class MatlabGrammar:
                 _PERSISTENT, _PLUS, _RBRACE, _RBRACKET, _RDIVIDE, _RETURN,
                 _RPAR, _SEMI, _SHORT_AND, _SHORT_OR, _SOL, _STRING, _SWITCH,
                 _TILDE, _TIMES, _TRY, _UMINUS, _UNOT, _UPLUS, _WHILE,
-                _WHITE, _anon_handle, _assignment, _bare_cell, _bare_matrix,
+                _WHITE, _anon_handle, _assignment, _bare_cell, _bare_array,
                 _block_c_end, _block_c_start, _block_comment, _call_args,
                 _case_stmt, _catch_stmt, _cell_access, _cell_array,
                 _cell_name, _cmd_args, _cmd_name, _cmd_stmt, _comma_subs,
                 _comma_values, _comment, _cond_expr, _continuation,
                 _control_stmt, _delimiter, _elseif_stmt, _expr, _for_stmt,
-                _fun_access, _fun_def_stmt, _fun_handle, _fun_mat_call,
-                _fun_mat_name, _fun_name, _fun_outputs, _fun_params,
+                _fun_access, _fun_def_stmt, _fun_handle, _funcall_or_array,
+                _fun_arr_name, _fun_name, _fun_outputs, _fun_params,
                 _fun_paramslist, _handle_name, _if_stmt, _lhs_array,
                 _lhs_var, _line_c_start, _line_comment, _logical_op,
-                _matlab_syntax, _matrix_access, _matrix_args, _matrix_name,
+                _matlab_syntax, _array_access, _array_args, _array_name,
                 _multi_values, _named_handle, _noncmd_start, _one_row,
                 _operand, _other_assign, _otherwise_stmt, _paren_expr,
                 _plusminus, _power, _row_sep, _rows, _shell_cmd,
@@ -981,8 +988,8 @@ class MatlabGrammar:
                               'function definition': self._format_fun_def,
                               'cell array':          self._format_cell_array,
                               'struct':              self._format_struct,
-                              'matrix':              self._format_matrix,
-                              'matrix or function':  self._format_matrix_or_fun,
+                              'array':               self._format_array,
+                              'array or function':   self._format_array_or_fun,
                               'transpose':           self._format_transpose,
                               'shell command':       self._format_shell,
                               'command statement':   self._format_cmd_stmt,
@@ -1078,13 +1085,13 @@ class MatlabGrammar:
         return ', '.join([self._format_pr(thing) for thing in pr])
 
 
-    def _format_matrix_or_fun(self, pr):
-        if not self._verified_pr(pr, 'matrix or function'):
+    def _format_array_or_fun(self, pr):
+        if not self._verified_pr(pr, 'array or function'):
             return
-        content = pr['matrix or function']
+        content = pr['array or function']
         name = content['name']
         args = self._format_simple_list(content['argument list'])
-        return '{{function/matrix: {} ( {} )}}'.format(self._format_pr(name), args)
+        return '{{function/array: {} ( {} )}}'.format(self._format_pr(name), args)
 
 
     def _stringify_subscripts(self, subscripts):
@@ -1107,24 +1114,24 @@ class MatlabGrammar:
         return text
 
 
-    def _format_matrix(self, pr):
-        if not self._verified_pr(pr, 'matrix'):
+    def _format_array(self, pr):
+        if not self._verified_pr(pr, 'array'):
             return
-        content = pr['matrix']
-        # Two kinds of matrix situations: a bare matrix, and one where we
-        # managed to determine it's a matrix access (and not the more
-        # ambiguous function call or matrix access).  If we have a row list,
+        content = pr['array']
+        # Two kinds of array situations: a bare array, and one where we
+        # managed to determine it's an array access (and not the more
+        # ambiguous function call or array access).  If we have a row list,
         # it's the former; if we have an subscript list, it's the latter.
         if 'row list' in content:
             rows = self._stringify_rowlist(content['row list'])
-            return '{{matrix: [ {} ]}}'.format(rows)
+            return '{{array: [ {} ]}}'.format(rows)
         elif 'subscript list' in content:
             name = self._format_pr(content['name'])
             subscripts = self._stringify_subscripts(content['subscript list'])
-            return '{{matrix {}: [ {} ]}}'.format(name, subscripts)
+            return '{{array {}: [ {} ]}}'.format(name, subscripts)
         else:
-            # No row list or subscript list => empty matrix.
-            return '{{matrix: [] }}'
+            # No row list or subscript list => empty array.
+            return '{{array: [] }}'
 
 
     def _format_cell_array(self, pr):
@@ -1417,7 +1424,7 @@ class MatlabGrammar:
 
     @staticmethod
     def make_key(thing):
-        '''Turns a parsed object like a matrix into a canonical text-string
+        '''Turns a parsed object like an array into a canonical text-string
         form, for use as a key in dictionaries such as Scope.assignments.
         '''
         def terminal(thing):
@@ -1430,7 +1437,7 @@ class MatlabGrammar:
             for item in row:
                 if terminal(item) and len(item.keys()) == 1:
                     list.append(item[item.keys()[0]])
-                elif 'matrix or function' in item or 'matrix' in item \
+                elif 'array or function' in item or 'array' in item \
                      or 'cell array' in item or 'struct' in item:
                     list.append(MatlabGrammar.make_key(item))
                 elif not item.keys():
@@ -1441,19 +1448,19 @@ class MatlabGrammar:
             return None
         elif terminal(thing) and len(thing.keys()) == 1:
             return thing[thing.keys()[0]]
-        elif 'matrix' in thing:
-            matrix = thing['matrix']
-            if 'row list' in matrix:
-                # Bare matrix, like [a,b].
+        elif 'array' in thing:
+            array = thing['array']
+            if 'row list' in array:
+                # Bare array, like [a,b].
                 rowlist = [row_to_string(row['subscript list'])
-                           for row in matrix['row list']]
+                           for row in array['row list']]
                 return '[' + ';'.join(rowlist) + ']'
-            elif 'subscript list' in matrix:
-                # Matrix reference, like foo(2,3).
-                name = matrix['name']['identifier']
-                return name + '(' + row_to_string(matrix['subscript list']) + ')'
-        elif 'matrix or function' in thing:
-            func = thing['matrix or function']
+            elif 'subscript list' in array:
+                # Array reference, like foo(2,3).
+                name = array['name']['identifier']
+                return name + '(' + row_to_string(array['subscript list']) + ')'
+        elif 'array or function' in thing:
+            func = thing['array or function']
             name = func['name']['identifier']
             return name + '(' + row_to_string(func['argument list']) + ')'
         elif 'cell array' in thing:
@@ -1500,20 +1507,19 @@ class MatlabGrammar:
 
 
     @staticmethod
-    def make_formula(results, spaces=True, parens=True, mattrans=None):
+    def make_formula(results, spaces=True, parens=True, atrans=None):
         '''Converted a mathematical expression into libSBML-style string form.
         The default behavior is to put spaces between terms and operators; if
         the optional flag 'spaces' is False, then no spaces are introduced.
         The default between is also to surround the expression with
         parentheses but if the optional flag 'parens' is False, the outermost
         parentheses (but not other parentheses) are omitted.  Finally, if
-        given a function for parameter 'mattrans' (default: none), it will
-        call that function when it encounters matrix references.  The function
-        will be given one argument, the matrix object, and should return a
+        given a function for parameter 'atrans' (default: none), it will
+        call that function when it encounters array references.  The function
+        will be given one argument, the array object, and should return a
         text string corresponding to the value to be used in place of the
-        matrix.  If no 'mattrans' is given, the default behavior is to render
-        matrices and arrays like they would appear in Matlab text: e.g.,
-        "foo(2,3)".
+        array.  If no 'atrans' is given, the default behavior is to render
+        arrays like they would appear in Matlab text: e.g., "foo(2,3)".
         '''
 
         if 'identifier' in results:
@@ -1532,18 +1538,18 @@ class MatlabGrammar:
             return results['unary operator']
         elif 'binary operator' in results:
             return results['binary operator']
-        elif 'matrix' in results:
-            if 'name' in results['matrix']:
-                return mattrans(results)
+        elif 'array' in results:
+            if 'name' in results['array']:
+                return atrans(results)
             else:
                 return MatlabGrammar.make_key(results)
-        elif {'matrix or function', 'cell array', 'struct',
+        elif {'array or function', 'cell array', 'struct',
               'function handle', 'transpose'} & set(results.keys()):
             return MatlabGrammar.make_key(results)
         elif len(results) == 1 and results.keys() == 0:
             return make_formula(results[0])
         elif len(results) > 1:
-            list = [MatlabGrammar.make_formula(term, spaces, parens, mattrans)
+            list = [MatlabGrammar.make_formula(term, spaces, parens, atrans)
                     for term in results]
             sep = ''
             if spaces:
