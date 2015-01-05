@@ -396,13 +396,43 @@ def create_raterule_model(mparse, use_species=False):
     assigned_var = re.sub(r'\[[^\]]+,([^\]]+)\]', r'\1', call_lhs)
 
     # Matlab ode functions take a handle as 1st arg & initial cond. var as 3rd.
-    # FIXME: handle case where function handle is an anonymous function.
+    # If the first arg is not a handle but a variable, we look up the variable
+    # value if we can, to see if *that* is the handle.  If not, we give up.
+    init_cond_var = call_arglist[2]['identifier']
+    handle_name = None
     if 'function handle' in call_arglist[0]:
-        handle_name = call_arglist[0]['function handle']['name']['identifier']
-        init_cond_var = call_arglist[2]['identifier']
+        # Case: ode45(@foo, trange, xinit, ...)
+        function_data = call_arglist[0]['function handle']
+        if 'name' in function_data:
+            handle_name = function_data['name']['identifier']
+        else:
+            # Case: ode45(@(args)body, trange, xinit, ...)
+            # FIXME we could actually handle this.
+            fail('Anonymous functions in {} call are unsupported'.format(ode_function))
+    elif 'identifier' in call_arglist[0]:
+        # Case: ode45(somevar, trange, xinit, ...)
+        # Look up the value of somevar and see if that's a function handle.
+        function_var = call_arglist[0]['identifier']
+        if function_var in working_scope.assignments:
+            var_value = working_scope.assignments[function_var]
+            if 'function handle' in var_value:
+                # somevar = @(args)somefunction(other args)
+                body = var_value['function handle']['function definition']
+                if 'array or function' in body and 'name' in body['array or function']:
+                    handle_name = body['array or function']['name']['identifier']
+                else:
+                    # Value is an anonymous function.
+                    # FIXME we could actually handle this.
+                    fail('Anonymous functions in {} call are unsupported'.format(ode_function))
+            else:
+                # Variable value is not a function handle.
+                pass
+        else:
+            # We don't know the value of somevar.
+            pass
 
     if not handle_name:
-        fail('Could not extract function handle from {} call'.format(ode_function))
+        fail('Could not determine ODE function from call to {}'.format(ode_function))
 
     # If we get this far, let's start generating some SBML.
 
@@ -414,6 +444,8 @@ def create_raterule_model(mparse, use_species=False):
     # defined either at the top level (if this file is a script) or inside
     # the scope of the file's overall function (if the file is a function).
     function_scope = get_function_declaration(handle_name, working_scope)
+    if not function_scope:
+        fail('Cannot locate definition for function {}'.format(handle_name))
 
     # The function form will have to be f(t, y), because that's what Matlab
     # requires.  We want to find out the name of the parameter 'y' in the
