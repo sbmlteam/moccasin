@@ -18,7 +18,7 @@ Arguments:
 '''
 
     try:
-        options = getopt.getopt(argv[1:], "nps")
+        options, unused = getopt.getopt(argv[1:], "nps")
     except:
         raise SystemExit(main.__doc__)
 
@@ -40,7 +40,7 @@ Arguments:
                 parser.print_parse_results(results)
                 print('')
             print('----- SBML output ' + '-'*30)
-            sbml = create_raterule_model(results)
+            sbml = create_raterule_model(results, use_species)
             print sbml
         except Exception as err:
             if do_debug and not results:
