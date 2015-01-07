@@ -29,7 +29,14 @@ from libsbml import *
 
 sys.path.append('..')
 sys.path.append('../parser')
-from matlab import MatlabGrammar
+from matlab import MatlabGrammar, Scope
+
+
+# -----------------------------------------------------------------------------
+# Globals.
+# -----------------------------------------------------------------------------
+
+anon_counter = 0
 
 
 # -----------------------------------------------------------------------------
@@ -175,6 +182,58 @@ def num_underscores(scope):
 def rename(base, tail='', num_underscores=1):
     return ''.join([base, '_'*num_underscores, tail])
 
+
+def parse_handle(func, scope, underscores):
+    # @(args)...stuff...
+    # Cases:
+    #  body is a function call => return the function name
+    #  body is a variable that holds another function handle => chase it
+    #  body is a matrix
+    if 'function handle' in func:
+        func = func['function handle']
+    if 'name' in func:                   # Case: @foo
+        return func['name']['identifier']
+    elif 'function definition' in func:  # Case: @(args)body
+        body = func['function definition']
+        if 'array or function' in body:
+            inside = body['array or function']
+            if 'name' in inside:
+                return inside['name']['identifier']
+            else:
+                # This shouldn't happen; 'array or function' always has a name.
+                return None
+        elif 'array' in body:
+            # Body is an array.  In our domain of ODE and similar models, it
+            # means it's the equivalent of a function body.  Approach: create
+            # a new fake function, store it, and return its name.
+            name = create_array_function(func, scope, underscores)
+            return name
+    else:
+        return None
+
+
+def create_array_function(func, scope, underscores):
+    if 'function handle' in func:
+        func = func['function handle']
+    if 'array' not in func['function definition']:
+        return None             # We shouldn't be here in the first place.
+    func_name = new_anon_name()
+    params = [p['identifier'] for p in func['argument list']]
+    output_var = func_name + '_'*underscores + 'out'
+    newscope = Scope(func_name, scope, None, params, [output_var])
+    newscope.assignments[output_var] = func['function definition']
+    newscope.types[output_var] = 'variable'
+    for var in params:
+        newscope.types[var] = 'variable'
+    scope.functions[func_name] = newscope
+    return func_name
+
+
+def new_anon_name():
+    global anon_counter
+    anon_counter += 1
+    return 'anon{:03d}'.format(anon_counter)
+
 
 # -----------------------------------------------------------------------------
 # SBML-specific stuff.
@@ -306,7 +365,7 @@ def make_raterule(assigned_var, dep_var, index, content, model, underscores, sco
     formula = re.sub(xnameregexp, newnametransform, string_formula)
 
     # Finally, write the rate rule.
-    rule_var = assigned_var + "_" + str(index + 1)
+    rule_var = assigned_var + '_'*underscores + str(index + 1)
     ast = parseL3Formula(formula)
     create_sbml_raterule(model, rule_var, ast)
 
@@ -401,35 +460,23 @@ def create_raterule_model(mparse, use_species=False):
     init_cond_var = call_arglist[2]['identifier']
     handle_name = None
     if 'function handle' in call_arglist[0]:
-        # Case: ode45(@foo, trange, xinit, ...)
+        # Case: ode45(@foo, time, xinit, ...) or ode45(@(args)..., time, xinit)
         function_data = call_arglist[0]['function handle']
-        if 'name' in function_data:
-            handle_name = function_data['name']['identifier']
-        else:
-            # Case: ode45(@(args)body, trange, xinit, ...)
-            # FIXME we could actually handle this.
-            fail('Anonymous functions in {} call are unsupported'.format(ode_function))
+        handle_name = parse_handle(function_data, working_scope, underscores)
     elif 'identifier' in call_arglist[0]:
         # Case: ode45(somevar, trange, xinit, ...)
         # Look up the value of somevar and see if that's a function handle.
         function_var = call_arglist[0]['identifier']
         if function_var in working_scope.assignments:
-            var_value = working_scope.assignments[function_var]
-            if 'function handle' in var_value:
-                # somevar = @(args)somefunction(other args)
-                body = var_value['function handle']['function definition']
-                if 'array or function' in body and 'name' in body['array or function']:
-                    handle_name = body['array or function']['name']['identifier']
-                else:
-                    # Value is an anonymous function.
-                    # FIXME we could actually handle this.
-                    fail('Anonymous functions in {} call are unsupported'.format(ode_function))
+            value = working_scope.assignments[function_var]
+            if 'function handle' in value:
+                handle_name = parse_handle(value, working_scope, underscores)
             else:
                 # Variable value is not a function handle.
                 pass
         else:
             # We don't know the value of somevar.
-            pass
+            fail('{} is unknown'.format(function_var))
 
     if not handle_name:
         fail('Could not determine ODE function from call to {}'.format(ode_function))
@@ -504,6 +551,10 @@ def create_raterule_model(mparse, use_species=False):
             mloop(rhs['array'],
                   lambda idx, item: make_indexed(var, idx, item, False, model,
                                                  underscores, function_scope))
+        elif 'function handle' in rhs:
+            # Skip function handles. If any was used in the ode* call, it will
+            # have been dealt with earlier.
+            continue
         elif 'array' not in rhs:
             translator = lambda pr: munge_reference(pr, function_scope, underscores)
             formula = MatlabGrammar.make_formula(rhs, atrans=translator)
