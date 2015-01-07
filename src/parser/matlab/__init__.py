@@ -20,3 +20,4 @@
 # ------------------------------------------------------------------------- -->
 
 from .grammar import MatlabGrammar
+from .scope import Scope

@@ -396,7 +396,7 @@ class MatlabGrammar:
                 array = lhs['array']
                 if 'name' in array:
                     self._save_type(name['identifier'], 'variable')
-        elif 'function definition':
+        elif 'function definition' in pr:
             func = pr['function definition']
             if 'output list' in func:
                 for var in func['output list']:
@@ -413,16 +413,79 @@ class MatlabGrammar:
 
 
     def _convert_type(self, pr):
-        if not isinstance(pr, ParseResults) or 'array or function' not in pr:
+        if 'array or function' in pr:
+            content = pr['array or function']
+            if 'name' in content:
+                id = content['name']['identifier']
+                if self._get_type(id, self._scope, True) == 'variable':
+                    # We have seen this name before, and it's not a function.
+                    content = pr.pop('array or function')
+                    pr['array'] = content
+                    content['subscript list'] = content.pop('argument list')
+                    for item in content['subscript list']:
+                        self._convert_recursively(item, id)
+        elif 'function handle' in pr:
+            # The parameters to the function are variables, so if they appear
+            # in the body and were previously identified as 'array or
+            # function', we can convert them to 'array'.
+            content = pr['function handle']
+            if 'function definition' in content:
+                body = content['function definition']
+                params = content['argument list']
+                for item in params:
+                    id = item['identifier']
+                    self._convert_recursively(body, id)
+
+
+    def _convert_recursively(self, pr, id):
+        if isinstance(pr, str):
             return
-        content = pr['array or function']
-        if 'name' in content:
-            name = content['name']['identifier']
-            if self._get_type(name, self._scope, True) == 'variable':
-                # We have seen this name before, and it's not a function.
+        elif MatlabGrammar.terminal(pr):
+            return
+        elif 'array or function' in pr:
+            content = pr['array or function']
+            if 'name' in content and id == content['name']['identifier']:
                 content = pr.pop('array or function')
                 pr['array'] = content
                 content['subscript list'] = content.pop('argument list')
+            if 'argument list' in content:
+                for term in content['argument list']:
+                    self._convert_recursively(term, id)
+        elif 'array' in pr:
+            array = pr['array']
+            if 'row list' in array:
+                for row in array['row list']:
+                    for subscript in row['subscript list']:
+                        self._convert_recursively(subscript, id)
+            elif 'subscript list' in array:
+                for item in array['subscript list']:
+                    self._convert_recursively(item, id)
+        elif 'cell array' in pr:
+            array = pr['cell array']
+            if 'row list' in array:
+                for row in array['row list']:
+                    for subscript in row['subscript list']:
+                        self._convert_recursively(subscript, id)
+        elif 'function handle' in pr:
+            content = pr['function handle']
+            if 'name' in content:
+                # Named handle, meaning @foo.  Nothing further to do.
+                return
+            else:
+                body = content['function definition']
+                self._convert_recursively(body, id)
+        elif 'struct' in pr:
+            content = pr['struct']
+            self._convert_recursively(content['struct base'], id)
+        elif 'transpose' in pr:
+            content = pr['transpose']
+            self._convert_recursively(content['operand'], id)
+        elif {'comment', 'command', 'command statement'} & set(pr.keys()):
+            return
+        else:
+            # The only thing left is expressions.
+            for term in pr:
+                self._convert_recursively(term, id)
 
 
     # Start of grammar definition.
@@ -886,6 +949,7 @@ class MatlabGrammar:
     def _init_type_inference(self):
         self._assignment      .addParseAction(self._remember_type)
         self._fun_def_stmt    .addParseAction(self._remember_type)
+        self._fun_handle      .addParseAction(self._convert_type)
         self._funcall_or_array.addParseAction(self._convert_type)
 
 
@@ -1427,15 +1491,10 @@ class MatlabGrammar:
         '''Turns a parsed object like an array into a canonical text-string
         form, for use as a key in dictionaries such as Scope.assignments.
         '''
-        def terminal(thing):
-            return {'identifier', 'number', 'colon', 'tilde', 'string',
-                    'boolean', 'colon operator', 'unary operator', 'binary',
-                    'operator'} & set(thing.keys())
-
         def row_to_string(row):
             list = []
             for item in row:
-                if terminal(item) and len(item.keys()) == 1:
+                if MatlabGrammar.terminal(item) and len(item.keys()) == 1:
                     list.append(item[item.keys()[0]])
                 elif 'array or function' in item or 'array' in item \
                      or 'cell array' in item or 'struct' in item:
@@ -1446,7 +1505,7 @@ class MatlabGrammar:
 
         if not isinstance(thing, ParseResults):
             return None
-        elif terminal(thing) and len(thing.keys()) == 1:
+        elif MatlabGrammar.terminal(thing) and len(thing.keys()) == 1:
             return thing[thing.keys()[0]]
         elif 'array' in thing:
             array = thing['array']
@@ -1567,6 +1626,16 @@ class MatlabGrammar:
             # caller deal with the problem.
             return None
 
+
+    @staticmethod
+    def terminal(thing):
+        '''Returns true if the given "thing" is a terminal object.'''
+        if isinstance(thing, ParseResults):
+            return {'identifier', 'number', 'colon', 'tilde', 'string',
+                    'boolean', 'colon operator', 'unary operator', 'binary',
+                    'operator'} & set(thing.keys())
+        else:
+            return False
 
 
         # for c in results:
