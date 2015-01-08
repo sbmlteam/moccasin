@@ -617,12 +617,13 @@ def get_filename_and_options(argv):
 
 
 def main(argv):
-    '''Usage: converter.py [-d] [-p] [-q] [-x] FILENAME.m
-Arguments:
- -d  (Optional) Drop into pdb before starting to parse the MATLAB input
- -p  (Optional) Turn variables into parameters (default: make them species)
- -q  (Optional) Be quiet; just produce SBML, nothing else
- -x  (Optional) Print extra debugging info about the interpreted MATLAB
+    '''Usage: converter.py [options] FILENAME.m
+Available options:
+ -d   Drop into pdb before starting to parse the MATLAB input
+ -h   Print this help message and quit
+ -p   Turn variables into parameters (default: make them species)
+ -q   Be quiet; just produce SBML, nothing else
+ -x   Print extra debugging info about the interpreted MATLAB
 '''
     path, debug, quiet, print_parse, use_species = get_filename_and_options(argv)
 
