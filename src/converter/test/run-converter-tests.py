@@ -10,21 +10,22 @@ from converter import *
 
 
 def main(argv):
-    '''Usage: run-syntax-tests.py [-d] [-v]
-Arguments:
-  -n  (Optional) Don't drop into pdb upon a parsing exception -- keep going.
-  -p  (Optional) Print annotated Matlab parsing results.
-  -s  (Optional) Turn variables into species (default: make them parameters)
+    '''Usage: run-syntax-tests.py [options]
+Available options:
+  -h   Print this help message
+  -n   Don't drop into pdb upon a parsing exception -- keep going
+  -p   Use parameters instead of species
+  -x   Extra debugging -- print annotated Matlab parsing results
 '''
 
     try:
-        options, unused = getopt.getopt(argv[1:], "nps")
+        options, unused = getopt.getopt(argv[1:], "npx")
     except:
         raise SystemExit(main.__doc__)
 
     do_debug        = not any(['-n' in y for y in options])
-    use_species     = any(['-s' in y for y in options])
-    do_print_interp = any(['-p' in y for y in options])
+    use_species     = not any(['-p' in y for y in options])
+    do_print_interp = any(['-x' in y for y in options])
 
     parser = MatlabGrammar()
 
