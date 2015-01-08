@@ -377,10 +377,9 @@ class MatlabGrammar:
         elif 'end statement' in pr:
             self._pop_context()
         elif 'array or function' in pr:
-            # This could be an array value access or a function call.
-            # Syntactically, we can't tell the difference. Treat them as calls.
             content = pr['array or function']
-            self._save_function_call(content)
+            if self._get_type(content['name'], self._scope, False) != 'variable':
+                self._save_function_call(content)
 
 
     def _remember_type(self, pr):
