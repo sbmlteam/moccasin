@@ -415,7 +415,7 @@ def make_raterule(assigned_var, dep_var, index, content, model, underscores, sco
 # words, in the sample above, "x" will be the basis of the species or parameter
 # names and the rate rules generated because that's what is used in [t, x] =...
 
-def create_raterule_model(mparse, use_species=False):
+def create_raterule_model(mparse, use_species=True):
     # This assumes there's only one call to an ode* function in the file.  We
     # start by finding that call (wherever it is -- whether it's at the top
     # level, or inside some other function), then inspecting the call, and
@@ -604,25 +604,25 @@ def munge_reference(pr, scope, underscores):
 
 def get_filename_and_options(argv):
     try:
-        options, path = getopt.getopt(argv[1:], "dpqs")
+        options, path = getopt.getopt(argv[1:], "dpqx")
     except:
         raise SystemExit(main.__doc__)
     if len(path) != 1 or len(options) > 2:
         raise SystemExit(main.__doc__)
     debug       = any(['-d' in y for y in options])
-    do_print    = any(['-p' in y for y in options])
     quiet       = any(['-q' in y for y in options])
-    use_species = any(['-s' in y for y in options])
-    return path[0], debug, quiet, do_print, use_species
+    print_parse = any(['-x' in y for y in options])
+    use_species = not any(['-p' in y for y in options])
+    return path[0], debug, quiet, print_parse, use_species
 
 
 def main(argv):
-    '''Usage: converter.py [-d] [-p] [-q] [-s] FILENAME.m
+    '''Usage: converter.py [-d] [-p] [-q] [-x] FILENAME.m
 Arguments:
  -d  (Optional) Drop into pdb before starting to parse the MATLAB input
- -p  (Optional) Print a debugging representation of the interpreted MATLAB
+ -p  (Optional) Turn variables into parameters (default: make them species)
  -q  (Optional) Be quiet; just produce SBML, nothing else
- -s  (Optional) Turn variables into species (default: make them parameters)
+ -x  (Optional) Print extra debugging info about the interpreted MATLAB
 '''
     path, debug, quiet, print_parse, use_species = get_filename_and_options(argv)
 
