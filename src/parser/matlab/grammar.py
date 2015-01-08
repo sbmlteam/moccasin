@@ -377,10 +377,9 @@ class MatlabGrammar:
         elif 'end statement' in pr:
             self._pop_context()
         elif 'array or function' in pr:
-            # This could be an array value access or a function call.
-            # Syntactically, we can't tell the difference. Treat them as calls.
             content = pr['array or function']
-            self._save_function_call(content)
+            if self._get_type(content['name'], self._scope, False) != 'variable':
+                self._save_function_call(content)
 
 
     def _remember_type(self, pr):
@@ -395,7 +394,15 @@ class MatlabGrammar:
             elif 'array' in lhs:
                 array = lhs['array']
                 if 'name' in array:
-                    self._save_type(name['identifier'], 'variable')
+                    self._save_type(array['identifier'], 'variable')
+                else:
+                    # If the LHS of an assignment is an array, and if there
+                    # are bare identifiers inside the array, then they must
+                    # be variables and not functions (else, syntax error).
+                    row = array['row list'][0]  # There can only be one row.
+                    for item in row['subscript list']:
+                        if 'identifier' in item:
+                            self._save_type(item['identifier'], 'variable')
         elif 'function definition' in pr:
             func = pr['function definition']
             if 'output list' in func:
@@ -424,6 +431,11 @@ class MatlabGrammar:
                     content['subscript list'] = content.pop('argument list')
                     for item in content['subscript list']:
                         self._convert_recursively(item, id)
+                    # If it was previously unknown whether this is a function
+                    # or array, it might have been put in the list of function
+                    # calls.  Remove it.
+                    if id in self._scope.calls:
+                        self._scope.calls.pop(id)
         elif 'function handle' in pr:
             # The parameters to the function are variables, so if they appear
             # in the body and were previously identified as 'array or
