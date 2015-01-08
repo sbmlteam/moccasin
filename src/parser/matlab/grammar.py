@@ -395,7 +395,7 @@ class MatlabGrammar:
             elif 'array' in lhs:
                 array = lhs['array']
                 if 'name' in array:
-                    self._save_type(name['identifier'], 'variable')
+                    self._save_type(array['identifier'], 'variable')
         elif 'function definition' in pr:
             func = pr['function definition']
             if 'output list' in func:
