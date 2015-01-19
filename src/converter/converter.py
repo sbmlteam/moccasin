@@ -234,7 +234,101 @@ def new_anon_name():
     anon_counter += 1
     return 'anon{:03d}'.format(anon_counter)
 
-
+# -----------------------------------------------------------------------------
+# XPP specific stuff
+# Later this should really get incorporated with the equivalent sbml
+# functions with a flag to say which is being used
+#
+# but for now I'm going with a completely separate approach
+# -----------------------------------------------------------------------------
+def create_xpp_compartment(xpp_variables, id, size):
+    compartment = dict({'SBML_type': 'Compartment',
+                        'id': id,
+                        'value': size,
+                        'constant': True,
+                        'init_assign': '',
+                        'rate_rule': ''})
+    xpp_variables.append(compartment)
+    return xpp_variables
+
+def create_xpp_parameter(xpp_variables, id, value, constant=True,
+                         rate_rule='', init_assign=''):
+    parameter = dict({'SBML_type': 'Parameter',
+                      'id': id,
+                      'value': value,
+                      'constant': constant,
+                      'init_assign': init_assign,
+                      'rate_rule': rate_rule})
+    xpp_variables.append(parameter)
+    return xpp_variables
+
+def create_xpp_species(xpp_variables, id, value, rate_rule='', init_assign=''):
+    species = dict({'SBML_type': 'Species',
+                    'id': id,
+                    'value': value,
+                    'constant': False,
+                    'init_assign': init_assign,
+                    'rate_rule': rate_rule})
+    xpp_variables.append(species)
+    return xpp_variables
+
+# def create_xpp_initial_assignment(model, id, ast):
+#     ia = model.createInitialAssignment()
+#     check(ia,               'create initial assignment')
+#     check(ia.setMath(ast),  'set initial assignment formula')
+#     check(ia.setSymbol(id), 'set initial assignment symbol')
+#     return ia
+
+
+def add_xpp_raterule(model, id, ast):
+    for i in range(0,len(model)):
+        if model[i]['id'] == id:
+            model[i]['rate_rule'] = ast
+            break
+
+    return
+
+
+
+def make_xpp_indexed(var, index, content, species, model, underscores, scope):
+    name = rename(var, str(index + 1), underscores)
+    if 'number' in content:
+        value = terminal_value(content)
+        if species:
+            model = create_xpp_species(model, name, value)
+        else:
+            model = create_xpp_parameter(model, name, value, False)
+    else:
+        translator = lambda pr: munge_reference(pr, scope, underscores)
+        formula = MatlabGrammar.make_formula(content, atrans=translator)
+        if species:
+            model = create_xpp_species(model, name, 0, formula)
+        else:
+            model = create_xpp_parameter(model, name, 0, False, formula)
+
+
+def make_xpp_raterule(assigned_var, dep_var, index, content, model, underscores, scope):
+    # Currently, this assumes there's only one math expression per row or
+    # column, meaning, one subscript value per row or column.
+
+    translator = lambda pr: munge_reference(pr, scope, underscores)
+    string_formula = MatlabGrammar.make_formula(content, atrans=translator)
+    if not string_formula:
+        fail('Failed to parse the formula for row {}'.format(index + 1))
+
+    # We need to rewrite matrix references "x(n)" to the form "x_n", and
+    # rename the variable to the name used for the results assignment
+    # in the call to the ode* function.
+    xnameregexp = dep_var + '_'*underscores + r'(\d+)'
+    newnametransform = assigned_var + '_'*underscores + r'\1'
+    formula = re.sub(xnameregexp, newnametransform, string_formula)
+
+    # Finally, write the rate rule.
+    rule_var = assigned_var + '_'*underscores + str(index + 1)
+    add_xpp_raterule(model, rule_var, formula)
+
+
+
 # -----------------------------------------------------------------------------
 # SBML-specific stuff.
 # -----------------------------------------------------------------------------
@@ -597,7 +691,268 @@ def munge_reference(pr, scope, underscores):
                 raise ValueError('Unable to handle matrix "' + name + '"')
     return constructed
 
-
+
+# -----------------------------------------------------------------------------
+# Translation code.
+# -----------------------------------------------------------------------------
+#
+# Principles for the XPP-based version of the converter
+# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+#
+# Matlab's ode* functions handle the following general problem:
+#
+# Given a set of differential equations (with X denoting a vector),
+#         dX/dt = f(t, X)
+#     with initial values X(t_0) = xinit,
+#     find the values of the variables X at different times t.
+#
+# The function defining the differential equations is given as "f" in a call
+# to an ode* function such as ode45.  We assume the user provides a Matlab
+# file such as the following (and here, the specific formula in the function
+# "f" is just an example -- our code does not depend on the details of the
+# function, and this is merely a realistic example from a real use case):
+#
+#     tspan  = [0 300];
+#     xinit  = [0; 0];
+#     a      = 0.01 * 60;
+#     b      = 0.0058 * 60;
+#     c      = 0.006 * 60;
+#     d      = 0.000192 * 60;
+#
+#     [t, x] = ode45(@f, tspan, xinit);
+#
+#     function dx = f(t, x)
+#       dx = [a - b * x(1); c * x(1) - d * x(2)];
+#     end
+#
+# In the above, the function "f" passed to Matlab's ode45 is the function "f"
+# in the general problem statement.  The body of "f" defines a vector of
+# formulas for dx/dt for each variable x. The values of x at different times
+# t is what the ode45 function computes.
+#
+# In create_xpp_elements() below, we translate this directly into an XPP
+# format that uses "rate rules" to directly encode the dx/dt expressions.
+# This uses the name of the variable in the LHS matrix used in the assignment
+# of the call to ode45 as the name of the independent variable.  So in other
+# words, in the sample above, "x" will be the basis of the species or parameter
+# names and the rate rules generated because that's what is used in [t, x] =...
+
+def create_xpp_elements(mparse, use_species=True):
+    # This assumes there's only one call to an ode* function in the file.  We
+    # start by finding that call (wherever it is -- whether it's at the top
+    # level, or inside some other function), then inspecting the call, and
+    # saving the name of the function handle passed to it as an argument.  We
+    # also save the name of the 3rd argument (a vector of initial conditions).
+
+    # Gather some preliminary info.
+    working_scope = get_function_scope(mparse)
+    underscores = num_underscores(working_scope) + 1
+
+    # Look for a call to a MATLAB ode* function.
+    ode_function = None
+    call_arglist = None
+    calls = get_all_function_calls(working_scope)
+    for name, arglist in calls.items():
+        if isinstance(name, str) and name.startswith('ode'):
+            # Found the invocation of an ode function.
+            call_arglist = arglist
+            ode_function = name
+            break
+
+    if not ode_function:
+        fail('Could not locate a call to a Matlab function in the file.')
+
+    # Quick summary of pieces we'll gather.  Assume a file like this:
+    #   xzero = [num1 num2 ...]                 --> "xzero" is init_cond_var
+    #   [t, y] = ode45(@odefunc, tspan, xzero)  --> "y" is assigned_var
+    #   function dy = odefunc(t, x)             --> "x" is dependent_var
+    #       dy = [row1; row2; ...]              --> "dy" is output_var
+    #   end                                     --> "odefunc" is handle_name
+
+    # Identify the variables to which the output of the ode call is assigned.
+    # It'll be a matrix of the form [t, y].  We want the name of the 2nd
+    # variable.  Since it has to be a name, we can extract it using a regexp.
+    # This will be the name of the independent variable for the ODE's.
+    call_lhs = get_lhs_for_rhs(ode_function, working_scope)
+    assigned_var = re.sub(r'\[[^\]]+,([^\]]+)\]', r'\1', call_lhs)
+
+    # Matlab ode functions take a handle as 1st arg & initial cond. var as 3rd.
+    # If the first arg is not a handle but a variable, we look up the variable
+    # value if we can, to see if *that* is the handle.  If not, we give up.
+    init_cond_var = call_arglist[2]['identifier']
+    handle_name = None
+    if 'function handle' in call_arglist[0]:
+        # Case: ode45(@foo, time, xinit, ...) or ode45(@(args)..., time, xinit)
+        function_data = call_arglist[0]['function handle']
+        handle_name = parse_handle(function_data, working_scope, underscores)
+    elif 'identifier' in call_arglist[0]:
+        # Case: ode45(somevar, trange, xinit, ...)
+        # Look up the value of somevar and see if that's a function handle.
+        function_var = call_arglist[0]['identifier']
+        if function_var in working_scope.assignments:
+            value = working_scope.assignments[function_var]
+            if 'function handle' in value:
+                handle_name = parse_handle(value, working_scope, underscores)
+            else:
+                # Variable value is not a function handle.
+                pass
+        else:
+            # We don't know the value of somevar.
+            fail('{} is unknown'.format(function_var))
+
+    if not handle_name:
+        fail('Could not determine ODE function from call to {}'.format(
+            ode_function))
+
+    # If we get this far, let's start generating some constructs for XPP.
+
+    xpp_variables = []
+    xpp_variables = create_xpp_compartment(xpp_variables, 'comp1', 1)
+
+    # Now locate our scope object for the function definition.  It'll be
+    # defined either at the top level (if this file is a script) or inside
+    # the scope of the file's overall function (if the file is a function).
+    function_scope = get_function_declaration(handle_name, working_scope)
+    if not function_scope:
+        fail('Cannot locate definition for function {}'.format(handle_name))
+
+    # The function form will have to be f(t, y), because that's what Matlab
+    # requires.  We want to find out the name of the parameter 'y' in the
+    # actual definition, so that we can locate this variable inside the
+    # formula within the function.  We don't know what the user will call it,
+    # so we have to use the position of the argument in the function def.
+    dependent_var = function_scope.parameters[1]
+
+    # Find the assignment to the initial condition variable, then create
+    # either parameters or species (depending on the run-time selection) for
+    # each entry.  The initial value of the parameter/species will be the
+    # value in the matrix.
+    init_cond = working_scope.assignments[init_cond_var]
+    if 'array' not in init_cond.keys():
+        fail('Failed to parse the assignment of the initial value matrix')
+    mloop(init_cond['array'],
+          lambda idx, item: make_xpp_indexed(assigned_var, idx, item, use_species,
+                                         xpp_variables, underscores, function_scope))
+
+    # Now, look inside the function definition and find the assignment to the
+    # function's output variable. (It corresponds to assigned_var, but inside
+    # the function.)  This defines the formula for the ODE.  We expect this
+    # to be a vector.  We take it apart, using each row as an ODE definition,
+    # and use this to create SBML "rate rules" for the output variables.
+    output_var = function_scope.returns[0]
+    var_def = function_scope.assignments[output_var]
+    if 'array' not in var_def:
+        fail('Failed to parse the body of the function {}'.format(handle_name))
+    mloop(var_def['array'],
+          lambda idx, item: make_xpp_raterule(assigned_var, dependent_var, idx,
+                                          item,
+                                          xpp_variables, underscores, function_scope))
+
+    # Create remaining parameters.  This breaks up matrix assignments by
+    # looking up the value assigned to the variable; if it's a matrix value,
+    # then the variable is turned into parameters named foo_1, foo_2, etc.
+    # Also, we have to decide what to do about duplicate variable names
+    # showing up inside the function body and outside.  The approach here is
+    # to have variables inside the function shadow ones outside, but we
+    # should really check if something more complicated is going on in the
+    # Matlab code.  The shadowing is done by virtue of the fact that the
+    # creation of the dict() object for the next for-loop uses the sum of
+    # the working scope and function scope dictionaries, with the function
+    # scope taken second (which means its values are the final ones).
+
+    skip_vars = [init_cond_var, output_var, assigned_var,
+                 call_arglist[1]['identifier']]
+    for var, rhs in dict(working_scope.assignments.items()
+            + function_scope.assignments.items()).items():
+        if var in skip_vars:
+            continue
+        # FIXME currently doesn't handle matrices on LHS.
+        if name_is_structured(var):
+            continue
+        if 'number' in rhs:
+            create_xpp_parameter(xpp_variables, var, terminal_value(rhs))
+        elif 'array' in rhs:
+            mloop(rhs['array'],
+                  lambda idx, item: make_xpp_indexed(var, idx, item, False, xpp_variables,
+                                                 underscores, function_scope))
+        elif 'function handle' in rhs:
+            # Skip function handles. If any was used in the ode* call, it will
+            # have been dealt with earlier.
+            continue
+    #     elif 'array' not in rhs:
+    #         translator = lambda pr: munge_reference(pr, function_scope,
+    #                                                 underscores)
+    #         formula = MatlabGrammar.make_formula(rhs, atrans=translator)
+    #         ast = parseL3Formula(formula)
+    #         if ast is not None:
+    #             create_sbml_parameter(model, var, 0)
+    #             create_sbml_initial_assignment(model, var, ast)
+    #
+    # Write the Model
+#    return writeSBMLToString(document)
+    return xpp_variables
+
+
+def create_xpp_file(parse_results, use_species):
+    xpp_elements = create_xpp_elements(parse_results)
+
+    # create the lines of the file that will be the output
+    lines = '#\n# This file is generated by MOCCASIN\n#\n\n'
+
+    num_objects = len(xpp_elements)
+
+    # output functions for sbml
+    lines += 'some functions definitions that are allowed in SBML'
+    lines += ' are not valid in xpp\nceil(x)=flr(1+x)\n\n'
+    lines += '@delay=50\n\n'
+
+    # output compartments
+    for i in range(0,num_objects):
+        if xpp_elements[i]['SBML_type'] == 'Compartment':
+            id = xpp_elements[i]['id']
+            value = xpp_elements[i]['value']
+            lines += ('# Compartment id = {}, constant\n'.format(id))
+            lines += ('par {}={}\n\n'.format(id, value))
+
+    #output constant parameters
+    for i in range(0, num_objects):
+        if (xpp_elements[i]['SBML_type'] == 'Parameter') and \
+                (xpp_elements[i]['constant'] == True):
+            id = xpp_elements[i]['id']
+            value = xpp_elements[i]['value']
+            lines += ('# Parameter id = {}, constant\n'.format(id))
+            lines += ('par {}={}\n\n'.format(id, value))
+
+    #output odes
+    for i in range(0, num_objects):
+        if ((xpp_elements[i]['SBML_type'] == 'Parameter') and \
+                (xpp_elements[i]['constant'] == False) or
+                (xpp_elements[i]['SBML_type'] == 'Species')):
+            id = xpp_elements[i]['id']
+            value = xpp_elements[i]['value']
+            formula = xpp_elements[i]['rate_rule']
+            lines += ('# rateRule : variable = {}\n'.format(id))
+            lines += ('init {}={}\n'.format(id, value))
+            lines +=('d{}/dt={}\n\n'.format(id, formula))
+
+    #output the sbml equivalent of variables
+    for i in range(0, num_objects):
+        if ((xpp_elements[i]['SBML_type'] == 'Parameter') and \
+                    (xpp_elements[i]['constant'] == False) or
+                (xpp_elements[i]['SBML_type'] == 'Species')):
+            id = xpp_elements[i]['id']
+            sbml = xpp_elements[i]['SBML_type']
+            lines += ('# {}:   id = {}. defined by rule\n\n'.format(sbml, id))
+
+    # output xpp specific code
+    lines += '@ meth=cvode, tol=1e-6, atol=1e-8\n'
+    lines += '# @ maxstor=1e6\n'
+    lines += '@ bound=40000, total=200\n'
+    lines += 'done\n\n'
+
+    return lines
+
+
 # -----------------------------------------------------------------------------
 # Driver
 # -----------------------------------------------------------------------------
@@ -652,10 +1007,20 @@ Available options:
     if not quiet:
         print('')
         print('----- SBML output ' + '-'*50)
+#
+#    sbml = create_raterule_model(parse_results, use_species)
+#    print sbml
 
-    sbml = create_raterule_model(parse_results, use_species)
-    print sbml
+#    out_path = path[0:len(path)-1] +'xml'
+#    file_out = open(out_path, 'w')
+#    file_out.write(sbml)
+#    file_out.close()
 
+    xpp = create_xpp_file(parse_results, use_species)
+    # for i in range(0,len(xpp)):
+    #     print '{}: {}'.format(i, xpp[i])
+
+    print xpp
 
 def fail(msg):
     raise SystemExit(msg)
