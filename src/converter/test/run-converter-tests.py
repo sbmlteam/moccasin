@@ -10,12 +10,13 @@ from converter import *
 
 
 def main(argv):
-    '''Usage: run-syntax-tests.py [options]
+    '''Usage: run-converter-tests.py [options]
 Available options:
   -h   Print this help message
   -n   Don't drop into pdb upon a parsing exception -- keep going
   -p   Use parameters instead of species
   -x   Extra debugging -- print annotated Matlab parsing results
+  -xpp Output an xpp file
 '''
 
     try:
@@ -26,10 +27,11 @@ Available options:
     do_debug        = not any(['-n' in y for y in options])
     use_species     = not any(['-p' in y for y in options])
     do_print_interp = any(['-x' in y for y in options])
+    output_xpp = True
 
     parser = MatlabGrammar()
 
-    for f in glob.glob("converter-test-cases/valid*.m"):
+    for f in glob.glob("converter-test-cases/valid_51.m"):
         print('===== ' + f + ' ' + '='*30)
         with open(f, 'r') as file:
             contents = file.read()
@@ -43,6 +45,10 @@ Available options:
             print('----- SBML output ' + '-'*30)
             sbml = create_raterule_model(results, use_species)
             print sbml
+            if output_xpp:
+                print('----- xpp '+ '-'*30)
+                xpp = create_xpp_file(results, use_species)
+                print xpp
         except Exception as err:
             if do_debug and not results:
                 print('Object "results" contains the output of parse_string()')
