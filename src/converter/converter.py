@@ -902,7 +902,7 @@ def create_xpp_file(parse_results, use_species):
     num_objects = len(xpp_elements)
 
     # output functions for sbml
-    lines += 'some functions definitions that are allowed in SBML'
+    lines += '# some function definitions that are allowed in SBML'
     lines += ' are not valid in xpp\nceil(x)=flr(1+x)\n\n'
     lines += '@delay=50\n\n'
 
@@ -914,35 +914,54 @@ def create_xpp_file(parse_results, use_species):
             lines += ('# Compartment id = {}, constant\n'.format(id))
             lines += ('par {}={}\n\n'.format(id, value))
 
-    #output constant parameters
+    # output constant parameters
     for i in range(0, num_objects):
-        if (xpp_elements[i]['SBML_type'] == 'Parameter') and \
-                (xpp_elements[i]['constant'] == True):
-            id = xpp_elements[i]['id']
-            value = xpp_elements[i]['value']
-            lines += ('# Parameter id = {}, constant\n'.format(id))
-            lines += ('par {}={}\n\n'.format(id, value))
+        element = xpp_elements[i]
+        if element['SBML_type'] == 'Parameter':
+            if element['constant'] is True:
+                id = element['id']
+                value = element['value']
+                lines += ('# Parameter id = {}, constant\n'.format(id))
+                lines += ('par {}={}\n\n'.format(id, value))
+            elif element['rate_rule'] == '':
+                id = element['id']
+                value = element['value']
+                lines += ('# Parameter id = {}, '
+                          'non-constant but no rule supplied\n'.format(id))
+                lines += ('par {}={}\n\n'.format(id, value))
 
-    #output odes
+    # output odes
     for i in range(0, num_objects):
-        if ((xpp_elements[i]['SBML_type'] == 'Parameter') and \
-                (xpp_elements[i]['constant'] == False) or
-                (xpp_elements[i]['SBML_type'] == 'Species')):
-            id = xpp_elements[i]['id']
-            value = xpp_elements[i]['value']
-            formula = xpp_elements[i]['rate_rule']
+        element = xpp_elements[i]
+        if element['SBML_type'] == 'Parameter':
+            if element['constant'] is False and element['rate_rule'] != '':
+                id = element['id']
+                value = element['value']
+                formula = element['rate_rule']
+                lines += ('# rateRule : variable = {}\n'.format(id))
+                lines += ('init {}={}\n'.format(id, value))
+                lines +=('d{}/dt={}\n\n'.format(id, formula))
+        elif element['SBML_type'] == 'Species':
+            id = element['id']
+            value = element['value']
+            formula = element['rate_rule']
             lines += ('# rateRule : variable = {}\n'.format(id))
             lines += ('init {}={}\n'.format(id, value))
             lines +=('d{}/dt={}\n\n'.format(id, formula))
 
     #output the sbml equivalent of variables
     for i in range(0, num_objects):
-        if ((xpp_elements[i]['SBML_type'] == 'Parameter') and \
-                    (xpp_elements[i]['constant'] == False) or
-                (xpp_elements[i]['SBML_type'] == 'Species')):
-            id = xpp_elements[i]['id']
-            sbml = xpp_elements[i]['SBML_type']
-            lines += ('# {}:   id = {}. defined by rule\n\n'.format(sbml, id))
+        element = xpp_elements[i]
+        if element['SBML_type'] == 'Parameter':
+            if element['constant'] is False and element['rate_rule'] != '':
+                id = element['id']
+                sbml = element['SBML_type']
+                lines += ('# {}:   id = {}, defined by rule\n\n'
+                          .format(sbml, id))
+        elif element['SBML_type'] == 'Species':
+            id = element['id']
+            sbml = element['SBML_type']
+            lines += ('# {}:   id = {}, defined by rule\n\n'.format(sbml, id))
 
     # output xpp specific code
     lines += '@ meth=cvode, tol=1e-6, atol=1e-8\n'
