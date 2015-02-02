@@ -879,15 +879,14 @@ def create_xpp_elements(mparse, use_species=True):
             # Skip function handles. If any was used in the ode* call, it will
             # have been dealt with earlier.
             continue
-    #     elif 'array' not in rhs:
-    #         translator = lambda pr: munge_reference(pr, function_scope,
-    #                                                 underscores)
-    #         formula = MatlabGrammar.make_formula(rhs, atrans=translator)
-    #         ast = parseL3Formula(formula)
-    #         if ast is not None:
-    #             create_sbml_parameter(model, var, 0)
-    #             create_sbml_initial_assignment(model, var, ast)
-    #
+        elif 'array' not in rhs:
+            translator = lambda pr: munge_reference(pr, function_scope,
+                                                    underscores)
+            formula = MatlabGrammar.make_formula(rhs, atrans=translator)
+            if formula is not None or formula != '':
+                create_xpp_parameter(xpp_variables, var, 0, True, '', formula)
+                # create_xpp_initial_assignment(xpp_variables, var, formula)
+
     # Write the Model
 #    return writeSBMLToString(document)
     return xpp_variables
@@ -902,17 +901,24 @@ def create_xpp_file(parse_results, use_species):
     num_objects = len(xpp_elements)
 
     # output functions for sbml
-    lines += '# some function definitions that are allowed in SBML'
-    lines += ' are not valid in xpp\nceil(x)=flr(1+x)\n\n'
-    lines += '@delay=50\n\n'
+    #
+    # dont need these for BioCham
+    #
+    # lines += '# some function definitions that are allowed in SBML'
+    # lines += ' are not valid in xpp\nceil(x)=flr(1+x)\n\n'
+    # lines += '@delay=50\n\n'
 
     # output compartments
-    for i in range(0,num_objects):
-        if xpp_elements[i]['SBML_type'] == 'Compartment':
-            id = xpp_elements[i]['id']
-            value = xpp_elements[i]['value']
-            lines += ('# Compartment id = {}, constant\n'.format(id))
-            lines += ('par {}={}\n\n'.format(id, value))
+    #
+    # BioCham creates it's own dummy compartment
+    # so dont do this
+    #
+    # for i in range(0,num_objects):
+    #     if xpp_elements[i]['SBML_type'] == 'Compartment':
+    #         id = xpp_elements[i]['id']
+    #         value = xpp_elements[i]['value']
+    #         lines += ('# Compartment id = {}, constant\n'.format(id))
+    #         lines += ('par {}={}\n\n'.format(id, value))
 
     # output constant parameters
     for i in range(0, num_objects):
@@ -922,7 +928,12 @@ def create_xpp_file(parse_results, use_species):
                 id = element['id']
                 value = element['value']
                 lines += ('# Parameter id = {}, constant\n'.format(id))
-                lines += ('par {}={}\n\n'.format(id, value))
+                # this does not seem to work
+                # FIX ME
+                if element['init_assign'] != '':
+                    lines += ('par {}={}\n\n'.format(id, element['init_assign']))
+                else:
+                    lines += ('par {}={}\n\n'.format(id, value))
             elif element['rate_rule'] == '':
                 id = element['id']
                 value = element['value']
@@ -964,10 +975,13 @@ def create_xpp_file(parse_results, use_species):
             lines += ('# {}:   id = {}, defined by rule\n\n'.format(sbml, id))
 
     # output xpp specific code
-    lines += '@ meth=cvode, tol=1e-6, atol=1e-8\n'
-    lines += '# @ maxstor=1e6\n'
-    lines += '@ bound=40000, total=200\n'
-    lines += 'done\n\n'
+    #
+    # dont need this for BioCham
+    #
+    # lines += '@ meth=cvode, tol=1e-6, atol=1e-8\n'
+    # lines += '# @ maxstor=1e6\n'
+    # lines += '@ bound=40000, total=200\n'
+    # lines += 'done\n\n'
 
     return lines
 
