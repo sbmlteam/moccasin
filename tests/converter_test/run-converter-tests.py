@@ -26,7 +26,6 @@ Available options:
     do_debug        = not any(['-n' in y for y in options])
     use_species     = not any(['-p' in y for y in options])
     do_print_interp = any(['-x' in y for y in options])
-
     parser = MatlabGrammar()
 
     for f in glob.glob("converter-test-cases/valid*.m"):
