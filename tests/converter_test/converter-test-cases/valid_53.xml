@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version1/core" level="3" version="1">
+  <model>
+    <listOfCompartments>
+      <compartment id="comp1" spatialDimensions="3" size="1" constant="true"/>
+    </listOfCompartments>
+    <listOfSpecies>
+      <species id="SimData_1" compartment="comp1" initialConcentration="1" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"/>
+      <species id="SimData_2" compartment="comp1" initialConcentration="1" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"/>
+      <species id="SimData_3" compartment="comp1" initialConcentration="1" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"/>
+    </listOfSpecies>
+    <listOfParameters>
+      <parameter id="I" value="1" constant="true"/>
+      <parameter id="k_1" value="4.2416" constant="false"/>
+      <parameter id="k_2" value="5.9816" constant="false"/>
+      <parameter id="k_3" value="0.1009" constant="false"/>
+      <parameter id="k_4" value="1.1549" constant="false"/>
+      <parameter id="k_5" value="1.3618" constant="false"/>
+      <parameter id="k_6" value="1.4219" constant="false"/>
+      <parameter id="k_7" value="0.0051" constant="false"/>
+      <parameter id="k_8" value="0.0972" constant="false"/>
+      <parameter id="k_9" value="0.0012" constant="false"/>
+      <parameter id="k_10" value="56.8583" constant="false"/>
+      <parameter id="k_11" value="0.0111" constant="false"/>
+      <parameter id="k_12" value="0.0014" constant="false"/>
+    </listOfParameters>
+    <listOfRules>
+      <rateRule variable="SimData_1">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <minus/>
+            <apply>
+              <times/>
+              <ci> k_1 </ci>
+              <ci> I </ci>
+              <apply>
+                <minus/>
+                <cn type="integer"> 1 </cn>
+                <ci> SimData_1 </ci>
+              </apply>
+            </apply>
+            <apply>
+              <divide/>
+              <apply>
+                <times/>
+                <ci> k_2 </ci>
+                <ci> SimData_1 </ci>
+              </apply>
+              <apply>
+                <plus/>
+                <ci> SimData_1 </ci>
+                <ci> k_8 </ci>
+              </apply>
+            </apply>
+          </apply>
+        </math>
+      </rateRule>
+      <rateRule variable="SimData_2">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <minus/>
+            <apply>
+              <times/>
+              <ci> k_3 </ci>
+              <ci> SimData_1 </ci>
+              <apply>
+                <minus/>
+                <cn type="integer"> 1 </cn>
+                <ci> SimData_2 </ci>
+              </apply>
+            </apply>
+            <apply>
+              <divide/>
+              <apply>
+                <times/>
+                <ci> k_4 </ci>
+                <ci> SimData_2 </ci>
+              </apply>
+              <apply>
+                <plus/>
+                <ci> SimData_2 </ci>
+                <ci> k_10 </ci>
+              </apply>
+            </apply>
+          </apply>
+        </math>
+      </rateRule>
+      <rateRule variable="SimData_3">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <minus/>
+            <apply>
+              <times/>
+              <ci> k_5 </ci>
+              <ci> SimData_1 </ci>
+              <apply>
+                <minus/>
+                <cn type="integer"> 1 </cn>
+                <ci> SimData_3 </ci>
+              </apply>
+            </apply>
+            <apply>
+              <times/>
+              <ci> k_6 </ci>
+              <ci> SimData_2 </ci>
+              <ci> SimData_3 </ci>
+            </apply>
+          </apply>
+        </math>
+      </rateRule>
+    </listOfRules>
+  </model>
+</sbml>
