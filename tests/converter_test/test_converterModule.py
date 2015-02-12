@@ -30,7 +30,7 @@ def build_model(path):
     except Exception as e:
         print e
    
-#reads file containing expected sbml model and returns as string
+#reads file containing expected sbml model and returns it as string
 def read_sbml (path):
     file = open(path,'r')
     contents = file.read()

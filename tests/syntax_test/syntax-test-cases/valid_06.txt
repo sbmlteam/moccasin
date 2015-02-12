@@ -1,0 +1,2 @@
+{comment:  comment line 10}
+{assign: {identifier: "k"} = ( {identifier: "a"} {binary op: +} {identifier: "b"} )}

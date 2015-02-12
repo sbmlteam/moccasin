@@ -1,0 +1,3 @@
+{comment:  foo}
+{function definition: {identifier: "valid_35"} parameters ( {identifier: "x"} ) output none}
+( ( {identifier: "x"} {binary op: *} {number: 2} ) )

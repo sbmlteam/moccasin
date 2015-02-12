@@ -1,0 +1,10 @@
+{comment:  quick functions}
+{assign: {identifier: "f"} = {anon @ handle: args ( {identifier: "x"} ) body ( ( ( {number: 3} {binary op: *} ( {identifier: "x"} {binary op: .^} {number: 2} ) ) {binary op: +} ( {number: 2} {binary op: *} {identifier: "x"} ) ) {binary op: +} {number: 7} ) }}
+{assign: {identifier: "t"} = ( ( {number: 0} {colon} {number: 0.001} ) {colon} {number: 1} )}
+( {function/array: {identifier: "plot"} ( {identifier: "t"}, {function/array: {identifier: "f"} ( {identifier: "t"} )}, {identifier: "t"}, {function/array: {identifier: "f"} ( ( {number: 2} {binary op: *} {identifier: "t"} ) )}, {identifier: "t"}, {function/array: {identifier: "f"} ( ( {number: 3} {binary op: *} {identifier: "t"} ) )} )} )
+{comment:  closures (linfunc below is a function that returns a function,}
+{comment:  and the outer functions arguments are held for the lifetime}
+{comment:  of the returned function.}
+{assign: {identifier: "linfunc"} = {anon @ handle: args ( {identifier: "m"}, {identifier: "b"} ) body {anon @ handle: args ( {identifier: "x"} ) body ( ( {identifier: "m"} {binary op: *} {identifier: "x"} ) {binary op: +} {identifier: "b"} ) } }}
+{assign: {identifier: "C2F"} = {function/array: {identifier: "linfunc"} ( ( {number: 9} {binary op: /} {number: 5} ), {number: 32} )}}
+{assign: {identifier: "F2C"} = {function/array: {identifier: "linfunc"} ( ( {number: 5} {binary op: /} {number: 9} ), ( ( ( {unary op: -} {number: 32} ) {binary op: *} {number: 5} ) {binary op: /} {number: 9} ) )}}

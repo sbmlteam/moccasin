@@ -1,0 +1,1 @@
+{assign: {identifier: "C"} = {cell array: [ {row 1: {identifier: "A"}, {function/array: {identifier: "sum"} ( {identifier: "A"} )}, {function/array: {identifier: "prod"} ( {function/array: {identifier: "prod"} ( {identifier: "A"} )} )}} ]}}
