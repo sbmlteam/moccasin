@@ -1,0 +1,3 @@
+{assign: {identifier: "list2"} = ( ( {number: 1} {colon} {number: 2} ) {colon} {number: 10} )}
+{assign: {identifier: "nsamp"} = {number: 5}}
+{assign: {identifier: "sliceOfPi"} = ( ( ( {number: 0} {colon} ( {number: 1} {binary op: /} ( {identifier: "nsamp"} {binary op: -} {number: 1} ) ) ) {colon} {number: 1} ) {binary op: *} {identifier: "pi"} )}

@@ -4,10 +4,8 @@ import pytest
 import sys
 import glob
 from pyparsing import ParseResults
-sys.path.append('moccasin/converter/')
 sys.path.append('moccasin/')
 from matlab_parser import *
-from converter import *
 
 #Generates (multiple) parametrized calls to a test function
 def pytest_generate_tests(metafunc):
@@ -17,21 +15,20 @@ def pytest_generate_tests(metafunc):
     metafunc.parametrize(argnames, [[funcargs[name] for name in argnames]
             for funcargs in funcarglist])
 
-#Parses and converts file to SBML and prints result(output is captured)                       
+#Parses the file and prints interpreted result(output is captured)                       
 def build_model(path):
     file = open(path,'r')
     contents = file.read()
     parser = MatlabGrammar()
     try:
         results = parser.parse_string(contents, fail_soft=True)
-        sbml = create_raterule_model(results, True)
         file.close()
-        print(sbml)
+        parser.print_parse_results(results)
     except Exception as e:
-        print e
+        print(e)
    
-#reads file containing expected sbml model and returns it as string
-def read_sbml (path):
+#reads file containing expected parsed model and returns it as string
+def read_parsed (path):
     file = open(path,'r')
     contents = file.read()
     file.close()
@@ -39,22 +36,19 @@ def read_sbml (path):
 
 # Constructs the params dictionary for test function parametrization
 def obtain_params():
-    matlab_models=glob.glob("tests/converter_test/converter-test-cases/*.m")
-    sbml_models=glob.glob("tests/converter_test/converter-test-cases/*.xml")
+    matlab_models=glob.glob("tests/syntax_test/syntax-test-cases/*.m")
+    parsed_models=glob.glob("tests/syntax_test/syntax-test-cases/*.txt")
     pairs=list()
     for i in range(len(matlab_models)):
-        pairs.append((dict(model= matlab_models[i],sbml=sbml_models[i])))
-    parameters={'test_converterCases':pairs}
+        pairs.append((dict(model= matlab_models[i],parsed=parsed_models[i])))
+    parameters={'test_syntaxCases':pairs}
     return parameters
 
 class TestClass:
     # a map specifying multiple argument sets for a test method
     params = obtain_params()
     
-    def test_converterCases(self,capsys, model, sbml):
+    def test_syntaxCases(self,capsys,model,parsed):
         build_model(model)
-        out,err=capsys.readouterr()
-        assert out.strip()== read_sbml(sbml).strip()
-
-
-
+	out,err=capsys.readouterr()        
+        assert out.strip()== read_parsed(parsed).strip()        
