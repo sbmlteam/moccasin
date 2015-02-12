@@ -4,8 +4,8 @@ import pytest
 import sys
 import glob
 from pyparsing import ParseResults
-sys.path.append('../../moccasin/converter/')
-sys.path.append('../../moccasin/')
+sys.path.append('moccasin/converter/')
+sys.path.append('moccasin/')
 from matlab_parser import *
 from converter import *
 
@@ -39,13 +39,13 @@ def read_sbml (path):
 
 # Constructs the params dictionary for test function parametrization
 def obtain_params():
-    matlab_models=glob.glob("converter-test-cases/*.m")
-    sbml_models=glob.glob("converter-test-cases/*.xml")
+    matlab_models=glob.glob("tests/converter_test/converter-test-cases/*.m")
+    sbml_models=glob.glob("tests/converter_test/converter-test-cases/*.xml")
     pairs=list()
     for i in range(len(matlab_models)):
         pairs.append((dict(model= matlab_models[i],sbml=sbml_models[i])))
-        params={'test_converterCases':pairs}
-    return params
+    parameters={'test_converterCases':pairs}
+    return parameters
 
 class TestClass:
     # a map specifying multiple argument sets for a test method
