@@ -9,21 +9,21 @@ sys.path.append('moccasin/')
 from matlab_parser import *
 from converter import *
 
+parser = MatlabGrammar()
 #Generates (multiple) parametrized calls to a test function
 def pytest_generate_tests(metafunc):
     # called once per each test function
     funcarglist = metafunc.cls.params[metafunc.function.__name__]
     argnames = list(funcarglist[0])
     metafunc.parametrize(argnames, [[funcargs[name] for name in argnames]
-            for funcargs in funcarglist])
+            for funcargs in funcarglist],scope='module')
 
 #Parses and converts file to SBML and prints result(output is captured)                       
 def build_model(path):
     file = open(path,'r')
     contents = file.read()
-    parser = MatlabGrammar()
     try:
-        results = parser.parse_string(contents, fail_soft=True)
+        results = parser.parse_string(contents, print_debug=False, fail_soft=True)
         sbml = create_raterule_model(results, True)
         file.close()
         print(sbml)

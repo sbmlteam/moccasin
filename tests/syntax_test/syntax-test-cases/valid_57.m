@@ -14,4 +14,3 @@ function valid_57(x)
    xlabel('X Axis')
    ylabel('Y Axis')
 end
-
