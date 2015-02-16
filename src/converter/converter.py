@@ -25,6 +25,7 @@ import pdb
 import re
 import getopt
 from pyparsing import ParseException, ParseResults
+from evaluate_formula import NumericStringParser
 from libsbml import *
 
 sys.path.append('..')
@@ -105,6 +106,11 @@ def get_lhs_for_rhs(name, scope):
             return lhs
     return None
 
+def get_assignment_rule(name, scope):
+    for lhs, rhs in scope.assignments.items():
+        if lhs == name:
+            return rhs
+    return None
 
 def get_function_declaration(name, scope):
     if scope and name in scope.functions:
@@ -737,6 +743,16 @@ def munge_reference(pr, scope, underscores):
 # words, in the sample above, "x" will be the basis of the species or parameter
 # names and the rate rules generated because that's what is used in [t, x] =...
 
+def substitute_vars(rhs, scope):
+    for i in range(0, len(rhs)):
+        var = MatlabGrammar.make_formula(rhs[i], False, False)
+        lhs = get_assignment_rule(var, scope)
+        if lhs is not None:
+            rhs[i] = lhs
+            return rhs
+    return None
+
+
 def create_xpp_elements(mparse, use_species=True):
     # This assumes there's only one call to an ode* function in the file.  We
     # start by finding that call (wherever it is -- whether it's at the top
@@ -744,6 +760,7 @@ def create_xpp_elements(mparse, use_species=True):
     # saving the name of the function handle passed to it as an argument.  We
     # also save the name of the 3rd argument (a vector of initial conditions).
 
+    formula_parser = NumericStringParser()
     # Gather some preliminary info.
     working_scope = get_function_scope(mparse)
     underscores = num_underscores(working_scope) + 1
@@ -882,9 +899,11 @@ def create_xpp_elements(mparse, use_species=True):
         elif 'array' not in rhs:
             translator = lambda pr: munge_reference(pr, function_scope,
                                                     underscores)
+            rhs = substitute_vars(rhs, working_scope)
             formula = MatlabGrammar.make_formula(rhs, atrans=translator)
             if formula is not None or formula != '':
-                create_xpp_parameter(xpp_variables, var, 0, True, '', formula)
+                result = formula_parser.eval(formula)
+                create_xpp_parameter(xpp_variables, var, result, True, '', '')
                 # create_xpp_initial_assignment(xpp_variables, var, formula)
 
     # Write the Model
