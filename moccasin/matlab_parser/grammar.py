@@ -1021,7 +1021,7 @@ class MatlabGrammar:
 
     def _init_grammar_names(self):
         for obj in self._to_name:
-            obj.setName(self._object_name(obj)) 
+            obj.setName(self._object_name(obj))
 
 
     # The next variable and function support the "print interpreted" option
