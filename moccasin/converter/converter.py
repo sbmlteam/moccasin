@@ -24,6 +24,8 @@ import sys
 import pdb
 import re
 import getopt
+import six
+import itertools
 from pyparsing import ParseException, ParseResults
 from libsbml import *
 
@@ -49,7 +51,7 @@ def get_function_scope(mparse):
     if mparse and mparse.scope:
         scope = mparse.scope
         if len(scope.functions) == 1 and len(scope.assignments) == 0:
-            return scope.functions.itervalues().next()
+            return six.next(six.itervalues(scope.functions))
         else:
             return scope
     else:
@@ -173,7 +175,7 @@ def num_underscores(scope):
             this_longest = len(max(re.findall('(_+)', name), key=len))
             longest = max(longest, this_longest)
     if scope.functions:
-        for subscope in scope.functions.itervalues():
+        for subscope in six.itervalues(scope.functions):
             longest = max(num_underscores(subscope), longest)
     return longest
 
@@ -537,8 +539,9 @@ def create_raterule_model(mparse, use_species=True):
     # scope taken second (which means its values are the final ones).
 
     skip_vars = [init_cond_var, output_var, assigned_var, call_arglist[1]['identifier']]
-    for var, rhs in dict(working_scope.assignments.items()
-                         + function_scope.assignments.items()).items():
+    all_vars = dict(itertools.chain(working_scope.assignments.items(),
+                                    function_scope.assignments.items()))
+    for var, rhs in all_vars.items():
         if var in skip_vars:
             continue
         # FIXME currently doesn't handle matrices on LHS.
@@ -653,7 +656,7 @@ Available options:
         print('----- SBML output ' + '-'*50)
 
     sbml = create_raterule_model(parse_results, use_species)
-    print sbml
+    print(sbml)
 
 
 def fail(msg):
