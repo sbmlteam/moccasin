@@ -233,8 +233,8 @@ if __name__ == '__main__':
     z.assignments['var2'] = 222
 
     try:
-        print 'x = ' + str(x)
-        print 'y = ' + str(y)
-        print 'z = ' + str(z)
+        print('x = ' + str(x))
+        print('y = ' + str(y))
+        print('z = ' + str(z))
     except Exception as err:
         print("error: {0}".format(err))
