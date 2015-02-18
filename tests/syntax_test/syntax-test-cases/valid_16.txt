@@ -1,0 +1,1 @@
+{assign: {identifier: "p"} = ( {identifier: "a"} {binary op: &} {identifier: "b"} )}

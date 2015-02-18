@@ -1,0 +1,1 @@
+{assign: {identifier: "B"} = {array: [ {row 1: {array: [ {row 1: {number: 8}}; {row 2: {number: 9}}; {row 3: {number: 16}} ]}, {array: [ {row 1: {number: 7}}; {row 2: ( {unary op: -} {number: 2} )}; {row 3: ( {unary op: -} {number: 3} )} ]}} ]}}

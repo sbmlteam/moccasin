@@ -1,0 +1,2 @@
+{function definition: {identifier: "valid_34"} parameters ( {identifier: "x"} ) output none}
+( ( {identifier: "x"} {binary op: *} {number: 2} ) )

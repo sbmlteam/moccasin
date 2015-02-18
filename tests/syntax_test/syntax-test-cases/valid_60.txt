@@ -1,0 +1,4 @@
+( {function/array: {identifier: "func"} ( {number: 3} )} )
+{command: name {identifier: "func"} args  4}
+{command: name {identifier: "func"} args  5}
+{command: name {identifier: "func"} args  6}
