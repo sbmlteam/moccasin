@@ -1,0 +1,3 @@
+libsbml>=5.11.0
+pyparsing>=2.0.3
+requests>=2.5.1

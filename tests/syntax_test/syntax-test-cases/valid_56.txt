@@ -1,0 +1,2 @@
+{assign: {array: [ {row 1: {identifier: "x"}, {identifier: "y"}} ]} = {function/array: {identifier: "somefunc"} ( {number: 3} )}}
+{assign: {array: [ {row 1: {identifier: "x"}, {identifier: "y"}} ]} = {function/array: {identifier: "somefunc"} ( {number: 3} )}}
