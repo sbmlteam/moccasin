@@ -41,7 +41,7 @@ Available options:
                 print('')
             print('----- SBML output ' + '-'*30)
             sbml = create_raterule_model(results, use_species)
-            print sbml
+            print(sbml)
         except Exception as err:
             if do_debug and not results:
                 print('Object "results" contains the output of parse_string()')
