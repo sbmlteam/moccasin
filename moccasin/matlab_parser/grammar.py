@@ -238,12 +238,15 @@
 # .............................................................................
 
 import sys
-import pdb
 import pyparsing                        # Need this for version check, so ...
 from pyparsing import *                 # ... DON'T merge this & previous stmt!
 from distutils.version import LooseVersion
-from grammar_utils import *
-from scope import *
+try:
+    from grammar_utils import *
+    from scope import *
+except:
+    from .grammar_utils import *
+    from .scope import *
 
 # Check minimum version of PyParsing.
 
@@ -1006,20 +1009,29 @@ class MatlabGrammar:
 
     def _object_name(self, obj):
         """Returns the name of a given object."""
-        for name, thing in MatlabGrammar.__dict__.iteritems():
+        try:
+            values = MatlabGrammar.__dict__.iteritems()  # Python 2
+        except:
+            values = MatlabGrammar.__dict__.items()      # Python 3
+        for name, thing in values:
             if thing is obj:
                 return name
 
+
     def _init_grammar_names(self):
-        map(lambda x: x.setName(self._object_name(x)), self._to_name)
+        for obj in self._to_name:
+            obj.setName(self._object_name(obj)) 
+
 
     # The next variable and function support the "print interpreted" option
     # for the parser interface.
 
     _to_print = [_comment, _stmt, _shell_cmd]
 
+
     def _init_print_interpreted(self):
-        map(lambda x: x.addParseAction(self._print_tokens), self._to_print)
+        for obj in self._to_print:
+            obj.addParseAction(self._print_tokens)
 
 
     def _set_print_tokens(self, doprint):
@@ -1030,7 +1042,7 @@ class MatlabGrammar:
         # This gets called once for every matching line.
         # Tokens will be a list; the first element will be the variable.
         if self._do_print_tokens:
-            print tokens
+            print(tokens)
 
 
     # The next variable and functino are for printing low-level PyParsing
@@ -1039,7 +1051,8 @@ class MatlabGrammar:
     _to_print_raw = []
 
     def _init_print_raw(self):
-        map(lambda x: x.setDebug(True), self._to_print_raw)
+        for obj in self._to_print_raw:
+            obj.setDebug(True)
 
 
     # Printers, for more debugging.
@@ -1096,10 +1109,11 @@ class MatlabGrammar:
     def _format_pr(self, pr):
         if isinstance(pr, str):
             return pr
-        if len(pr.keys()) == 0:
+        if not nonempty_dict(pr):
             # It's an expression.
             return self._format_expression(pr)
-        stringifier = self._stringifiers[pr.keys()[0]]
+        key = first_key(pr)
+        stringifier = self._stringifiers[key]
         return stringifier(pr)
 
 
@@ -1128,7 +1142,6 @@ class MatlabGrammar:
         if not {'unary operator', 'binary operator',
                 'colon operator'} & set(pr.keys()):
             self._warn('ParseResults not an operator type')
-        op_key = pr.keys()[0]
         if 'colon operator' in pr:
             text = '{colon}'
         else:
@@ -1136,6 +1149,7 @@ class MatlabGrammar:
                 op = 'unary op'
             elif 'binary operator' in pr:
                 op = 'binary op'
+            op_key = first_key(pr)
             text = '{{{}: {}}}'.format(op, pr[op_key])
         return text
 
@@ -1506,8 +1520,9 @@ class MatlabGrammar:
         def row_to_string(row):
             list = []
             for item in row:
-                if MatlabGrammar.terminal(item) and len(item.keys()) == 1:
-                    list.append(item[item.keys()[0]])
+                if MatlabGrammar.terminal(item) and len(item) == 1:
+                    terminal = item[first_key(item)]
+                    list.append(terminal)
                 elif 'array or function' in item or 'array' in item \
                      or 'cell array' in item or 'struct' in item:
                     list.append(MatlabGrammar.make_key(item))
@@ -1517,8 +1532,9 @@ class MatlabGrammar:
 
         if not isinstance(thing, ParseResults):
             return None
-        elif MatlabGrammar.terminal(thing) and len(thing.keys()) == 1:
-            return thing[thing.keys()[0]]
+        elif MatlabGrammar.terminal(thing) and len(thing) == 1:
+            name = first_key(thing)
+            return thing[name]
         elif 'array' in thing:
             array = thing['array']
             if 'row list' in array:
@@ -1617,7 +1633,7 @@ class MatlabGrammar:
         elif {'array or function', 'cell array', 'struct',
               'function handle', 'transpose'} & set(results.keys()):
             return MatlabGrammar.make_key(results)
-        elif len(results) == 1 and results.keys() == 0:
+        elif len(results) == 1 and not results.keys():
             return make_formula(results[0])
         elif len(results) > 1:
             list = [MatlabGrammar.make_formula(term, spaces, parens, atrans)

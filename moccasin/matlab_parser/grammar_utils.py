@@ -21,6 +21,8 @@
 
 import functools
 import inspect
+import sys
+import six
 from pyparsing import ParseResults
 
 
@@ -94,7 +96,8 @@ def parse_debug_helper(f):
     def action(*args):
         if len(args) < num_args:
             if action.exc_info:
-                raise action.exc_info[0], action.exc_info[1], action.exc_info[2]
+                raise six.reraise(action.exc_info[0], action.exc_info[1],
+                                  action.exc_info[2])
         action.exc_info = None
         try:
             return f(*args[:-(num_args + 1):-1])
@@ -104,3 +107,18 @@ def parse_debug_helper(f):
 
     action.exc = None
     return action
+
+
+# Portability helpers.
+# .............................................................................
+
+def first_key(d):
+    if sys.version < '3':
+        return d.keys()[0]
+    else:
+        for key in d.keys():
+            return key
+
+
+def nonempty_dict(d):
+    return (d.keys() and len(list(d.keys())) > 0)

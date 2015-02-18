@@ -21,7 +21,7 @@
 
 import sys
 import getopt
-from parser import *
+from grammar import *
 
 
 def get_filename_and_options(argv):
@@ -46,17 +46,17 @@ Arguments:
     path, debug, print_interpreted = get_filename_and_options(argv)
 
     file = open(path, 'r')
-    print '----- file ' + path + ' ' + '-'*30
+    print('----- file ' + path + ' ' + '-'*30)
     contents = file.read()
-    print contents
+    print(contents)
 
-    print '----- raw parse results ' + '-'*50
+    print('----- raw parse results ' + '-'*50)
     parser  = MatlabGrammar()
     results = parser.parse_string(contents, True)
-    print ''
+    print('')
 
     if print_interpreted:
-        print '----- interpreted output ' + '-'*50
+        print('----- interpreted output ' + '-'*50)
         parser.print_parse_results(results)
 
     if debug:
