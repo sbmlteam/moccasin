@@ -19,6 +19,7 @@
 # available online at https://github.com/sbmlteam/moccasin/.
 # ------------------------------------------------------------------------- -->
 
+from __future__ import print_function
 import collections
 from pyparsing import ParseResults
 
