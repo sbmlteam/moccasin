@@ -1,0 +1,6 @@
+{assign: {identifier: "a"} = {array: [ {row 1: {number: 1}, {number: 2}, {number: 3}}; {row 2: {number: 4}, {number: 5}, {number: 6}}; {row 3: {number: 7}, {number: 8}, {number: 10}} ]}}
+{command: name {identifier: "format"} args  long}
+{assign: {identifier: "p"} = ( {identifier: "a"} {binary op: *} {function/array: {identifier: "inv"} ( {identifier: "a"} )} )}
+{command: name {identifier: "save"} args  myfile.mat}
+{command: name {identifier: "save"} args  secondfile.mat}
+{command: name {identifier: "save"} args  anotherfile.mat}

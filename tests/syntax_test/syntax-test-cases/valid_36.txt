@@ -1,0 +1,6 @@
+{assign: {identifier: "fhandle"} = {function @ handle: {identifier: "humps"}}}
+{assign: {identifier: "sqr"} = {anon @ handle: args ( {identifier: "x"} ) body ( {identifier: "x"} {binary op: .^} {number: 2} ) }}
+{assign: {struct: {identifier: "S"}.{identifier: "a"} } = {function @ handle: {identifier: "sin"}}}
+{assign: {struct: {identifier: "S"}.{identifier: "b"} } = {function @ handle: {identifier: "cos"}}}
+{assign: {struct: {identifier: "S"}.{identifier: "c"} } = {function @ handle: {identifier: "tan"}}}
+( {function/array: {identifier: "structfun"} ( {anon @ handle: args ( {identifier: "x"} ) body {array {identifier: "x"}: [ {function/array: {identifier: "linspace"} ( {number: 1}, {number: 4}, {number: 3} )} ]} }, {identifier: "S"}, {string: "UniformOutput"}, {boolean: false} )} )
