@@ -1,0 +1,2 @@
+{command: name {identifier: "close"} args  all}
+{command: name {identifier: "clear"} args  all}
