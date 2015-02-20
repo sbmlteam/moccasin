@@ -19,20 +19,18 @@ Available options:
   -n   Don't drop into pdb upon a parsing exception -- keep going
   -p   Use parameters instead of species
   -x   Extra debugging -- print annotated Matlab parsing results
-  -s   Write out sbml file
-  -y   Write out xpp file
+  -o   Create XPP (SBML is default)
 '''
 
     try:
-        options, unused = getopt.getopt(argv[1:], "npxys")
+        options, unused = getopt.getopt(argv[1:], "npxo")
     except:
         raise SystemExit(main.__doc__)
 
     do_debug        = not any(['-n' in y for y in options])
     use_species     = not any(['-p' in y for y in options])
     do_print_interp = any(['-x' in y for y in options])
-    output_xpp      = any(['-y' in y for y in options])
-    output_sbml     = any(['-s' in y for y in options])
+    output_sbml     = not any(['-o' in y for y in options])
 
     parser = MatlabGrammar()
 
@@ -47,23 +45,27 @@ Available options:
                 print('----- interpreted ' + '-'*30)
                 parser.print_parse_results(results)
                 print('')
-            print('----- SBML output ' + '-'*30)
+            if output_sbml:
+                print('----- SBML output ' + '-'*30)
+            else:
+                print('----- XPP output ' + '-'*30)
 #            print('hello')
-            sbml = converter.create_raterule_model(results, use_species)
+            sbml = converter.create_raterule_model(results, use_species,
+                                                   output_sbml)
             print (sbml)
             # if output_sbml:
             #     out_path = f[0:len(f)-1]+'xml'
             #     file_out = open(out_path, 'w')
             #     file_out.write(sbml)
             #     file_out.close()
-            if output_xpp:
-                print('----- xpp '+ '-'*30)
-                xpp = converter.create_xpp_file(results, use_species)
-                print(xpp)
-                out_xpp_file = f[0:len(f)-2]+'from_moccasin.ode'
-                file_xpp = open(out_xpp_file, 'w')
-                file_xpp.write(xpp)
-                file_xpp.close()
+            # if output_xpp:
+            #     print('----- xpp '+ '-'*30)
+            #     xpp = converter.create_xpp_file(results, use_species)
+            #     print(xpp)
+            #     out_xpp_file = f[0:len(f)-2]+'from_moccasin.ode'
+            #     file_xpp = open(out_xpp_file, 'w')
+            #     file_xpp.write(xpp)
+            #     file_xpp.close()
         except Exception as err:
             print('threw exception')
             if do_debug and not results:
