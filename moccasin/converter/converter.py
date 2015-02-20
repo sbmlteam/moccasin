@@ -539,7 +539,6 @@ def create_raterule_model(mparse, use_species=True):
             ode_function = name
             break
 
-    print('in create rate rule')
     if not ode_function:
         fail('Could not locate a call to a Matlab function in the file.')
 
@@ -764,13 +763,11 @@ def create_xpp_elements(mparse, use_species=True):
     # saving the name of the function handle passed to it as an argument.  We
     # also save the name of the 3rd argument (a vector of initial conditions).
 
-    print('in create xpp elements')
     formula_parser = NumericStringParser()
     # Gather some preliminary info.
     working_scope = get_function_scope(mparse)
     underscores = num_underscores(working_scope) + 1
 
-    print('in create xpp elements')
     # Look for a call to a MATLAB ode* function.
     ode_function = None
     call_arglist = None
@@ -782,7 +779,6 @@ def create_xpp_elements(mparse, use_species=True):
             ode_function = name
             break
 
-    print('in create xpp elements')
     if not ode_function:
         fail('Could not locate a call to a Matlab function in the file.')
 
