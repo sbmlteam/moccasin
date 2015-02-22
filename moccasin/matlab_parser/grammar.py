@@ -238,6 +238,7 @@
 # .............................................................................
 
 from __future__ import print_function
+import pdb
 import sys
 import pyparsing                        # Need this for version check, so ...
 from pyparsing import *                 # ... DON'T merge this & previous stmt!
@@ -398,7 +399,7 @@ class MatlabGrammar:
             elif 'array' in lhs:
                 array = lhs['array']
                 if 'name' in array:
-                    self._save_type(array['identifier'], 'variable')
+                    self._save_type(array['name']['identifier'], 'variable')
                 else:
                     # If the LHS of an assignment is an array, and if there
                     # are bare identifiers inside the array, then they must
@@ -413,21 +414,28 @@ class MatlabGrammar:
                 for var in func['output list']:
                     # The output parameter names are a safe bet to assume to
                     # be variables.
-                    self._save_type(var['identifier'], 'variable')
+                    if 'identifier' in var:
+                        self._save_type(var['identifier'], 'variable')
             if 'parameter list' in func:
                 for param in func['parameter list']:
                     # FIXME this labels parameters as variables, but the
                     # parameter could be a function name or handle when it's
                     # called.  Need to correlate what's done here with the
                     # arguments used in the call to the function.
-                    self._save_type(param['identifier'], 'variable')
+                    if 'identifier' in func:
+                        self._save_type(param['identifier'], 'variable')
 
 
     def _convert_type(self, pr):
+        # Eventually we might be able to figure out more valid conversions.
+        # For now, this is pretty limited.
         if 'array or function' in pr:
             content = pr['array or function']
-            if 'name' in content:
-                id = content['name']['identifier']
+            if 'name' not in content:
+                return
+            name = content['name']
+            if 'identifier' in name:
+                id = name['identifier']
                 if self._get_type(id, self._scope, True) == 'variable':
                     # We have seen this name before, and it's not a function.
                     content = pr.pop('array or function')
@@ -436,21 +444,10 @@ class MatlabGrammar:
                     for item in content['subscript list']:
                         self._convert_recursively(item, id)
                     # If it was previously unknown whether this is a function
-                    # or array, it might have been put in the list of function
-                    # calls.  Remove it.
+                    # or array, it might have been put in the list of
+                    # function calls.  Remove it.
                     if id in self._scope.calls:
                         self._scope.calls.pop(id)
-        elif 'function handle' in pr:
-            # The parameters to the function are variables, so if they appear
-            # in the body and were previously identified as 'array or
-            # function', we can convert them to 'array'.
-            content = pr['function handle']
-            if 'function definition' in content:
-                body = content['function definition']
-                params = content['argument list']
-                for item in params:
-                    id = item['identifier']
-                    self._convert_recursively(body, id)
 
 
     def _convert_recursively(self, pr, id):
@@ -1021,7 +1018,7 @@ class MatlabGrammar:
 
     def _init_grammar_names(self):
         for obj in self._to_name:
-            obj.setName(self._object_name(obj)) 
+            obj.setName(self._object_name(obj))
 
 
     # The next variable and function support the "print interpreted" option
