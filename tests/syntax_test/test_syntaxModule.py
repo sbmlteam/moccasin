@@ -10,10 +10,10 @@ from matlab_parser import *
 from string import printable
 import codecs
 
-parser = MatlabGrammar()
+parser= MatlabGrammar()
 #Generates (multiple) parametrized calls to a test function
 def pytest_generate_tests(metafunc):
-    # called once per each test function
+    # called once per test function
     funcarglist = metafunc.cls.params[metafunc.function.__name__]
     argnames = list(funcarglist[0])
     metafunc.parametrize(argnames, [[funcargs[name] for name in argnames]
