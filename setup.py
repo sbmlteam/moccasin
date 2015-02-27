@@ -13,7 +13,7 @@ with open(path.join(here, 'requirements.txt')) as f:
     reqs = f.read().rstrip().encode("utf-8").splitlines()
 
 class PyTest(TestCommand):
-    user_options = [('pytest-args=', 'vv', "Arguments to pass to py.test")]
+    #user_options = [('pytest-args=', 'vv', "Arguments to pass to py.test")]
 
     def initialize_options(self):
         TestCommand.initialize_options(self)
@@ -37,13 +37,12 @@ setup(
     license='GNU Lesser General Public License',
     author='Michael Hucka, Sarah Keating, and Harold Gomez',
     tests_require=['pytest'],
-    #add pytest-cov but place before pytest or it will fail
     install_requires=reqs,
     cmdclass={'test': PyTest},
     author_email='email@sbml.com',
     description='User-assisted converter that can take MATLAB or Octave ODE-based models in biology and translate them into SBML format',
     packages=find_packages(exclude='tests'),
-#   package_data={'moccasin': ['docs/*.txt','LICENSE.txt', 'requirements.txt']},
+    package_data={'moccasin': ['docs/*.txt','LICENSE.txt', 'requirements.txt']},
     include_package_data=True,
     platforms='any',
     test_suite='tests',
