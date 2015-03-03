@@ -13,6 +13,6 @@ Aside from a required MATLAB file, Moccasin's CLI supports several flags useful 
 * -x Print extra debugging information about the interpreted MATLAB code
 * -s Encode variables as species (default: parameters)
 
-One-character abbreviation for flags: in this way you can use the GNU-style composition of flags (i.e. -qsd is an abbreviation of -q -s -x).
+One-character abbreviation for flags: in this way you can use the GNU-style composition of flags (i.e. -qsd is an abbreviation of -q -s -d).
 
 ###Usage of settings files
