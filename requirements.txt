@@ -2,3 +2,4 @@
 pyparsing>=2.0.3
 requests>=2.5.1
 six>=1.9.0
+plac>=0.9.1
