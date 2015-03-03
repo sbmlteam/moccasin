@@ -27,7 +27,7 @@ import re
 import getopt
 import six
 import itertools
-from pyparsing import ParseException, ParseResults
+from pyparsing import ParseResults
 from libsbml import *
 
 sys.path.append('..')
@@ -600,69 +600,5 @@ def munge_reference(pr, scope, underscores):
                 raise ValueError('Unable to handle matrix "' + name + '"')
     return constructed
 
-
-# -----------------------------------------------------------------------------
-# Driver
-# -----------------------------------------------------------------------------
-
-def get_filename_and_options(argv):
-    try:
-        options, path = getopt.getopt(argv[1:], "dpqx")
-    except:
-        raise SystemExit(main.__doc__)
-    if len(path) != 1 or len(options) > 2:
-        raise SystemExit(main.__doc__)
-    debug       = any(['-d' in y for y in options])
-    quiet       = any(['-q' in y for y in options])
-    print_parse = any(['-x' in y for y in options])
-    use_species = not any(['-p' in y for y in options])
-    return path[0], debug, quiet, print_parse, use_species
-
-
-def main(argv):
-    '''Usage: converter.py [options] FILENAME.m
-Available options:
- -d   Drop into pdb before starting to parse the MATLAB input
- -h   Print this help message and quit
- -p   Turn variables into parameters (default: make them species)
- -q   Be quiet; just produce SBML, nothing else
- -x   Print extra debugging info about the interpreted MATLAB
-'''
-    path, debug, quiet, print_parse, use_species = get_filename_and_options(argv)
-
-    file = open(path, 'r')
-    file_contents = file.read()
-    file.close()
-
-    if not quiet:
-        print('----- file ' + path + ' ' + '-'*30)
-        print(file_contents)
-
-    if debug:
-        pdb.set_trace()
-
-    try:
-        parser = MatlabGrammar()
-        parse_results = parser.parse_string(file_contents)
-    except ParseException as err:
-        print("error: {0}".format(err))
-
-    if print_parse and not quiet:
-        print('')
-        print('----- interpreted output ' + '-'*50)
-        parser.print_parse_results(parse_results)
-
-    if not quiet:
-        print('')
-        print('----- SBML output ' + '-'*50)
-
-    sbml = create_raterule_model(parse_results, use_species)
-    print(sbml)
-
-
 def fail(msg):
     raise SystemExit(msg)
-
-
-if __name__ == '__main__':
-    main(sys.argv)

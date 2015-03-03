@@ -9,44 +9,42 @@ sys.path.append('../../moccasin/')
 from matlab_parser import *
 from converter import *
 
-
 def main(argv):
-    '''Usage: run-syntax-tests.py [options]
-Available options:
-  -h   Print this help message
-  -n   Don't drop into pdb upon a parsing exception -- keep going
-  -p   Use parameters instead of species
-  -x   Extra debugging -- print annotated Matlab parsing results
-'''
 
-    try:
-        options, unused = getopt.getopt(argv[1:], "npx")
-    except:
-        raise SystemExit(main.__doc__)
+    #Flag values used for testing
+    debug=False
+    quiet=False
+    print_parse=True
+    use_species=True
+    
+    for path in glob.glob("converter-test-cases/valid*.m"):
+        file = open(path, 'r')
+        file_contents = file.read()
+        file.close()
+    
+        if not quiet:
+            print('----- file ' + path + ' ' + '-'*30)
+            print(file_contents)
 
-    do_debug        = not any(['-n' in y for y in options])
-    use_species     = not any(['-p' in y for y in options])
-    do_print_interp = any(['-x' in y for y in options])
-    parser = MatlabGrammar()
-
-    for f in glob.glob("converter-test-cases/valid*.m"):
-        print('===== ' + f + ' ' + '='*30)
-        with open(f, 'r') as file:
-            contents = file.read()
-        print(contents.rstrip())
+        if debug:
+            pdb.set_trace()
         try:
-            results = parser.parse_string(contents, fail_soft=True)
-            if do_print_interp:
-                print('----- interpreted ' + '-'*30)
-                parser.print_parse_results(results)
-                print('')
-            print('----- SBML output ' + '-'*30)
-            sbml = create_raterule_model(results, use_species)
-            print(sbml)
-        except Exception as err:
-            if do_debug and not results:
-                print('Object "results" contains the output of parse_string()')
-                pdb.set_trace()
+            parser = MatlabGrammar()
+            parse_results = parser.parse_string(file_contents)
+        except ParseException as err:
+            print("error: {0}".format(err))
+
+        if print_parse and not quiet:
+            print('')
+            print('----- interpreted output ' + '-'*50)
+            parser.print_parse_results(parse_results)
+
+        if not quiet:
+            print('')
+            print('----- SBML output ' + '-'*50)
+
+        sbml = create_raterule_model(parse_results, use_species)
+        print(sbml)
 
 
 if __name__ == '__main__':
