@@ -13,7 +13,7 @@ from converter import *
 parser = MatlabGrammar()
 #Generates (multiple) parametrized calls to a test function
 def pytest_generate_tests(metafunc):
-    # called once per each test function
+    # called once per test function
     funcarglist = metafunc.cls.params[metafunc.function.__name__]
     argnames = list(funcarglist[0])
     metafunc.parametrize(argnames, [[funcargs[name] for name in argnames]
@@ -23,13 +23,10 @@ def pytest_generate_tests(metafunc):
 def build_model(path):
     file = open(path,'r')
     contents = file.read()
-    try:
-        results = parser.parse_string(contents, print_debug=False, fail_soft=True)
-        sbml = create_raterule_model(results, True)
-        file.close()
-        print(sbml)
-    except Exception as e:
-        print e
+    results = parser.parse_string(contents, print_debug=False, fail_soft=True)
+    sbml = create_raterule_model(results, True)
+    file.close()
+    print(sbml)
    
 #reads file containing expected sbml model and returns it as string
 def read_sbml (path):
@@ -40,8 +37,8 @@ def read_sbml (path):
 
 # Constructs the params dictionary for test function parametrization
 def obtain_params():
-    matlab_models=glob.glob("tests/converter_test/converter-test-cases/*.m")
-    sbml_models=glob.glob("tests/converter_test/converter-test-cases/*.xml")
+    matlab_models=glob.glob("tests/converter_test/converter-test-cases/valid*.m")
+    sbml_models=glob.glob("tests/converter_test/converter-test-cases/valid*.xml")
     pairs=list()
     for i in range(len(matlab_models)):
         pairs.append((dict(model= matlab_models[i],sbml=sbml_models[i])))

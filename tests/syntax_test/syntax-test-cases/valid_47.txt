@@ -1,7 +1,1 @@
-( {function/array: {identifier: "x"} ( {number: 1} )} )
-{assign: {identifier: "y"} = {transpose: {identifier: "x"} operator ' }}
-( {transpose: {{array: [] }} operator ' } )
-( {transpose: {number: 1} operator ' } )
-( {transpose: {function/array: {identifier: "x"} ( {number: 1} )} operator ' } )
-{assign: {identifier: "y"} = {transpose: {function/array: {identifier: "x"} ( {number: 1} )} operator ' }}
-{assign: {identifier: "y"} = {transpose: {identifier: "x"} operator ' }}
+{assign: {array {identifier: "z"}: [ {colon}, {identifier: "p"} ]} = ( {transpose: ( {function/array: {identifier: "z_tmp"} ( ( {number: 2} {colon} {identifier: "end"} ), {identifier: "p"} )} {binary op: -} {function/array: {identifier: "z_tmp"} ( ( {number: 1} {colon} ( {identifier: "end"} {binary op: -} {number: 1} ) ), {identifier: "p"} )} ) operator ' } {binary op: ./} ( {function/array: {identifier: "glc_ext"} ( ( ( {identifier: "glc_min_ind"} {binary op: +} {number: 1} ) {colon} {identifier: "glc_max_ind"} ) )} {binary op: -} {function/array: {identifier: "glc_ext"} ( ( {number: 1} {colon} ( {identifier: "glc_max_ind"} {binary op: -} {number: 1} ) ) )} ) )}
