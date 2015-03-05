@@ -422,8 +422,7 @@ class MatlabGrammar:
                     # parameter could be a function name or handle when it's
                     # called.  Need to correlate what's done here with the
                     # arguments used in the call to the function.
-                    if 'identifier' in func:
-                        self._save_type(param['identifier'], 'variable')
+                    self._save_type(param['identifier'], 'variable')
 
 
     def _convert_type(self, pr):
