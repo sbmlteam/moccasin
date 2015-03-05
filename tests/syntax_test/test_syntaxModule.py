@@ -10,10 +10,10 @@ from matlab_parser import *
 from string import printable
 import codecs
 
-parser = MatlabGrammar()
+parser= MatlabGrammar()
 #Generates (multiple) parametrized calls to a test function
 def pytest_generate_tests(metafunc):
-    # called once per each test function
+    # called once per test function
     funcarglist = metafunc.cls.params[metafunc.function.__name__]
     argnames = list(funcarglist[0])
     metafunc.parametrize(argnames, [[funcargs[name] for name in argnames]
@@ -39,8 +39,8 @@ def read_parsed(path):
 
 # Constructs the params dictionary for test function parametrization
 def obtain_params():
-    matlab_models=glob.glob("tests/syntax_test/syntax-test-cases/*.m")
-    parsed_models=glob.glob("tests/syntax_test/syntax-test-cases/*.txt")
+    matlab_models=glob.glob("tests/syntax_test/syntax-test-cases/valid*.m")
+    parsed_models=glob.glob("tests/syntax_test/syntax-test-cases/valid*.txt")
     pairs=list()
     for i in range(len(matlab_models)):
         pairs.append((dict(model= matlab_models[i],parsed=parsed_models[i])))
