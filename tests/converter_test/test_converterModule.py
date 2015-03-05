@@ -7,6 +7,7 @@ import glob
 from pyparsing import ParseResults
 sys.path.append('moccasin/converter/')
 sys.path.append('moccasin/')
+sys.path.append('../../moccasin')
 from matlab_parser import *
 from converter import *
 
