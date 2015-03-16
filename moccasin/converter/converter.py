@@ -304,7 +304,8 @@ def make_xpp_indexed(var, index, content, species, model, underscores, scope):
             model = create_xpp_parameter(model, name, 0, False, formula)
 
 
-def make_xpp_raterule(assigned_var, dep_var, index, content, model, underscores, scope):
+def make_xpp_raterule(assigned_var, dep_var, index, content, model,
+                      underscores, scope):
     # Currently, this assumes there's only one math expression per row or
     # column, meaning, one subscript value per row or column.
 
@@ -342,7 +343,8 @@ def create_xpp_string(xpp_elements):
                 # this does not seem to work
                 # FIX ME
                 if element['init_assign'] != '':
-                    lines += ('par {}={}\n\n'.format(id, element['init_assign']))
+                    lines += ('par {}={}\n\n'.format(id,
+                                                     element['init_assign']))
                 else:
                     lines += ('par {}={}\n\n'.format(id, value))
             elif element['rate_rule'] == '':
@@ -764,7 +766,7 @@ def create_raterule_model(mparse, use_species=True, produce_sbml=True):
                 rhs = substitute_vars(rhs, working_scope)
                 formula = MatlabGrammar.make_formula(rhs, atrans=translator)
                 if formula is not None and formula != '':
-                    result = formula_parser.evel(formula)
+                    result = formula_parser.eval(formula)
                     create_xpp_parameter(xpp_variables, var, result)
     # Write the Model
     if produce_sbml:
