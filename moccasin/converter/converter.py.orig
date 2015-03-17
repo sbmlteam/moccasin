@@ -27,8 +27,12 @@ import re
 import getopt
 import six
 import itertools
+<<<<<<< HEAD
+from pyparsing import ParseResults
+=======
 from pyparsing import ParseException, ParseResults
 from evaluate_formula import NumericStringParser
+>>>>>>> develop
 from libsbml import *
 
 sys.path.append('..')
@@ -803,6 +807,8 @@ def munge_reference(pr, scope, underscores):
                 raise ValueError('Unable to handle matrix "' + name + '"')
     return constructed
 
+<<<<<<< HEAD
+=======
 # -----------------------------------------------------------------------------
 # Driver
 # -----------------------------------------------------------------------------
@@ -868,9 +874,6 @@ Available options:
     print(code)
 
 
+>>>>>>> develop
 def fail(msg):
     raise SystemExit(msg)
-
-
-if __name__ == '__main__':
-    main(sys.argv)
