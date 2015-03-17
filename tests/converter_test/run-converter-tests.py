@@ -16,6 +16,7 @@ def main(argv):
     quiet=False
     print_parse=True
     use_species=True
+    output_sbml=True
     
     for path in glob.glob("converter-test-cases/valid*.m"):
         file = open(path, 'r')
@@ -43,7 +44,7 @@ def main(argv):
             print('')
             print('----- SBML output ' + '-'*50)
 
-        sbml = create_raterule_model(parse_results, use_species)
+        sbml = create_raterule_model(parse_results, use_species,output_sbml)
         print(sbml)
 
 
