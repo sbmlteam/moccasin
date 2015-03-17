@@ -4,14 +4,15 @@ from __future__ import print_function
 import pytest
 import sys
 import glob
+import os
 from pyparsing import ParseResults
 sys.path.append('moccasin/converter/')
 sys.path.append('moccasin/')
+sys.path.append('../moccasin')
 sys.path.append('../../moccasin')
 from matlab_parser import *
 from converter import *
 
-parser = MatlabGrammar()
 #Generates (multiple) parametrized calls to a test function
 def pytest_generate_tests(metafunc):
     # called once per test function
@@ -24,6 +25,7 @@ def pytest_generate_tests(metafunc):
 def build_model(path):
     file = open(path,'r')
     contents = file.read()
+    parser = MatlabGrammar()
     results = parser.parse_string(contents, print_debug=False, fail_soft=True)
     sbml = create_raterule_model(results, True)
     file.close()
@@ -38,12 +40,20 @@ def read_sbml (path):
 
 # Constructs the params dictionary for test function parametrization
 def obtain_params():
-    matlab_models=glob.glob("tests/converter_test/converter-test-cases/valid*.m")
-    sbml_models=glob.glob("tests/converter_test/converter-test-cases/valid*.xml")
-    pairs=list()
+    if os.path.isdir('tests'):
+        path = ['tests', 'converter_test', 'converter-test-cases']
+    elif os.path.isdir('converter_test'):
+        path = ['converter_test', 'converter-test-cases']
+    elif os.path.isdir('converter-test-cases'):
+        path = ['converter-test-cases']
+    m_path = path + ['valid*.m']
+    txt_path = path + ['valid*.xml']
+    matlab_models = glob.glob(os.path.join(*m_path))
+    sbml_models = glob.glob(os.path.join(*txt_path))
+    pairs = list()
     for i in range(len(matlab_models)):
-        pairs.append((dict(model= matlab_models[i],sbml=sbml_models[i])))
-    parameters={'test_converterCases':pairs}
+        pairs.append((dict(model = matlab_models[i], sbml = sbml_models[i])))
+    parameters = {'test_converterCases':pairs}
     return parameters
 
 class TestClass:
