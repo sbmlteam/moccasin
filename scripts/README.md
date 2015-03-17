@@ -11,8 +11,11 @@ Aside from a required MATLAB file, Moccasin's CLI supports several flags useful 
 * -d Drop into pdb before starting to parse the MATLAB input
 * -q Be quiet: produce SBML and nothing else
 * -x Print extra debugging information about the interpreted MATLAB code
-* -s Encode variables as species (default: parameters)
+* -p Encode variables as parameters (default: species)
+* -e Returns model as equation-based SBML (default: reaction-based SBML)
+* -o Returns model in XPP format (default: SBML format)
 
-One-character abbreviation for flags: in this way you can use the GNU-style composition of flags (i.e. -qsd is an abbreviation of -q -s -d).
+
+The one-character abbreviation used here allows for GNU-style composition of flags (i.e. -qpe is an abbreviation of -q -p -e).
 
 ###Usage of settings files
