@@ -1053,55 +1053,12 @@ class MatlabGrammar:
 
 
     # Printers, for more debugging.
+    #
+    # In what follows, the _format functions are named after the grammar
+    # objects, so that the function _format_pr() can dispatch on the object
+    # name.  For instance, to format an "assignment", there's a function
+    # called _format_assignment().
     # .........................................................................
-
-    def _warn(self, *args):
-        print('WARNING: {}'.format(' '.join(args)))
-
-
-    def _init_printer(self):
-        self._stringifiers = {'assignment':          self._format_assignment,
-                              'identifier':          self._format_identifier,
-                              'number':              self._format_number,
-                              'boolean':             self._format_boolean,
-                              'string':              self._format_string,
-                              'tilde':               self._format_tilde,
-                              'unary operator':      self._format_op,
-                              'binary operator':     self._format_op,
-                              'colon operator':      self._format_op,
-                              'colon':               self._format_colon,
-                              'function handle':     self._format_fun_handle,
-                              'function definition': self._format_fun_def,
-                              'cell array':          self._format_cell_array,
-                              'struct':              self._format_struct,
-                              'array':               self._format_array,
-                              'array or function':   self._format_array_or_fun,
-                              'transpose':           self._format_transpose,
-                              'shell command':       self._format_shell,
-                              'command statement':   self._format_cmd_stmt,
-                              'control statement':   self._format_control_stmt,
-                              'comment':             self._format_comment,
-                              'while statement':     self._format_while_stmt,
-                              'if statement':        self._format_if_stmt,
-                              'elseif statement':    self._format_elseif_stmt,
-                              'else statement':      self._format_else_stmt,
-                              'switch statement':    self._format_switch_stmt,
-                              'case statement':      self._format_case_stmt,
-                              'otherwise statement': self._format_otherwise_stmt,
-                              'for statement':       self._format_for_stmt,
-                              'try statement':       self._format_try_stmt,
-                              'catch statement':     self._format_catch_stmt,
-                              'continue statement':  self._format_continue_stmt,
-                              'break statement':     self._format_break_stmt,
-                              'return statement':    self._format_return_stmt,
-                              'end statement':       self._format_end_stmt,
-                              'expression':          self._format_expression
-                              }
-
-
-    def _stringify(self, thing):
-        return '\n'.join([self._format_pr(pr) for pr in thing])
-
 
     def _format_pr(self, pr):
         if isinstance(pr, str):
@@ -1110,8 +1067,11 @@ class MatlabGrammar:
             # It's an expression.
             return self._format_expression(pr)
         key = first_key(pr)
-        stringifier = self._stringifiers[key]
-        return stringifier(pr)
+        # Construct the function name dynamically.
+        func = '_format_' + '_'.join(key.split())
+        class_symbols = globals()['MatlabGrammar']()
+        func = getattr(class_symbols, func)
+        return func(pr)
 
 
     def _format_identifier(self, pr):
@@ -1135,20 +1095,22 @@ class MatlabGrammar:
         return '{{boolean: {}}}'.format(content)
 
 
-    def _format_op(self, pr):
-        if not {'unary operator', 'binary operator',
-                'colon operator'} & set(pr.keys()):
-            self._warn('ParseResults not an operator type')
-        if 'colon operator' in pr:
-            text = '{colon}'
-        else:
-            if 'unary operator' in pr:
-                op = 'unary op'
-            elif 'binary operator' in pr:
-                op = 'binary op'
-            op_key = first_key(pr)
-            text = '{{{}: {}}}'.format(op, pr[op_key])
+    def _format_unary_operator(self, pr):
+        op = 'unary op'
+        op_key = first_key(pr)
+        text = '{{{}: {}}}'.format(op, pr[op_key])
         return text
+
+
+    def _format_binary_operator(self, pr):
+        op = 'binary op'
+        op_key = first_key(pr)
+        text = '{{{}: {}}}'.format(op, pr[op_key])
+        return text
+
+
+    def _format_colon_operator(self, pr):
+        return '{colon}'
 
 
     def _format_string(self, pr):
@@ -1172,7 +1134,7 @@ class MatlabGrammar:
         return ', '.join([self._format_pr(thing) for thing in pr])
 
 
-    def _format_array_or_fun(self, pr):
+    def _format_array_or_function(self, pr):
         if not self._verified_pr(pr, 'array or function'):
             return
         content = pr['array or function']
@@ -1233,7 +1195,7 @@ class MatlabGrammar:
             return '{{cell array: [ {} ]}}'.format(rows)
 
 
-    def _format_fun_def(self, pr):
+    def _format_function_definition(self, pr):
         if not self._verified_pr(pr, 'function definition'):
             return
         content = pr['function definition']
@@ -1252,7 +1214,7 @@ class MatlabGrammar:
             .format(name, param, output)
 
 
-    def _format_fun_handle(self, pr):
+    def _format_function_handle(self, pr):
         if not self._verified_pr(pr, 'function handle'):
             return
         content = pr['function handle']
@@ -1289,7 +1251,7 @@ class MatlabGrammar:
         return '{{transpose: {} operator {} }}'.format(operand, content['operator'])
 
 
-    def _format_shell(self, pr):
+    def _format_shell_command(self, pr):
         if not self._verified_pr(pr, 'shell command'):
             return
         content = pr['shell command']
@@ -1297,7 +1259,7 @@ class MatlabGrammar:
         return '{{shell command: {}}}'.format(body)
 
 
-    def _format_cmd_stmt(self, pr):
+    def _format_command_statement(self, pr):
         if not self._verified_pr(pr, 'command statement'):
             return
         content = pr['command statement']
@@ -1313,14 +1275,14 @@ class MatlabGrammar:
         return '{{comment: {}}}'.format(content[0])
 
 
-    def _format_control_stmt(self, pr):
+    def _format_control_statement(self, pr):
         if not self._verified_pr(pr, 'control statement'):
             return
         content = pr['control statement']
         return self._format_pr(content)
 
 
-    def _format_while_stmt(self, pr):
+    def _format_while_statement(self, pr):
         if not self._verified_pr(pr, 'while statement'):
             return
         content = pr['while statement']
@@ -1328,7 +1290,7 @@ class MatlabGrammar:
         return '{{while stmt: {}}}'.format(cond)
 
 
-    def _format_if_stmt(self, pr):
+    def _format_if_statement(self, pr):
         if not self._verified_pr(pr, 'if statement'):
             return
         content = pr['if statement']
@@ -1336,7 +1298,7 @@ class MatlabGrammar:
         return '{{if stmt: {}}}'.format(cond)
 
 
-    def _format_elseif_stmt(self, pr):
+    def _format_elseif_statement(self, pr):
         if not self._verified_pr(pr, 'elseif statement'):
             return
         content = pr['elseif statement']
@@ -1344,13 +1306,13 @@ class MatlabGrammar:
         return '{{eleif stmt: {}}}'.format(cond)
 
 
-    def _format_else_stmt(self, pr):
+    def _format_else_statement(self, pr):
         if not self._verified_pr(pr, 'else statement'):
             return
         return '{else}'
 
 
-    def _format_switch_stmt(self, pr):
+    def _format_switch_statement(self, pr):
         if not self._verified_pr(pr, 'switch statement'):
             return
         content = pr['switch statement']
@@ -1358,7 +1320,7 @@ class MatlabGrammar:
         return '{{switch stmt: {}}}'.format(expr)
 
 
-    def _format_case_stmt(self, pr):
+    def _format_case_statement(self, pr):
         if not self._verified_pr(pr, 'case statement'):
             return
         content = pr['case statement']
@@ -1366,13 +1328,13 @@ class MatlabGrammar:
         return '{{case: {}}}'.format(expr)
 
 
-    def _format_otherwise_stmt(self, pr):
+    def _format_otherwise_statement(self, pr):
         if not self._verified_pr(pr, 'otherwise statement'):
             return
         return '{otherwise}'
 
 
-    def _format_for_stmt(self, pr):
+    def _format_for_statement(self, pr):
         if not self._verified_pr(pr, 'for statement'):
             return
         content = pr['for statement']
@@ -1381,13 +1343,13 @@ class MatlabGrammar:
         return '{{for stmt: var {} in {}}}'.format(var, exp)
 
 
-    def _format_try_stmt(self, pr):
+    def _format_try_statement(self, pr):
         if not self._verified_pr(pr, 'try statement'):
             return
         return '{try}'
 
 
-    def _format_catch_stmt(self, pr):
+    def _format_catch_statement(self, pr):
         if not self._verified_pr(pr, 'catch statement'):
             return
         content = pr['catch statement']
@@ -1395,25 +1357,25 @@ class MatlabGrammar:
         return '{{catch: var {}}}'.format(var)
 
 
-    def _format_continue_stmt(self, pr):
+    def _format_continue_statement(self, pr):
         if not self._verified_pr(pr, 'continue statement'):
             return
         return '{continue}'
 
 
-    def _format_break_stmt(self, pr):
+    def _format_break_statement(self, pr):
         if not self._verified_pr(pr, 'break statement'):
             return
         return '{break}'
 
 
-    def _format_return_stmt(self, pr):
+    def _format_return_statement(self, pr):
         if not self._verified_pr(pr, 'return statement'):
             return
         return '{return}'
 
 
-    def _format_end_stmt(self, pr):
+    def _format_end_statement(self, pr):
         if not self._verified_pr(pr, 'end statement'):
             return
         return '{end}'
@@ -1427,6 +1389,14 @@ class MatlabGrammar:
 
     def _format_expression(self, thing):
         return '( ' + ' '.join([self._format_pr(pr) for pr in thing]) + ' )'
+
+
+    def _warn(self, *args):
+        print('WARNING: {}'.format(' '.join(args)))
+
+
+    def _stringify(self, thing):
+        return '\n'.join([self._format_pr(pr) for pr in thing])
 
 
     def _verified_pr(self, pr, type):
@@ -1449,7 +1419,6 @@ class MatlabGrammar:
         self._init_type_inference()
         self._init_print_interpreted()
         self._init_print_raw()
-        self._init_printer()
 
 
     def _reset(self):
