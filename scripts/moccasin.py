@@ -25,8 +25,8 @@ from tempfile import NamedTemporaryFile
 import plac
 import sys
 import requests
-sys.path.append('../moccasin/converter/')
-sys.path.append('../moccasin/')
+sys.path.append('moccasin/converter/')
+sys.path.append('moccasin/')
 from matlab_parser import *
 from converter import *
 

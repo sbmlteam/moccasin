@@ -1,5 +1,11 @@
-#python-libsbml>=5.11.0
-pyparsing>=2.0.3
-requests>=2.5.1
-six>=1.9.0
+#libsbml>=5.11.0
+coverage>=3.7.1
 plac>=0.9.1
+colorama>=0.3.3
+py>=1.4.26
+pyparsing>=2.0.3
+pytest>=2.6.4
+requests>=2.6.0
+six>=1.9.0
+tox>=1.9.0
+virtualenv>=12.0.7

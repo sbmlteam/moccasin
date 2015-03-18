@@ -54,5 +54,5 @@ setup(
         'License :: OSI Approved :: GNU Lesser General Public License',
         'Operating System :: OS Independent'
         ],
-    scripts = ['scripts/CLI.py'],
+    scripts = ['scripts/moccasin.py'],
 )
