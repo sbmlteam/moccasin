@@ -1630,33 +1630,3 @@ class MatlabGrammar:
                     'operator'} & set(thing.keys())
         else:
             return False
-
-
-        # for c in results:
-        #     if c.tag != 'function definition':
-        #         continue
-        #     print('')
-        #     print('** scope: ' + c.scope.name + ' **')
-        #     if len(c.scope.variables) > 0:
-        #         print('    Variables assigned in this scope:')
-        #         vars = c.scope.variables
-        #         for name in vars.keys():
-        #             value = vars[name]
-        #             value_type = self._interpret_type(value)
-        #             if value_type == 'bare matrix':
-        #                 rows = len(value[0])
-        #                 print('      ' + name + ' = (matrix with ' + str(rows) + ' rows)')
-        #             elif value_type is None:
-        #                 print('      ' + name + ' = ' + self._flatten(value.asList()))
-        #             else:
-        #                 print('      ' + name)
-
-        #     else:
-        #         print('    No variables defined in this scope.')
-        #     if len(c.scope.functions) > 0:
-        #         print('    Functions defined in this scope:')
-        #         for fname, fscope in c.scope.functions.items():
-        #             print('      ' + ' '.join(fscope.returns)
-        #                   + ' = ' + fname + '(' + ' '.join(fscope.args) + ')')
-        #     else:
-        #         print('    No functions defined in this scope.')
