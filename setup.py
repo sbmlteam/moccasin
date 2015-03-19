@@ -54,5 +54,5 @@ setup(
         'License :: OSI Approved :: GNU Lesser General Public License',
         'Operating System :: OS Independent'
         ],
-## scripts = ['command-line-interface.py'],
+    scripts = ['scripts/moccasin.py'],
 )
