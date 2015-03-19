@@ -54,7 +54,7 @@ setup(
     author_email='email@sbml.com',
     description='User-assisted converter that can take MATLAB or Octave ODE-based models in biology and translate them into SBML format',
     packages=find_packages(exclude='tests'),
-    package_data={'moccasin': ['docs/*.txt','LICENSE.txt', 'requirements.txt']},
+    package_data={'moccasin': ['docs/*.md','LICENSE.txt', 'requirements.txt']},
     include_package_data=True,
     platforms='any',
     test_suite='tests',
