@@ -9,7 +9,7 @@ Then, you can simply use the setup script in this distribution to build and inst
 
 ```python setup.py install```
 
->Please note that MOCCASIN will require that you to have internet connection during installation and file conversion.
+>Please note that MOCCASIN will require having internet connection during installation and file conversion.
 
 ###How do I use MOCCASIN?
-For more information on how the functionality offered by the command-line interface, refer to this [documentation] (scripts/README.md). 
+MOCCASIN exposes a command-line interface that allows users to convert MATLAB files into L3V1 SBML. For more information on how to use this, please refer to this [documentation](../scripts/README.md). 
