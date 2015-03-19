@@ -265,7 +265,7 @@ ParserElement.enablePackrat()
 # MatlabGrammar.
 # .............................................................................
 
-class MatlabGrammar():
+class MatlabGrammar:
 
     # Context and scope management.
     #
