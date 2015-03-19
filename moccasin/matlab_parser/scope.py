@@ -53,8 +53,11 @@ class ScopeDict(collections.MutableMapping, dict):
     def __contains__(self, x):
         return dict.__contains__(self, x)
 
+    def clear(self):
+        dict.clear()
 
-class Scope:
+
+class Scope(object):
     '''Class for tracking our interpretation of MATLAB parsing results.  Most
     properties of objects of this class are used to store things that are
     also in one of our annotated ParseResults structures, but designed to
@@ -111,6 +114,7 @@ class Scope:
 
     Users can access via the normal x.propname approach.
 
+    To make a copy of a Scope object, use the Python 'copy' module.
     '''
 
     def __init__(self, name='', parent=None, pr=None, parameters=[], returns=[]):
@@ -141,19 +145,17 @@ class Scope:
                         len(self._calls), parent_name)
 
 
-    def copy_scope(self, source):
-        '''Reset all properties of the current object to those of source's.'''
-        if not isinstance(source, Scope):
-            raise TypeError('Expected a Scope object')
-        self.name          = source.name
-        self.parameters    = source.parameters
-        self.returns       = source.returns
-        self.comments      = source.comments
-        self.parent        = source.parent
-        self.parse_results = source.parse_results
-        self._functions    = source._functions
-        self._assignments  = source._assignments
-        self._calls        = source._calls
+    def clear_scope(self):
+        self.name          = ''
+        self.parameters    = []
+        self.returns       = []
+        self.comments      = []
+        self.parent        = None
+        self.parse_results = None
+        self._functions     = ScopeDict()
+        self._assignments   = ScopeDict()
+        self._calls         = ScopeDict()
+        self._types         = ScopeDict()
 
 
     @property
