@@ -240,6 +240,7 @@
 from __future__ import print_function
 import pdb
 import sys
+import copy
 import pyparsing                        # Need this for version check, so ...
 from pyparsing import *                 # ... DON'T merge this & previous stmt!
 from distutils.version import LooseVersion
@@ -264,7 +265,7 @@ ParserElement.enablePackrat()
 # MatlabGrammar.
 # .............................................................................
 
-class MatlabGrammar:
+class MatlabGrammar():
 
     # Context and scope management.
     #
@@ -317,8 +318,7 @@ class MatlabGrammar:
 
     def _duplicate_context(self, dest):
         if not dest.scope:
-            dest.scope = Scope()
-        dest.scope.copy_scope(self._scope)
+            dest.scope = copy.copy(self._scope)
 
 
     def _save_function_definition(self, content, pr):
@@ -383,7 +383,8 @@ class MatlabGrammar:
             self._pop_context()
         elif 'array or function' in pr:
             content = pr['array or function']
-            if self._get_type(content['name'], self._scope, False) != 'variable':
+            lookup = self._get_type(content['name'], self._scope, False)
+            if lookup and lookup != 'variable':
                 self._save_function_call(content)
 
 
@@ -422,7 +423,8 @@ class MatlabGrammar:
                     # parameter could be a function name or handle when it's
                     # called.  Need to correlate what's done here with the
                     # arguments used in the call to the function.
-                    self._save_type(param['identifier'], 'variable')
+                    if 'identifier' in param:
+                        self._save_type(param['identifier'], 'variable')
 
 
     def _convert_type(self, pr):
@@ -948,20 +950,26 @@ class MatlabGrammar:
     # .........................................................................
 
     def _init_parse_actions(self):
-        self._fun_def_stmt    .addParseAction(self._store_stmt)
-        self._funcall_or_array.addParseAction(self._store_stmt)
-        self._assignment      .addParseAction(self._store_stmt)
-        self._cmd_stmt        .addParseAction(self._store_stmt)
-        self._end_stmt        .addParseAction(self._store_stmt)
+        self._fun_def_stmt    .setParseAction(self._store_stmt)
+        self._funcall_or_array.setParseAction(self._store_stmt)
+        self._assignment      .setParseAction(self._store_stmt)
+        self._cmd_stmt        .setParseAction(self._store_stmt)
+        self._end_stmt        .setParseAction(self._store_stmt)
 
 
     # Add actions to support weak data type inferencing
     # .........................................................................
 
     def _init_type_inference(self):
+        # Be careful to use "setParseAction" for things that have never been
+        # set.  If you use "addParseAction" but there is no "set" done before
+        # anywhere, then the objects will persist inside caller instances and
+        # every creation of a new MatlabGrammar will add them again.
+
+        self._fun_handle      .setParseAction(self._convert_type)
+
         self._assignment      .addParseAction(self._remember_type)
         self._fun_def_stmt    .addParseAction(self._remember_type)
-        self._fun_handle      .addParseAction(self._convert_type)
         self._funcall_or_array.addParseAction(self._convert_type)
 
 
@@ -1015,20 +1023,25 @@ class MatlabGrammar:
                 return name
 
 
+    _init_grammar_names_done = []
+
     def _init_grammar_names(self):
-        for obj in self._to_name:
-            obj.setName(self._object_name(obj))
+        if 'done' not in self._init_grammar_names_done:
+            for obj in self._to_name:
+                obj.setName(self._object_name(obj))
+            self._init_grammar_names_done.append('done')
 
 
-    # The next variable and function support the "print interpreted" option
-    # for the parser interface.
+    # The next functions support the "print interpreted" parser option.
 
-    _to_print = [_comment, _stmt, _shell_cmd]
-
+    _init_print_interpreted_done = []
 
     def _init_print_interpreted(self):
-        for obj in self._to_print:
-            obj.addParseAction(self._print_tokens)
+        if 'done' not in self._init_print_interpreted_done:
+            self._comment  .addParseAction(self._print_tokens)
+            self._stmt     .addParseAction(self._print_tokens)
+            self._shell_cmd.addParseAction(self._print_tokens)
+            self._init_print_interpreted_done.append('done')
 
 
     def _set_print_tokens(self, doprint):
@@ -1042,7 +1055,7 @@ class MatlabGrammar:
             print(tokens)
 
 
-    # The next variable and functino are for printing low-level PyParsing
+    # The next variable and function are for printing low-level PyParsing
     # matches.  To use this, manually add objects to the list, like so:
     #   _to_print_raw = [_cell_access, _cell_array, _bare_cell, _expr]
     _to_print_raw = []
@@ -1068,10 +1081,11 @@ class MatlabGrammar:
             return self._format_expression(pr)
         key = first_key(pr)
         # Construct the function name dynamically.
-        func = '_format_' + '_'.join(key.split())
-        class_symbols = globals()['MatlabGrammar']()
-        func = getattr(class_symbols, func)
-        return func(pr)
+        func_name = '_format_' + '_'.join(key.split())
+        if func_name in MatlabGrammar.__dict__:
+            return MatlabGrammar.__dict__[func_name](self, pr)
+        else:
+            self._warn('Internal error: no formatter for ' + str(key))
 
 
     def _format_identifier(self, pr):
@@ -1413,12 +1427,12 @@ class MatlabGrammar:
     # .........................................................................
 
     def __init__(self):
-        self._reset()
         self._init_grammar_names()
         self._init_parse_actions()
         self._init_type_inference()
         self._init_print_interpreted()
         self._init_print_raw()
+        self._reset()
 
 
     def _reset(self):
