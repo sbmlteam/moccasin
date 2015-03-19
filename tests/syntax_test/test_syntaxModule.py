@@ -4,13 +4,15 @@ from __future__ import print_function
 import pytest
 import sys
 import glob
+import os
 from pyparsing import ParseResults
 sys.path.append('moccasin/')
+sys.path.append('../moccasin')
+sys.path.append('../../moccasin')
 from matlab_parser import *
 from string import printable
 import codecs
 
-parser= MatlabGrammar()
 #Generates (multiple) parametrized calls to a test function
 def pytest_generate_tests(metafunc):
     # called once per test function
@@ -24,6 +26,7 @@ def build_model(path):
     file = open(path,'r')
     contents = file.read()
     try:
+        parser= MatlabGrammar()
         results = parser.parse_string(contents, print_debug=False, fail_soft=True)
         parser.print_parse_results(results)
         file.close()
@@ -39,12 +42,20 @@ def read_parsed(path):
 
 # Constructs the params dictionary for test function parametrization
 def obtain_params():
-    matlab_models=glob.glob("tests/syntax_test/syntax-test-cases/valid*.m")
-    parsed_models=glob.glob("tests/syntax_test/syntax-test-cases/valid*.txt")
-    pairs=list()
+    if os.path.isdir('tests'):
+        path = ['tests', 'syntax_test', 'syntax-test-cases']
+    elif os.path.isdir('syntax_test'):
+        path = ['syntax_test', 'syntax-test-cases']
+    elif os.path.isdir('syntax-test-cases'):
+        path = ['syntax-test-cases']
+    m_path = path + ['valid*.m']
+    txt_path = path + ['valid*.txt']
+    matlab_models = glob.glob(os.path.join(*m_path))
+    parsed_models = glob.glob(os.path.join(*txt_path))
+    pairs = list()
     for i in range(len(matlab_models)):
-        pairs.append((dict(model= matlab_models[i],parsed=parsed_models[i])))
-    parameters={'test_syntaxCases':pairs}
+        pairs.append((dict(model = matlab_models[i], parsed = parsed_models[i])))
+    parameters = {'test_syntaxCases' : pairs}
     return parameters
 
 class TestClass:
