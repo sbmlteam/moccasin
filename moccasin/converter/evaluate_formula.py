@@ -59,9 +59,12 @@ class NumericStringParser(object):
         plusorminus = Literal('+') | Literal('-')
         int_num = Combine(Optional(plusorminus) + number)
         exponent = Combine(e + Optional(plusorminus) + number)
-        double_num = (Combine(Optional(plusorminus) + Optional(number) + Optional(point) + number)
-        | Combine(Optional(plusorminus) + number + Optional(point)))
+        double_num = (Combine(Optional(plusorminus) + Optional(number)
+                              + Optional(point) + number) |
+                      Combine(Optional(plusorminus)
+                              + number + Optional(point)))
         fnumber = Combine((double_num | int_num) + Optional(exponent))
+
         ident = Word(alphas, alphas+nums+"_$")
 
         plus = Literal("+")
@@ -112,7 +115,7 @@ class NumericStringParser(object):
             "asin": math.asin,
             "asinh": math.asinh,
             "atan": math.atan,
-            "atanh": math.atanh,  # not working
+            "atanh": math.atanh,
             "ceil": math.ceil,
             "cos": math.cos,
             "cosh": math.cosh,
