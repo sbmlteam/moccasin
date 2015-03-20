@@ -73,6 +73,8 @@ class NumericStringParser(object):
         div = Literal("/")
         lpar = Literal("(").suppress()
         rpar = Literal(")").suppress()
+        comma = Literal(",").suppress()
+        exp = Literal("exp")
         addop = plus | minus
         multop = mult | div
         expop = Literal("^")
@@ -81,6 +83,10 @@ class NumericStringParser(object):
         atom = ((Optional(oneOf("- +")) +
                  (pi | e | fnumber | int_num | double_num |
                   ident+lpar+expr+rpar)
+                 .setParseAction(self.push_first))
+                | (Optional(oneOf("- +")) +
+                 (pi | e | fnumber | int_num | double_num |
+                  ident+lpar+expr+ZeroOrMore(comma+expr)+rpar)
                  .setParseAction(self.push_first))
                 | Optional(oneOf("- +")) + Group(lpar+expr+rpar)
                 ).setParseAction(self.push_u_minus)
@@ -122,10 +128,9 @@ class NumericStringParser(object):
             "exp": math.exp,  # not working
             "factorial": math.factorial,
             "floor": math.floor,
+            "fix": lambda a: a,  # not working
             "log": math.log,
             "log10": math.log10,
-            "mod": math.fmod,  # not working
-            "plus": plus,  # not working
             "round": round,
             "sin": math.sin,
             "sinh": math.sinh,
@@ -133,6 +138,14 @@ class NumericStringParser(object):
             "tan": math.tan,
             "tanh": math.tanh,
             "uplus": lambda a: a
+        }
+        self.bin_fn = {
+            "mod": math.fmod,
+            "plus": operator.add,
+            "times": operator.mul,
+            "minus": operator.sub,
+            "power": operator.pow,
+            "rem": math.fmod
         }
 
     def evaluate_stack(self, s):
@@ -149,6 +162,10 @@ class NumericStringParser(object):
             return math.e   # 2.718281828
         elif op in self.fn:
             return self.fn[op](self.evaluate_stack(s))
+        elif op in self.bin_fn:
+            op2 = self.evaluate_stack(s)
+            op1 = self.evaluate_stack(s)
+            return self.bin_fn[op](op1, op2)
         elif op[0].isalpha():
             return 0
         else:
