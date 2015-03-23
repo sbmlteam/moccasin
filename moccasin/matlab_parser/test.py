@@ -40,11 +40,11 @@ def get_filename_and_options(argv):
 def main(argv):
     '''Usage: matlab_parser.py [-p] [-d] FILENAME.m
 Arguments:
-  -p   (Optional) Print a representation of the interpreted input
+  -p   (Optional) Print a representation of the output in the "old" format
   -d   (Optional) Drop into pdb as the final step
 '''
 
-    path, debug, print_interpreted = get_filename_and_options(argv)
+    path, debug, print_old_format = get_filename_and_options(argv)
 
     file = open(path, 'r')
     print('----- file ' + path + ' ' + '-'*30)
@@ -53,11 +53,11 @@ Arguments:
 
     print('----- raw parse results ' + '-'*50)
     parser  = MatlabGrammar()
-    results = parser.parse_string(contents, True)
-    print('')
+    results = parser.parse_string(contents)
+    parser.print_parse_results(results, print_raw=True)
 
-    if print_interpreted:
-        print('----- interpreted output ' + '-'*50)
+    if print_old_format:
+        print('----- old format ' + '-'*50)
         parser.print_parse_results(results)
 
     if debug:

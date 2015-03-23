@@ -20,5 +20,6 @@
 # ------------------------------------------------------------------------- -->
 
 from .grammar import MatlabGrammar
-from .scope import Scope
+from .context import MatlabContext
+from .matlab import *
 
