@@ -137,7 +137,7 @@ The parser will return the following node structure:
 ```
 [
 Assignment(lhs=Identifier(name='a'),
-rhs=Array(is_cell=False, rows=[[Number(value='1'), Number(value='2')]]))
+           rhs=Array(is_cell=False, rows=[[Number(value='1'), Number(value='2')]]))
 ]
 ```
 
