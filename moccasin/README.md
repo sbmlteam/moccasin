@@ -148,7 +148,7 @@ And that's basically it.  A caller can take the list of nodes turned by the pars
 A word about the syntax of expressions.  Mathematical and conditional expressions returned by the parser are in infix notation (just as in MATLAB), but binary operations are grouped left-to-right during parsing and appear as sublists.  For example, "1 + 2 + 3" will be returned as:
 
 ```
-[[Number(value='1'), BinaryOp(op='+'), Number(value='2')], BinaryOp(op='+'), Number(value='3')]
+[ [ Number(value='1'), BinaryOp(op='+'), Number(value='2') ], BinaryOp(op='+'), Number(value='3') ]
 ```
 
 Matrices and functions in MATLAB
