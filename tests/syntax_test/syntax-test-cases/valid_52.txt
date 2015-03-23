@@ -9,7 +9,7 @@
 {comment:  initial conditions}
 {assign: {identifier: "I"} = {number: 1}}
 {comment:  input signal, could also be defined as just another parameter in k}
-{assign: {array: [ {row 1: {identifier: "Tsim"}, {identifier: "SimData"}} ]} = {function/array: {identifier: "ode15s"} ( {function @ handle: {identifier: "rhss"}}, {identifier: "tspan"}, {identifier: "x0"}, {{array: [] }}, {identifier: "k"}, {identifier: "I"} )}}
+{assign: {array: [ {row 1: {identifier: "Tsim"}, {identifier: "SimData"}} ]} = {function/array: {identifier: "ode15s"} ( {function @ handle: {identifier: "rhss"}}, {identifier: "tspan"}, {identifier: "x0"}, {array: [] }, {identifier: "k"}, {identifier: "I"} )}}
 {comment: % plotting}
 ( {identifier: "figure"} )
 ( {function/array: {identifier: "subplot"} ( {number: 3}, {number: 1}, {number: 1} )} )

@@ -1,3 +1,3 @@
-{for stmt: var {identifier: "x"} in ( {string: "a"} {colon} {string: "d"} )}
+{for stmt: var {identifier: "x"} in ( {string: "a"} {colon operator} {string: "d"} )}
 ( {identifier: "x"} )
 {end}
