@@ -33,7 +33,7 @@ This work is made possible thanks in part to funding from the Mount Sinai School
 License
 -------
 
-Copyright (C) 2014-2015 jointly by the California Institute of Technology (Pasadena, California, USA) and the Mount Sinai School of Medicine (New York, New York, USA).
+Copyright (C) 2014-2015 jointly by the California Institute of Technology (Pasadena, California, USA), the Mount Sinai School of Medicine (New York, New York, USA), and Boston University (Boston, Massachusetts, USA).
 
 This library is free software; you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation; either version 2.1 of the License, or any later version.
 
