@@ -7,11 +7,16 @@ import glob
 import os
 from pyparsing import ParseResults
 sys.path.append('moccasin/converter/')
+sys.path.append('../moccasin/converter/')
+sys.path.append('../../moccasin/converter/')
 sys.path.append('moccasin/')
 sys.path.append('../moccasin')
 sys.path.append('../../moccasin')
 from matlab_parser import *
 from converter import *
+
+# This prevents exceeding recursion depth in case valid_55.m
+sys.setrecursionlimit(1500)
 
 #Generates (multiple) parametrized calls to a test function
 def pytest_generate_tests(metafunc):
@@ -21,16 +26,13 @@ def pytest_generate_tests(metafunc):
     metafunc.parametrize(argnames, [[funcargs[name] for name in argnames]
             for funcargs in funcarglist],scope='module')
 
-#Parses and converts file to SBML and prints result(output is captured)                       
+#Parses and converts file to SBML and prints result(output is captured)
 def build_model(path):
-    file = open(path,'r')
-    contents = file.read()
     parser = MatlabGrammar()
-    results = parser.parse_string(contents, print_debug=False, fail_soft=True)
+    results = parser.parse_file(path, print_debug=False, fail_soft=True)
     sbml = create_raterule_model(results, True)
-    file.close()
     print(sbml)
-   
+
 #reads file containing expected sbml model and returns it as string
 def read_sbml (path):
     file = open(path,'r')
@@ -59,11 +61,8 @@ def obtain_params():
 class TestClass:
     # a map specifying multiple argument sets for a test method
     params = obtain_params()
-    
-    def test_converterCases(self,capsys, model, sbml):
+
+    def test_converterCases(self, capsys, model, sbml):
         build_model(model)
-        out,err=capsys.readouterr()
-        assert out.strip()== read_sbml(sbml).strip()
-
-
-
+        out, err = capsys.readouterr()
+        assert out.strip() == read_sbml(sbml).strip()
