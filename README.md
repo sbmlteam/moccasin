@@ -6,7 +6,7 @@ MOCCASIN
 ----
 *Authors*:      [Michael Hucka](http://www.cds.caltech.edu/~mhucka), [Sarah Keating](http://www.ebi.ac.uk/about/people/sarah-keating), and [Harold G&oacute;mez](http://www.bu.edu/computationalimmunology/people/harold-gomez/).
 
-*Copyright*:    Copyright (C) 2014-2015 jointly by the California Institute of Technology (Pasadena, California, USA) and the Mount Sinai School of Medicine (New York, New York, USA).
+*Copyright*:    Copyright (C) 2014-2015 jointly by the California Institute of Technology (Pasadena, California, USA), the Mount Sinai School of Medicine (New York, New York, USA), and Boston University (Boston, Massachusetts, USA).
 
 *License*:      This code is licensed under the LGPL version 2.1.  Please see the file [../COPYING.txt](https://raw.githubusercontent.com/sbmlteam/moccasin/master/COPYING.txt) for details.
 
@@ -27,7 +27,7 @@ The goal of this project is to develop software that uses a combination of heuri
 Funding
 -------
 
-This work is made possible thanks to funding from the Mount Sinai School of Medicine in New York City, provided as part of the NIH-funded project *Modeling Immunity for Biodefense* (Principal Investigator: [http://www.mountsinai.org/profiles/stuart-c-sealfon](Stuart Sealfon)).
+This work is made possible thanks in part to funding from the Mount Sinai School of Medicine in New York City, provided as part of the NIH-funded project *Modeling Immunity for Biodefense* (Principal Investigator: [http://www.mountsinai.org/profiles/stuart-c-sealfon](Stuart Sealfon)).
 
 
 License
