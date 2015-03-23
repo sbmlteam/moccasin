@@ -1,4 +1,4 @@
-{function definition: {identifier: "valid_52"} parameters (  ) output [ {identifier: "x"}, {identifier: "y"} ]}
+{function definition: {identifier: "valid_52"} parameters ( none ) output [ {identifier: "x"}, {identifier: "y"} ]}
 {assign: {identifier: "x"} = {number: 2}}
 {assign: {identifier: "y"} = {number: 2}}
 {end}

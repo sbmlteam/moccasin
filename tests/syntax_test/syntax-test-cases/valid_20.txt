@@ -1,4 +1,4 @@
-{assign: {identifier: "t"} = ( ( {number: 0} {colon} {number: 0.001} ) {colon} {number: 1} )}
+{assign: {identifier: "t"} = ( ( {number: 0} {colon operator} {number: 0.001} ) {colon operator} {number: 1} )}
 ( {function/array: {identifier: "plot"} ( {identifier: "t"}, {function/array: {identifier: "sin"} ( ( ( {number: 2} {binary op: *} {identifier: "pi"} ) {binary op: *} {array: [ {row 1: {identifier: "t"}}; {row 2: ( {identifier: "t"} {binary op: +} {number: 0.25} )} ]} ) )} )} )
 ( {function/array: {identifier: "xlabel"} ( {string: "t"} )} )
 ( {function/array: {identifier: "ylabel"} ( {string: "$\hat{y}_k=sin 2\pi (t+{k \over 4})$"}, {string: "Interpreter"}, {string: "latex"} )} )
