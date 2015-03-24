@@ -28,37 +28,42 @@ from grammar import *
 
 def get_filename_and_options(argv):
     try:
-        options, path = getopt.getopt(argv[1:], "dp")
+        options, path = getopt.getopt(argv[1:], "dpq")
     except:
         raise SystemExit(main.__doc__)
     if len(path) != 1 or len(options) > 2:
         raise SystemExit(main.__doc__)
     debug = any(['-d' in y for y in options])
     do_print = any(['-p' in y for y in options])
-    return path[0], debug, do_print
+    quiet = any(['-q' in y for y in options])
+    return path[0], debug, do_print, quiet
 
 
 def main(argv):
-    '''Usage: matlab_parser.py [-p] [-d] FILENAME.m
+    '''Usage: matlab_parser.py [-p] [-d] [-q] FILENAME.m
 Arguments:
+  -q   (Optional) Be quiet -- just print the output
   -p   (Optional) Print a representation of the output in the "old" format
   -d   (Optional) Drop into pdb as the final step
 '''
 
-    path, debug, print_old_format = get_filename_and_options(argv)
+    path, debug, print_old_format, quiet = get_filename_and_options(argv)
 
     file = open(path, 'r')
-    print('----- file ' + path + ' ' + '-'*30)
+    if not quiet: print('----- file ' + path + ' ' + '-'*30)
     contents = file.read()
-    print(contents)
+    if not quiet: print(contents)
 
-    print('----- raw parse results ' + '-'*50)
     parser  = MatlabGrammar()
     results = parser.parse_string(contents)
-    parser.print_parse_results(results, print_raw=True)
-
-    if print_old_format:
-        print('----- old format ' + '-'*50)
+    if not print_old_format:
+        if not quiet: print('----- raw parse results ' + '-'*50)
+        parser.print_parse_results(results, print_raw=True)
+    else:
+        if not quiet:
+            print('----- raw parse results ' + '-'*50)
+            parser.print_parse_results(results, print_raw=True)
+        if not quiet: print('----- old format ' + '-'*50)
         parser.print_parse_results(results)
 
     if debug:
