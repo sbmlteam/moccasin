@@ -1,5 +1,5 @@
 {function definition: {identifier: "valid_57"} parameters ( {identifier: "x"} ) output none}
-{assign: {identifier: "y"} = ( ( ( {number: 1.5} {binary op: *} {function {identifier: "cos"} ( {identifier: "x"} ) } ) {binary op: +} ( {number: 6} {binary op: *} {function {identifier: "exp"} ( ( ( {unary op: -} {number: .1} ) {binary op: *} {identifier: "x"} ) ) } ) ) {binary op: +} ( {function {identifier: "exp"} ( ( {number: .07} {binary op: *} {identifier: "x"} ) ) } {binary op: .*} {function {identifier: "sin"} ( ( {number: 3} {binary op: *} {identifier: "x"} ) ) } ) )}
+{assign: {identifier: "y"} = ( ( ( {number: 1.5} {binary op: *} {function {identifier: "cos"} ( {identifier: "x"} ) } ) {binary op: +} ( {number: 6} {binary op: *} {function {identifier: "exp"} ( ( {number: -.1} {binary op: *} {identifier: "x"} ) ) } ) ) {binary op: +} ( {function {identifier: "exp"} ( ( {number: .07} {binary op: *} {identifier: "x"} ) ) } {binary op: .*} {function {identifier: "sin"} ( ( {number: 3} {binary op: *} {identifier: "x"} ) ) } ) )}
 {assign: {identifier: "ym"} = {function {identifier: "mean"} ( {identifier: "y"} ) }}
 {assign: {identifier: "hfig"} = {function {identifier: "figure"} ( {string: "Name"}, {string: "Function and Mean"} ) }}
 {assign: {identifier: "hax"} = {function {identifier: "axes"} ( {string: "Parent"}, {identifier: "hfig"} ) }}

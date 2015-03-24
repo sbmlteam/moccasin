@@ -763,16 +763,17 @@ class MatlabGrammar:
     def _process_node(self, node):
         if not isinstance(node, MatlabNode):
             return node
-        if isinstance(node, Assignment):
-            self._save_assignment(node)
-        elif isinstance(node, FunDef):
+        if isinstance(node, FunDef):
             self._push_context(self._save_function_definition(node))
         elif isinstance(node, End):
             # FIXME while/for/etc. loops will have end statements too!
             self._pop_context()
         self._save_inferred_type(node)
         self._save_calls(node)
-        return self._convert_types(node)
+        processed = self._convert_types(node)
+        if isinstance(processed, Assignment):
+            self._save_assignment(processed)
+        return processed
 
 
     # This function modifies the current context.
@@ -849,7 +850,13 @@ class MatlabGrammar:
     def _convert_types(self, node):
         # For now, this is pretty limited.
         if isinstance(node, list):
-            return [self._convert_types(item) for item in node]
+            # We should do more simplifications if we can.  This is
+            # just one simple one for now.
+            if len(node) == 2 and isinstance(node[0], UnaryOp) and isinstance(node[1], Number):
+                # Replace [UnaryOp(op='-'), Number(value='x')] with Number(value='-x')
+                return Number(value='-' + node[1].value)
+            else:
+                return [self._convert_types(item) for item in node]
         elif isinstance(node, ArrayOrFunCall):
             if not isinstance(node.name, Identifier):
                 # FIXME: it is potentially the case that a function call is
@@ -864,6 +871,8 @@ class MatlabGrammar:
                 # to a FunCall.  At this time, we also process the arguments.
                 the_args = self._convert_types(node.args)
                 node = FunCall(name=node.name, args=the_args)
+                # Update the stored record of the call.
+                self._save_function_call(node)
             elif self._get_type(the_name, self._context, True) == 'variable':
                 # We have seen this name before, and it's not a function.  We
                 # can convert this ArrayOrFunCall to an ArrayRef.  We can
@@ -882,7 +891,13 @@ class MatlabGrammar:
                 # we may still be able to change some of its arguments.
                 node.args = self._convert_types(node.args)
 
-        elif isinstance(node, FunCall) or isinstance(node, ArrayRef):
+        elif isinstance(node, FunCall):
+            # Convert the arguments or subscripts.
+            node.args = self._convert_types(node.args)
+            # Now update the stored record of the call.
+            self._save_function_call(node)
+
+        elif isinstance(node, ArrayRef):
             # Convert the arguments or subscripts.
             node.args = self._convert_types(node.args)
 
@@ -1818,11 +1833,10 @@ class MatlabGrammar:
             base = MatlabGrammar.make_key(thing.name)
             return base + '(' + row_to_string(thing.args) + ')'
         elif isinstance(thing, ArrayRef):
-            base = MatlabGrammar.make_key(thing.name)
-            if thing.is_cell:
-                return base + '{' + row_to_string(thing.args) + '}'
-            else:
-                return base + '(' + row_to_string(thing.args) + ')'
+            base  = MatlabGrammar.make_key(thing.name)
+            left  = '{' if thing.is_cell else '('
+            right = '}' if thing.is_cell else ')'
+            return base + left + row_to_string(thing.args) + right
         elif isinstance(thing, StructRef):
             base = MatlabGrammar.make_key(thing.name)
             return base + '.' + MatlabGrammar.make_key(thing.field)
@@ -1873,16 +1887,14 @@ class MatlabGrammar:
         array.  If no 'atrans' is given, the default behavior is to render
         arrays like they would appear in Matlab text: e.g., "foo(2,3)".
         '''
-        def make_list(thing):
-            list = [MatlabGrammar.make_formula(term, spaces, parens, atrans)
-                    for term in thing]
-            sep = ''
-            if spaces:
-                sep = ' '
-            if parens:
-                return '(' + sep.join(list) + ')'
-            else:
-                return sep.join(list)
+        def compose(name, args, delimiters=None):
+            list = [MatlabGrammar.make_formula(arg, spaces, parens, atrans)
+                    for arg in args]
+            sep = ' ' if spaces else ''
+            front = name if name else ''
+            left = delimiters[0] if delimiters else ''
+            right = delimiters[1] if delimiters else ''
+            return front + left + sep.join(list) + right
 
         if isinstance(thing, str):
             return thing
@@ -1890,28 +1902,28 @@ class MatlabGrammar:
             return str(thing.value)
         elif isinstance(thing, Identifier):
             return str(thing.name)
-        elif isinstance(thing, Transpose):
-            # Need test this special case of Operator before other Operators.
-            # Note: Can't be called as LHS of an assignment, but we use make_key
-            # for make_formula, and therefore need to do something sensible.
-            return MatlabGrammar.make_key(thing)
-        elif isinstance(thing, Operator):
-            return str(thing.op)
         elif isinstance(thing, ArrayRef) or isinstance(thing, ArrayOrFunCall):
             if atrans:
                 return atrans(thing)
             else:
-                return MatlabGrammar.make_key(thing)
+                return compose(thing.name.name, thing.args, '()')
+        elif isinstance(thing, FunCall):
+            return compose(thing.name.name, thing.args, '()')
+        elif isinstance(thing, Array):
+            return compose(None, thing.rows, '[]')
         elif isinstance(thing, StructRef) \
-             or isinstance(thing, FunCall) \
              or isinstance(thing, AnonFun) \
-             or isinstance(thing, FunHandle) \
-             or isinstance(thing, Array):
+             or isinstance(thing, FunHandle):
             return MatlabGrammar.make_key(thing)
         elif isinstance(thing, Expression):
-            return make_list(thing.content)
+            return compose(None, thing.content, '()')
+        elif isinstance(thing, Transpose):
+            # Need test this special case of Operator before other Operators.
+            return compose(None, thing.operand) + thing.op
+        elif isinstance(thing, Operator):
+            return str(thing.op)
         elif isinstance(thing, list):
-            return make_list(thing)
+            return compose(None, thing, '()')
         elif 'comment' in thing:
             return ''
         else:
