@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# @file    CLI.py
+# @file    moccasin.py
 # @brief   Command-line interface for Moccasin
 # @author  Harold Gomez
 #
@@ -8,7 +8,7 @@
 # This software is part of MOCCASIN, the Model ODE Converter for Creating
 # Awesome SBML INteroperability. Visit https://github.com/sbmlteam/moccasin/.
 #
-# Copyright (C) 2014 jointly by the following organizations:
+# Copyright (C) 2014-2015 jointly by the following organizations:
 #  1. California Institute of Technology, Pasadena, CA, USA
 #  2. Mount Sinai School of Medicine, New York, NY, USA
 #  3. Boston University, Boston, MA, USA
@@ -18,101 +18,135 @@
 # Software Foundation.  A copy of the license agreement is provided in the
 # file named "COPYING.txt" included with this software distribution and also
 # available online at https://github.com/sbmlteam/moccasin/.
+# ------------------------------------------------------------------------- -->
 
 from __future__ import print_function
 from pyparsing import ParseException, ParseResults
 from tempfile import NamedTemporaryFile
 import plac
 import sys
+import os
 import requests
-sys.path.append('moccasin/converter/')
 sys.path.append('moccasin/')
+sys.path.append('../moccasin/')
+sys.path.append('moccasin/converter/')
+sys.path.append('../moccasin/converter/')
 from matlab_parser import *
 from converter import *
+
+# This prevents exceeding recursion depth in some cases.
+sys.setrecursionlimit(1500)
+
+# -----------------------------------------------------------------------------
+# Global configuration constants
+# -----------------------------------------------------------------------------
+
+_BIOCHAM_URL = 'http://lifeware.inria.fr/biocham/online/rest/export'
 
 # -----------------------------------------------------------------------------
 # Main function - driver
 # -----------------------------------------------------------------------------
 
-def main(debug, quiet, print_parse, use_params, use_equations, output_XPP, filename):
-    "A minimal interface for MATLAB file parsing and conversion to SBML"
+def main(path, debug=False, quiet=False, print_parse=False, use_params=False,
+         use_equations=False, output_XPP=False):
+    '''A minimal interface for converting simple MATLAB models to SBML.'''
     #Flag-Option-Required-Default(FORD) convention was followed for function args declaration.
     #Flag arguments are first, then option arguments and required arguments, and finally default arguments.
-    if filename.endswith('.m'):  
-        file = open(filename, 'r')
-        file_contents = file.read()
-        file.close()
-      
-        if not quiet:
-            yield('----- file ' + filename + ' ' + '-'*30)
-            yield(file_contents)
 
-        if debug:
-            pdb.set_trace()
-                
-        try:
+    if not path.endswith('.m'):
+        print('File "{}" does not appear to be a MATLAB file.'.format(path))
+        sys.exit(1)
+
+    try:
+        with open(path) as file:
+            file_contents = file.read()
+            if not quiet:
+                print_header(' File ' + path + ' ')
+                print(file_contents)
+
+            if debug:
+                pdb.set_trace()
+
             parser = MatlabGrammar()
             parse_results = parser.parse_string(file_contents)
-        except ParseException as err:
-            yield("error: {0}".format(err))
 
-        if print_parse and not quiet:
-            yield('')
-            yield('----- interpreted output ' + '-'*50)
-            parser.print_parse_results(parse_results)
+            if print_parse and not quiet:
+                print_header(' Parsed MATLAB output ')
+                parser.print_parse_results(parse_results)
 
-        if output_XPP:
-            yield('')
-            yield('----- XPP output ' + '-'*50)
-            output= create_raterule_model(parse_results, not use_params, not output_XPP)
-            yield(output)
-
-        else:  
-            if use_equations:
-                yield('')
-                yield('----- Equation-based SBML output ' + '-'*50)
-                output= create_raterule_model(parse_results, not use_params, not output_XPP)
-                yield(output)
+            if output_XPP:
+                print_header(' XPP output ', quiet)
+                output = create_raterule_model(parse_results, not use_params, not output_XPP)
+                print(output)
+            elif use_equations:
+                print_header(' Equation-based SBML output ', quiet)
+                output = create_raterule_model(parse_results, not use_params, not output_XPP)
+                print(output)
             else:
-                yield('')
-                yield('----- Reaction-based SBML output ' + '-'*50)
-                #Create temp file storing XPP model version
+                print_header(' Reaction-based SBML output ', quiet)
+                if not network_available() and not quiet:
+                    print('Error: a network connection is needed for this feature.')
+                    sys.exit(1)
                 try:
-                    with NamedTemporaryFile(suffix= ".ode", delete=False) as xpp_file:
-                        xpp_file.write(create_raterule_model(parse_results, not use_params, output_XPP))
-                    files = {'file':open(xpp_file.name)}                
-                    #Access Biocham to curate and convert equations to reactions
-                    url = 'http://lifeware.inria.fr/biocham/online/rest/export'
+                    # Create temp file storing XPP model version
+                    with NamedTemporaryFile(suffix=".ode", delete=False) as xpp_file:
+                        output = create_raterule_model(parse_results, not use_params, output_XPP)
+                        xpp_file.write(output)
+                    files = {'file':open(xpp_file.name)}
+                    # Access Biocham to curate and convert equations to reactions
                     data = {'exportTo':'sbml', 'curate':'true'}
-                    response = requests.post(url, files=files, data=data)
+                    response = requests.post(_BIOCHAM_URL, files=files, data=data)
                     del files
                     yield(response.content)
                 except IOError as err:
                     yield("error: {0}".format(err))
-                finally:            
-                 os.unlink(xpp_file.name)
-    else:
-        yield("usage: filename used must be a MATLAB file")
-        
+                finally:
+                    os.unlink(xpp_file.name)
+
+    except Exception as err:
+        yield("Error: {0}".format(err))
+
+
+# -----------------------------------------------------------------------------
+# Helper functions
+# -----------------------------------------------------------------------------
+
+def print_header(text, quiet=False):
+    if not quiet:
+        print('')
+        print('{:-^78}'.format(text))
+        print('')
+
+
+def network_available():
+    '''Try to connect somewhere to test if a network is available.'''
+    try:
+        _ = requests.get('http://www.google.com', timeout=5)
+        return True
+    except requests.ConnectionError:
+        return False
+
+
 # -----------------------------------------------------------------------------
 # Plac annotations for main function arguments
 # -----------------------------------------------------------------------------
-      
-#Argument annotation follows (help, kind, abbrev, type, choices, metavar) convention
+
+# Argument annotation follows (help, kind, abbrev, type, choices, metavar) convention
 main.__annotations__ = dict(
-    debug=('Drop into pdb before starting to parse the MATLAB input', 'flag', 'd'),
-    quiet=('Be quiet: produce SBML and nothing else', 'flag', 'q'),
-    print_parse=('Print extra debugging information about the interpreted MATLAB code', 'flag', 'x'),
-    use_params=('Encode variables as parameters (default: species)', 'flag', 'p'),
-    use_equations=('Returns model as equation-based SBML (default: reaction-based SBML)', 'flag', 'e'),
-    output_XPP=('Returns model in XPP format (default: SBML format)', 'flag', 'o'),
-    filename=('path of MATLAB file'))
+    path          = ('path to MATLAB input file'),
+    debug         = ('drop into pdb before parsing the MATLAB input', 'flag', 'd'),
+    quiet         = ('be quiet: produce SBML and nothing else', 'flag', 'q'),
+    print_parse   = ('print extra debugging info about the interpreted MATLAB code', 'flag', 'x'),
+    use_params    = ('encode variables as SBML parameters instead of species', 'flag', 'p'),
+    use_equations = ('returns model as equation-based SBML (default: reaction-based SBML)', 'flag', 'e'),
+    output_XPP    = ('returns model in XPP format (default: SBML format)', 'flag', 'o')
+)
 
 # -----------------------------------------------------------------------------
 # Entry point
 # -----------------------------------------------------------------------------
-   
-if __name__ == '__main__':
+
+if __name__ ==  '__main__':
     #The argument parser is inferred - it also deals with too few or too many func args
     for output in plac.call(main):
         print(output)
