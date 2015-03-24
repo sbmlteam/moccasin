@@ -264,13 +264,15 @@ def new_anon_name():
 
 
 def substitute_vars(rhs, context):
-    for i in range(0, len(rhs)):
-        var = MatlabGrammar.make_formula(rhs[i], False, False)
-        lhs = get_assignment_rule(var, context)
-        if lhs is not None:
-            rhs[i] = lhs
-            return rhs
-    return None
+    result = []
+    for item in rhs:
+        if isinstance(item, Identifier):
+            assigned_value = get_assignment(item.name, context)
+            if assigned_value:
+                result.append(assigned_value)
+                continue
+        result.append(item)
+    return result
 
 
 # -----------------------------------------------------------------------------
@@ -746,6 +748,7 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
 
     all_vars = dict(itertools.chain(working_context.assignments.items(),
                                     function_context.assignments.items()))
+    formula_parser = NumericStringParser()
     for var, rhs in all_vars.items():
         if var in skip_vars:
             continue
@@ -777,6 +780,8 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
             # A list => math expression, but the stuff below handles it too.
             translator = lambda node: munge_reference(node, function_context,
                                                       underscores)
+            if isinstance(rhs, ArrayRef):
+                rhs = rhs.args
             if produce_sbml:
                 formula = MatlabGrammar.make_formula(rhs, atrans=translator)
                 ast = parseL3Formula(formula)
@@ -784,26 +789,9 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
                     create_sbml_parameter(model, var, 0)
                     create_sbml_initial_assignment(model, var, ast)
             else:
-                formula_parser = NumericStringParser()
-                rhs = substitute_vars(rhs, working_context)
-                formula = MatlabGrammar.make_formula(rhs, atrans=translator)
-                if formula is not None and formula != '':
-                    result = formula_parser.eval(formula)
-                    create_xpp_parameter(xpp_variables, var, result)
-        elif isinstance(rhs, list):
-            translator = lambda node: munge_reference(node, function_context,
-                                                      underscores)
-            if produce_sbml:
-                formula = MatlabGrammar.make_formula(rhs, atrans=translator)
-                ast = parseL3Formula(formula)
-                if ast is not None:
-                    create_sbml_parameter(model, var, 0)
-                    create_sbml_initial_assignment(model, var, ast)
-            else:
-                formula_parser = NumericStringParser()
-                rhs = substitute_vars(rhs, working_context)
-                formula = MatlabGrammar.make_formula(rhs, atrans=translator)
-                if formula is not None and formula != '':
+                substituted = substitute_vars(rhs, working_context)
+                formula = MatlabGrammar.make_formula(substituted, atrans=translator)
+                if formula:
                     result = formula_parser.eval(formula)
                     create_xpp_parameter(xpp_variables, var, result)
 
