@@ -84,7 +84,7 @@ def name_is_structured(name):
 
 
 def name_mentioned_in_rhs(name, node):
-    if isinstance(node, ArrayOrFunCall):
+    if isinstance(node, ArrayOrFunCall) or isinstance(node, FunCall):
         if isinstance(node.name, Identifier) and name == node.name.name:
             return True
         if name_mentioned_in_rhs(name, node.args):
@@ -212,7 +212,7 @@ def parse_handle(thing, context, underscores):
     # This next thing is not an else-if because may get here two different ways.
     if isinstance(thing, AnonFun):
         # Case: ode45(@(args)..., time, xinit)
-        if isinstance(thing.body, ArrayOrFunCall):
+        if isinstance(thing.body, ArrayOrFunCall) or isinstance(thing.body, FunCall):
             # Body is just a function call.
             if isinstance(thing.body.name, Identifier):
                 # The name is a plain identifier -- good.
