@@ -2,12 +2,12 @@
 {assign: {identifier: "c3"} = {array {identifier: "count"}: [ {colon}, {number: 3} ]}}
 {comment:  Data at intersection 3}
 {assign: {identifier: "tdata"} = {transpose: ( {number: 1} {colon operator} {number: 24} ) operator ' }}
-{assign: {identifier: "X"} = {array: [ {row 1: {function/array: {identifier: "ones"} ( {function/array: {identifier: "size"} ( {identifier: "tdata"} )} )}, {function/array: {identifier: "cos"} ( ( ( ( {number: 2} {binary op: *} {identifier: "pi"} ) {binary op: /} {number: 12} ) {binary op: *} ( {identifier: "tdata"} {binary op: -} {number: 7} ) ) )}} ]}}
+{assign: {identifier: "X"} = {array: [ {row 1: {function {identifier: "ones"} ( {function {identifier: "size"} ( {identifier: "tdata"} ) } ) }, {function {identifier: "cos"} ( ( ( ( {number: 2} {binary op: *} {identifier: "pi"} ) {binary op: /} {number: 12} ) {binary op: *} ( {identifier: "tdata"} {binary op: -} {number: 7} ) ) ) }} ]}}
 {assign: {identifier: "s_coeffs"} = ( {identifier: "X"} {binary op: \} {identifier: "c3"} )}
 ( {identifier: "figure"} )
-( {function/array: {identifier: "plot"} ( {identifier: "c3"}, {string: "o-"} )} )
+( {function {identifier: "plot"} ( {identifier: "c3"}, {string: "o-"} ) } )
 {command: name {identifier: "hold"} args  on}
 {assign: {identifier: "tfit"} = {transpose: ( ( {number: 1} {colon operator} {number: 0.01} ) {colon operator} {number: 24} ) operator ' }}
-{assign: {identifier: "yfit"} = ( {array: [ {row 1: {function/array: {identifier: "ones"} ( {function/array: {identifier: "size"} ( {identifier: "tfit"} )} )}, {function/array: {identifier: "cos"} ( ( ( ( {number: 2} {binary op: *} {identifier: "pi"} ) {binary op: /} {number: 12} ) {binary op: *} ( {identifier: "tfit"} {binary op: -} {number: 7} ) ) )}} ]} {binary op: *} {identifier: "s_coeffs"} )}
-( {function/array: {identifier: "plot"} ( {identifier: "tfit"}, {identifier: "yfit"}, {string: "r-"}, {string: "LineWidth"}, {number: 2} )} )
-( {function/array: {identifier: "legend"} ( {string: "Data"}, {string: "Sinusoidal Fit"}, {string: "Location"}, {string: "NW"} )} )
+{assign: {identifier: "yfit"} = ( {array: [ {row 1: {function {identifier: "ones"} ( {function {identifier: "size"} ( {identifier: "tfit"} ) } ) }, {function {identifier: "cos"} ( ( ( ( {number: 2} {binary op: *} {identifier: "pi"} ) {binary op: /} {number: 12} ) {binary op: *} ( {identifier: "tfit"} {binary op: -} {number: 7} ) ) ) }} ]} {binary op: *} {identifier: "s_coeffs"} )}
+( {function {identifier: "plot"} ( {identifier: "tfit"}, {identifier: "yfit"}, {string: "r-"}, {string: "LineWidth"}, {number: 2} ) } )
+( {function {identifier: "legend"} ( {string: "Data"}, {string: "Sinusoidal Fit"}, {string: "Location"}, {string: "NW"} ) } )
