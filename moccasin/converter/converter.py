@@ -761,6 +761,22 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
                 if formula is not None and formula != '':
                     result = formula_parser.eval(formula)
                     create_xpp_parameter(xpp_variables, var, result)
+        elif isinstance(rhs, list):
+            translator = lambda node: munge_reference(node, function_context,
+                                                      underscores)
+            if produce_sbml:
+                formula = MatlabGrammar.make_formula(rhs, atrans=translator)
+                ast = parseL3Formula(formula)
+                if ast is not None:
+                    create_sbml_parameter(model, var, 0)
+                    create_sbml_initial_assignment(model, var, ast)
+            else:
+                formula_parser = NumericStringParser()
+                rhs = substitute_vars(rhs, working_context)
+                formula = MatlabGrammar.make_formula(rhs, atrans=translator)
+                if formula is not None and formula != '':
+                    result = formula_parser.eval(formula)
+                    create_xpp_parameter(xpp_variables, var, result)
     # Write the Model
     if produce_sbml:
         return writeSBMLToString(document)
