@@ -60,6 +60,15 @@ def get_function_context(context):
         return None
 
 
+def get_assignment(name, context):
+    if name in context.assignments:
+        return context.assignments[name]
+    elif hasattr(context, 'parent') and context.parent:
+        return get_assignment(name, context.parent)
+    else:
+        return None
+
+
 def get_all_assignments(context):
     # Loop through the variables and create a dictionary to return.
     assignments = {}
@@ -493,23 +502,36 @@ def create_sbml_raterule(model, id, ast):
 
 
 def make_indexed(var, index, content, species, model, underscores, context):
+    # Helper function:
+    def create_species_or_parameter(the_name, the_value):
+        if species:
+            item = create_sbml_species(model, the_name, the_value)
+        else:
+            item = create_sbml_parameter(model, the_name, the_value)
+        item.setConstant(False)
+
     name = rename(var, str(index + 1), underscores)
     if isinstance(content, Number):
-        if species:
-            item = create_sbml_species(model, name, content.value)
-        else:
-            item = create_sbml_parameter(model, name, content.value)
-        item.setConstant(False)
+        create_species_or_parameter(name, content.value)
+        return
+    elif isinstance(content, Identifier):
+        # Check if we have the simple case of a variable whose value is
+        # *another* variable whose value in turn is a number.
+        assigned_value = get_assignment(name, context)
+        if assigned_value and isinstance(assigned_value, Number):
+            create_species_or_parameter(name, assigned_value)
+            return
+
+    # Fall-back case: create an initial assignment.
+    if species:
+        item = create_sbml_species(model, name, 0)
     else:
-        if species:
-            item = create_sbml_species(model, name, 0)
-        else:
-            item = create_sbml_parameter(model, name, 0)
-        item.setConstant(False)
-        translator = lambda node: munge_reference(node, context, underscores)
-        formula = MatlabGrammar.make_formula(content, atrans=translator)
-        ast = parseL3Formula(formula)
-        create_sbml_initial_assignment(model, name, ast)
+        item = create_sbml_parameter(model, name, 0)
+    item.setConstant(False)
+    translator = lambda node: munge_reference(node, context, underscores)
+    formula = MatlabGrammar.make_formula(content, atrans=translator)
+    ast = parseL3Formula(formula)
+    create_sbml_initial_assignment(model, name, ast)
 
 
 def make_raterule(assigned_var, dep_var, index, content, model, underscores, context):
@@ -601,7 +623,7 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
     call_arglist = None
     calls = get_all_function_calls(working_context)
     for name, arglist in calls.items():
-        if isinstance(name, str) and name.startswith('ode'):
+        if isinstance(name, str) and re.match('^ode[0-9]', name):
             # Found the invocation of an ode function.
             call_arglist = arglist
             ode_function = name
@@ -715,7 +737,13 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
     # the working context and function context dictionaries, with the function
     # context taken second (which means its values are the final ones).
 
-    skip_vars = [init_cond_var, output_var, assigned_var, call_arglist[1].name]
+    skip_vars = [init_cond_var, output_var, assigned_var]
+    if isinstance(call_arglist[1], Identifier):
+        # Sometimes people use an array for the time parameter.  In that case,
+        # it doesn't matter for what happens below.  But if it's a named
+        # variable, we want to skip it.
+        skip_vars.append(call_arglist[1].name)
+
     all_vars = dict(itertools.chain(working_context.assignments.items(),
                                     function_context.assignments.items()))
     for var, rhs in all_vars.items():
@@ -745,7 +773,8 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
             # Skip function handles. If any was used in the ode* call, it will
             # have been dealt with earlier.
             continue
-        elif isinstance(rhs, ArrayRef):
+        elif isinstance(rhs, ArrayRef) or isinstance(rhs, list):
+            # A list => math expression, but the stuff below handles it too.
             translator = lambda node: munge_reference(node, function_context,
                                                       underscores)
             if produce_sbml:
@@ -759,8 +788,9 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
                 rhs = substitute_vars(rhs, working_context)
                 formula = MatlabGrammar.make_formula(rhs, atrans=translator)
                 if formula is not None and formula != '':
-                    result = formula_parser.evel(formula)
+                    result = formula_parser.eval(formula)
                     create_xpp_parameter(xpp_variables, var, result)
+
     # Write the Model
     if produce_sbml:
         return writeSBMLToString(document)
@@ -771,15 +801,15 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
 # FIXME only handles 1-D matrices.
 # FIXME grungy part for looking up identifier -- clean up & handle more depth
 
-def munge_reference(matrix, context, underscores):
-    name = matrix.name.name
+def munge_reference(array, context, underscores):
+    name = array.name.name
     if inferred_type(name, context) != 'variable':
-        return MatlabGrammar.make_key(matrix)
+        return MatlabGrammar.make_key(array)
     # Base name starts with one less underscore because the loop process
     # adds one in front of each number.
     constructed = name + '_'*(underscores - 1)
-    for i in range(0, len(matrix.args)):
-        element = matrix.args[i]
+    for i in range(0, len(array.args)):
+        element = array.args[i]
         i += 1
         if isinstance(element, Number):
             constructed += '_' + element.value
@@ -789,12 +819,12 @@ def munge_reference(matrix, context, underscores):
             assignments = get_all_assignments(context)
             var_name = element.name
             if var_name not in assignments:
-                raise ValueError('Unable to handle matrix "' + name + '"')
+                raise ValueError('Unable to handle "' + name + '"')
             assigned_value = assignments[var_name]
             if isinstance(assigned_value, Number):
                 constructed += '_' + assigned_value
             else:
-                raise ValueError('Unable to handle matrix "' + name + '"')
+                raise ValueError('Unable to handle "' + name + '"')
     return constructed
 
 
