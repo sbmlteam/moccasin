@@ -10,9 +10,9 @@
 {comment:  with initial values X(t_0) = xinit, it solves for values of the}
 {comment:  vector of variables X at different times t.  The function defining}
 {comment:  the differential equations is given as "f".}
-{assign: {array: [ {row 1: {identifier: "t"}, {identifier: "x"}} ]} = {function/array: {identifier: "ode45"} ( {function @ handle: {identifier: "f"}}, {identifier: "tspan"}, {identifier: "xinit"} )}}
+{assign: {array: [ {row 1: {identifier: "t"}, {identifier: "x"}} ]} = {function {identifier: "ode45"} ( {function @ handle: {identifier: "f"}}, {identifier: "tspan"}, {identifier: "xinit"} ) }}
 ( {identifier: "figure"} )
-( {function/array: {identifier: "plot"} ( {identifier: "t"}, {array {identifier: "y"}: [ {colon}, {number: 2} ]} )} )
+( {function {identifier: "plot"} ( {identifier: "t"}, {array {identifier: "y"}: [ {colon}, {number: 2} ]} ) } )
 {function definition: {identifier: "f"} parameters ( {identifier: "t"}, {identifier: "x"} ) output {identifier: "dx"}}
 {assign: {identifier: "dx"} = {array: [ {row 1: ( {identifier: "a"} {binary op: -} ( {identifier: "b"} {binary op: *} {array {identifier: "x"}: [ {number: 1} ]} ) )}; {row 2: ( ( {identifier: "c"} {binary op: *} {array {identifier: "x"}: [ {number: 1} ]} ) {binary op: -} ( {identifier: "d"} {binary op: *} {array {identifier: "x"}: [ {number: 2} ]} ) )} ]}}
 {end}

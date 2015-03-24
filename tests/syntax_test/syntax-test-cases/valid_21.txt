@@ -1,5 +1,5 @@
 {function definition: {identifier: "checkme"} parameters ( {identifier: "a"}, {identifier: "b"}, {identifier: "c"} ) output none}
-( {function/array: {identifier: "validateattributes"} ( {identifier: "a"}, {cell array: [ {row 1: {string: "double"}} ]}, {cell array: [ {row 1: {string: "positive"}, {string: "2d"}} ]} )} )
-( {function/array: {identifier: "validateattributes"} ( {identifier: "b"}, {cell array: [ {row 1: {string: "numeric"}} ]}, {cell array: [ {row 1: {string: "numel"}, {number: 100}, {string: "ncols"}, {number: 10}} ]} )} )
-( {function/array: {identifier: "validateattributes"} ( {identifier: "c"}, {cell array: [ {row 1: {string: "char"}, {string: "cell"}} ]}, {cell array: [ {row 1: {string: "nonempty"}} ]} )} )
-( {function/array: {identifier: "disp"} ( {string: "All inputs are ok."} )} )
+( {function {identifier: "validateattributes"} ( {identifier: "a"}, {cell array: [ {row 1: {string: "double"}} ]}, {cell array: [ {row 1: {string: "positive"}, {string: "2d"}} ]} ) } )
+( {function {identifier: "validateattributes"} ( {identifier: "b"}, {cell array: [ {row 1: {string: "numeric"}} ]}, {cell array: [ {row 1: {string: "numel"}, {number: 100}, {string: "ncols"}, {number: 10}} ]} ) } )
+( {function {identifier: "validateattributes"} ( {identifier: "c"}, {cell array: [ {row 1: {string: "char"}, {string: "cell"}} ]}, {cell array: [ {row 1: {string: "nonempty"}} ]} ) } )
+( {function {identifier: "disp"} ( {string: "All inputs are ok."} ) } )
