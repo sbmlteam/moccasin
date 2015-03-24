@@ -1,2 +1,2 @@
-{assign: {identifier: "p"} = {function/array: {identifier: "fminsearch"} ( {function @ handle: {identifier: "humps"}}, {number: .5} )}}
-{assign: {identifier: "exp_pdf"} = {anon @ handle: args ( {identifier: "t"} ) body ( ( {number: 1} {binary op: /} {identifier: "mu1"} ) {binary op: *} {function/array: {identifier: "exp"} ( ( ( {unary op: -} {identifier: "t"} ) {binary op: /} {identifier: "mu1"} ) )} ) }}
+{assign: {identifier: "p"} = {function {identifier: "fminsearch"} ( {function @ handle: {identifier: "humps"}}, {number: .5} ) }}
+{assign: {identifier: "exp_pdf"} = {anon @ handle: args ( {identifier: "t"} ) body ( ( {number: 1} {binary op: /} {identifier: "mu1"} ) {binary op: *} {function {identifier: "exp"} ( ( ( {unary op: -} {identifier: "t"} ) {binary op: /} {identifier: "mu1"} ) ) } ) }}

@@ -1,1 +1,1 @@
-{assign: {identifier: "ptmp"} = {function/array: {identifier: "pcolor"} ( {identifier: "x"}, {identifier: "y"}, {transpose: {identifier: "z"} operator ' } )}}
+{assign: {identifier: "ptmp"} = {function {identifier: "pcolor"} ( {identifier: "x"}, {identifier: "y"}, {transpose: {identifier: "z"} operator ' } ) }}
