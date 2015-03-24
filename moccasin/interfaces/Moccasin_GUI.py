@@ -30,7 +30,7 @@ import requests
 import sys
 from pyparsing import ParseException, ParseResults
 from tempfile import NamedTemporaryFile
-sys.path.append('../converter/')
+sys.path.append('../converter')
 from converter import *
 sys.path.append('../matlab_parser')
 from matlab_parser import *
@@ -229,16 +229,26 @@ class MainFrame ( wx.Frame ):
 			event.Skip()
 		else:
 			try:
-##				parser = MatlabGrammar()
-##				parse_results = parser.parse_string(self.matlabTextCtrl.GetValue())
-##				print(parse_results)
+				parser = MatlabGrammar()
+				parse_results = parser.parse_string(self.matlabTextCtrl.GetValue())
+			except ParseException as err:
+				print("error: {0}".format(err))
+
+			print(parser.print_parse_results(parse_results))
+
+			sbml = create_raterule_model(parse_results, True,True)
+			print(sbml)
+
+##			try:
+##				#print(parse_results)
 ##				#Create temp file storing XPP model version				
 ##				with NamedTemporaryFile(suffix= ".ode", delete=False) as xpp_file:
 ##					xpp_file.write(create_raterule_model(parse_results))
-##				files = {u'file':open(xpp_file.name)}                
+##				files = {'file':open(xpp_file.name)}
+##				print(xpp_file.name)
 ##				#Access Biocham to curate and convert equations to reactions
-##				url = u'http://lifeware.inria.fr/biocham/online/rest/export'
-##				data = {u'exportTo':u'sbml', u'curate':u'true'}
+##				url = 'http://lifeware.inria.fr/biocham/online/rest/export'
+##				data = {'exportTo':'sbml', 'curate':'true'}
 ##				response = requests.post(url, files=files, data=data)
 ##				del files
 ##				self.convertedTextCtrl.SetValue(response.content)
@@ -246,7 +256,8 @@ class MainFrame ( wx.Frame ):
 ##			except IOError as err:
 ##				print("error: {0}".format(err))
 ##			finally:
-##                                os.unlink(xpp_file.name)
+##				print("Nothing")
+##				#os.unlink(xpp_file.name)
 
 	
 	def onOptions( self, event ):
