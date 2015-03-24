@@ -23,4 +23,4 @@
 from .grammar import MatlabGrammar
 from .context import MatlabContext
 from .matlab import *
-
+from .functions import *
