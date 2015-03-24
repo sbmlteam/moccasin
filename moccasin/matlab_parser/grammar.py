@@ -821,13 +821,12 @@ class MatlabGrammar:
                 return
             name = node.name.name
             found_type = self._get_type(name, self._context, False)
-            if found_type != 'variable' and not matlab_function_or_command(name):
+            if found_type != 'variable':
                 self._save_function_call(node)
         elif isinstance(node, Assignment):
             self._save_calls(node.rhs)
         elif isinstance(node, FunCall):
-            if not matlab_function_or_command(node.name.name):
-                self._save_function_call(node)
+            self._save_function_call(node)
         elif isinstance(node, ArrayRef):
             for arg in node.args:
                 self._save_calls(arg)
