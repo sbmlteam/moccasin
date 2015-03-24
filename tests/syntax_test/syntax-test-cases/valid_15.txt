@@ -4,4 +4,4 @@
 {assign: {identifier: "n"} = ( {identifier: "n"} {binary op: -} {number: 1} )}
 {assign: {identifier: "f"} = ( {identifier: "f"} {binary op: *} {identifier: "n"} )}
 {end}
-( {function/array: {identifier: "disp"} ( {array: [ {row 1: {string: "n! = "}, {function/array: {identifier: "num2str"} ( {identifier: "f"} )}} ]} )} )
+( {function {identifier: "disp"} ( {array: [ {row 1: {string: "n! = "}, {function {identifier: "num2str"} ( {identifier: "f"} ) }} ]} ) } )
