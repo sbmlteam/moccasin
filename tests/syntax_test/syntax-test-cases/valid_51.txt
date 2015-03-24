@@ -1,23 +1,23 @@
 {function definition: {identifier: "valid_51"} parameters ( none ) output {identifier: "Y"}}
 {assign: {identifier: "tspan"} = {array: [ {row 1: {number: 0}, {number: 12}} ]}}
 {assign: {identifier: "initCond"} = {array: [ {row 1: {number: 1}, {number: 2}, {number: 3}} ]}}
-{assign: {array: [ {row 1: {identifier: "T"}, {identifier: "Y"}} ]} = {function/array: {identifier: "ode45"} ( {function @ handle: {identifier: "rigid"}}, {identifier: "tspan"}, {identifier: "initCond"} )}}
+{assign: {array: [ {row 1: {identifier: "T"}, {identifier: "Y"}} ]} = {function {identifier: "ode45"} ( {function @ handle: {identifier: "rigid"}}, {identifier: "tspan"}, {identifier: "initCond"} ) }}
 ( {identifier: "figure"} )
-( {function/array: {identifier: "subplot"} ( {number: 2}, {number: 2}, {number: 1} )} )
-( {function/array: {identifier: "plot"} ( {identifier: "T"}, {array {identifier: "Y"}: [ {colon}, {number: 1} ]}, {string: "r-"} )} )
-( {function/array: {identifier: "title"} ( {string: "dy_1 concentration over time"} )} )
-( {function/array: {identifier: "subplot"} ( {number: 2}, {number: 2}, {number: 2} )} )
-( {function/array: {identifier: "plot"} ( {identifier: "T"}, {array {identifier: "Y"}: [ {colon}, {number: 2} ]}, {string: "b-."} )} )
-( {function/array: {identifier: "title"} ( {string: "dy_2 concentration over time"} )} )
-( {function/array: {identifier: "subplot"} ( {number: 2}, {number: 2}, {number: 3} )} )
-( {function/array: {identifier: "plot"} ( {identifier: "T"}, {array {identifier: "Y"}: [ {colon}, {number: 3} ]}, {string: "g:"} )} )
-( {function/array: {identifier: "title"} ( {string: "dy_3 concentration over time"} )} )
-( {function/array: {identifier: "subplot"} ( {number: 2}, {number: 2}, {number: 3} )} )
-( {function/array: {identifier: "xlabel"} ( {string: "Simulation Time"} )} )
-( {function/array: {identifier: "ylabel"} ( {string: "Species Concentration"} )} )
-( {function/array: {identifier: "subplot"} ( {number: 2}, {number: 2}, {number: 4} )} )
-( {function/array: {identifier: "plot"} ( {identifier: "T"}, {array {identifier: "Y"}: [ {colon}, {number: 1} ]}, {string: "r-"}, {identifier: "T"}, {array {identifier: "Y"}: [ {colon}, {number: 2} ]}, {string: "b-."}, {identifier: "T"}, {array {identifier: "Y"}: [ {colon}, {number: 3} ]}, {string: "g:"} )} )
-( {function/array: {identifier: "title"} ( {string: "Species concentrations over time"} )} )
+( {function {identifier: "subplot"} ( {number: 2}, {number: 2}, {number: 1} ) } )
+( {function {identifier: "plot"} ( {identifier: "T"}, {array {identifier: "Y"}: [ {colon}, {number: 1} ]}, {string: "r-"} ) } )
+( {function {identifier: "title"} ( {string: "dy_1 concentration over time"} ) } )
+( {function {identifier: "subplot"} ( {number: 2}, {number: 2}, {number: 2} ) } )
+( {function {identifier: "plot"} ( {identifier: "T"}, {array {identifier: "Y"}: [ {colon}, {number: 2} ]}, {string: "b-."} ) } )
+( {function {identifier: "title"} ( {string: "dy_2 concentration over time"} ) } )
+( {function {identifier: "subplot"} ( {number: 2}, {number: 2}, {number: 3} ) } )
+( {function {identifier: "plot"} ( {identifier: "T"}, {array {identifier: "Y"}: [ {colon}, {number: 3} ]}, {string: "g:"} ) } )
+( {function {identifier: "title"} ( {string: "dy_3 concentration over time"} ) } )
+( {function {identifier: "subplot"} ( {number: 2}, {number: 2}, {number: 3} ) } )
+( {function {identifier: "xlabel"} ( {string: "Simulation Time"} ) } )
+( {function {identifier: "ylabel"} ( {string: "Species Concentration"} ) } )
+( {function {identifier: "subplot"} ( {number: 2}, {number: 2}, {number: 4} ) } )
+( {function {identifier: "plot"} ( {identifier: "T"}, {array {identifier: "Y"}: [ {colon}, {number: 1} ]}, {string: "r-"}, {identifier: "T"}, {array {identifier: "Y"}: [ {colon}, {number: 2} ]}, {string: "b-."}, {identifier: "T"}, {array {identifier: "Y"}: [ {colon}, {number: 3} ]}, {string: "g:"} ) } )
+( {function {identifier: "title"} ( {string: "Species concentrations over time"} ) } )
 {comment: % ODE system function}
 {function definition: {identifier: "rigid"} parameters ( {identifier: "t"}, {identifier: "y"} ) output {identifier: "dy"}}
 {assign: {identifier: "k1"} = {number: 1}}

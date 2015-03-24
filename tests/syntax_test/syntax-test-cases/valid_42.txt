@@ -1,4 +1,4 @@
 {assign: {identifier: "results_folder"} = {string: "../../results/glucose_glycogen_dependency"}}
-{assign: {identifier: "res_file"} = {function/array: {identifier: "strcat"} ( {identifier: "results_folder"}, {string: "/"}, {string: "glucose_glycogen_dependency.mat"} )}}
+{assign: {identifier: "res_file"} = {function {identifier: "strcat"} ( {identifier: "results_folder"}, {string: "/"}, {string: "glucose_glycogen_dependency.mat"} ) }}
 {assign: {identifier: "conversion_factor"} = ( {number: 12.5} {binary op: *} {number: 60} )}
 {comment:  [mmol/s] -> [µmol/min/kgbw]}
