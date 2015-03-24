@@ -275,10 +275,12 @@ try:
     from grammar_utils import *
     from context import *
     from matlab import *
+    from functions import *
 except:
     from .grammar_utils import *
     from .context import *
     from .matlab import *
+    from .functions import *
 
 # Check minimum version of PyParsing.
 
@@ -785,6 +787,8 @@ class MatlabGrammar:
                    isinstance(rhs, Boolean) or isinstance(rhs, String):
                     self._save_type(lhs.name, 'variable')
             elif isinstance(lhs, ArrayRef):
+                # A function call can't appear on the LHS of an assignment, so
+                # we know that what we have here is a variable, not a function.
                 self._save_type(lhs.name, 'variable')
             elif isinstance(lhs, Array):
                 # If the LHS of an assignment is a bare array, and if there
@@ -797,8 +801,8 @@ class MatlabGrammar:
         elif isinstance(node, FunDef):
             if node.output:
                 for var in node.output:
-                    # The output parameter names are a safe bet to assume to
-                    # be variables.
+                    # The output parameter names are variables inside the
+                    # context of the function definition.
                     if isinstance(var, Identifier):
                         self._save_type(var.name, 'variable')
             if node.parameters:
@@ -813,7 +817,10 @@ class MatlabGrammar:
 
     def _save_calls(self, node):
         if isinstance(node, ArrayOrFunCall):
-            found_type = self._get_type(node.name, self._context, False)
+            if not isinstance(node.name, Identifier):
+                return
+            name = node.name.name
+            found_type = self._get_type(name, self._context, False)
             if found_type != 'variable':
                 self._save_function_call(node)
         elif isinstance(node, Assignment):
@@ -838,31 +845,38 @@ class MatlabGrammar:
 
     # This function assumes that it is being executed in the context for
     # which it makes sense to do the conversion.  Currently this means it
-    # assumes it's being executed by _process_node() 
+    # assumes it's being executed by _process_node().
     def _convert_types(self, node):
         # For now, this is pretty limited.
         if isinstance(node, list):
             return [self._convert_types(item) for item in node]
         elif isinstance(node, ArrayOrFunCall):
-            # FIXME: it is potentially the case that a function call is
-            # nested, using the result of another reference.  In that case,
-            # the name won't be an Identifier.  Currently, the code below
-            # doesn't handle that case.
             if not isinstance(node.name, Identifier):
+                # FIXME: it is potentially the case that a function call is
+                # nested, using the result of another reference.  In that
+                # case, the name won't be an Identifier.  Currently, the code
+                # below doesn't handle that case.
                 return node
             the_name = node.name.name
-            if self._get_type(the_name, self._context, True) == 'variable':
+            if (matlab_function_or_command(the_name) or
+                self._get_type(the_name, self._context, True) == 'function'):
+                # This is a known function or command.  We can convert this
+                # to a FunCall.  At this time, we also process the arguments.
+                the_args = self._convert_types(node.args)
+                node = FunCall(name=node.name, args=the_args)
+            elif self._get_type(the_name, self._context, True) == 'variable':
                 # We have seen this name before, and it's not a function.  We
                 # can convert this ArrayOrFunCall to an ArrayRef.  We can
                 # also convert the arguments/subscripts.
-                the_args = self._convert_types(node.args)
-                node = ArrayRef(name=node.name, args=the_args, is_cell=False)
 
                 # Also, if it was previously unknown whether this name is a
                 # function or array, it might have been put in the list of
                 # function calls.  Remove it if so.
                 if the_name in self._context.calls:
                     self._context.calls.pop(the_name)
+
+                the_args = self._convert_types(node.args)
+                node = ArrayRef(name=node.name, args=the_args, is_cell=False)
             else:
                 # Although we didn't change the type of this ArrayOrFunCall,
                 # we may still be able to change some of its arguments.
@@ -1069,6 +1083,8 @@ class MatlabGrammar:
             the_output = None
         # FIXME should get the body somehow
         the_body = None
+        # Since we know this to be a function, we record its type as such.
+        self._save_type(the_name, 'function')
         return FunDef(name=the_name, parameters=the_params,
                       output=the_output, body=the_body)
 
