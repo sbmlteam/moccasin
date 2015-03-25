@@ -1012,7 +1012,7 @@ matlab_converters = {
 
 def get_filename_and_options(argv):
     try:
-        options, path = getopt.getopt(argv[1:], "dpqxo")
+        options, path = getopt.getopt(argv[1:], "dpqxor")
     except:
         raise SystemExit(main.__doc__)
     if len(path) != 1 or len(options) > 2:
@@ -1020,9 +1020,10 @@ def get_filename_and_options(argv):
     debug       = any(['-d' in y for y in options])
     quiet       = any(['-q' in y for y in options])
     print_parse = any(['-x' in y for y in options])
+    print_raw   = any(['-r' in y for y in options])
     use_species = not any(['-p' in y for y in options])
     create_sbml = not any(['-o' in y for y in options])
-    return path[0], debug, quiet, print_parse, use_species, create_sbml
+    return path[0], debug, quiet, print_parse, print_raw, use_species, create_sbml
 
 
 def main(argv):
@@ -1032,10 +1033,11 @@ Available options:
  -h   Print this help message and quit
  -p   Turn variables into parameters (default: make them species)
  -q   Be quiet; just produce code, nothing else
+ -r   Print the raw MatlabNode output for the output printed with option -x
  -x   Print extra debugging info about the interpreted MATLAB
  -o   Create the XPP conversion (SBML is created by default)
 '''
-    path, debug, quiet, print_parse, use_species, create_sbml \
+    path, debug, quiet, print_parse, print_raw, use_species, create_sbml \
         = get_filename_and_options(argv)
 
     file = open(path, 'r')
@@ -1055,10 +1057,12 @@ Available options:
     except Exception as err:
         print("error: {0}".format(err))
 
+    code = create_raterule_model(parse_results, use_species, create_sbml)
+
     if print_parse and not quiet:
         print('')
         print('----- interpreted output ' + '-'*50)
-        parser.print_parse_results(parse_results)
+        parser.print_parse_results(parse_results, print_raw)
 
     if not quiet:
         print('')
@@ -1067,7 +1071,6 @@ Available options:
         else:
             print('----- XPP output ' + '-'*50)
 
-    code = create_raterule_model(parse_results, use_species, create_sbml)
     print(code)
 
 
