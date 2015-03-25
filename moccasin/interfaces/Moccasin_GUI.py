@@ -53,16 +53,17 @@ class MainFrame ( wx.Frame ):
 
 	def __init__( self, parent ):
 		wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = "Welcome to MOCCASIN", pos = wx.DefaultPosition, size = wx.Size( 785,691 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
-	
+		self.SetSizeHintsSz( wx.Size( 721,-1 ), wx.DefaultSize )
 		self.SetExtraStyle( wx.FRAME_EX_METAL )		
 		self.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_BTNFACE ) )
 		
 		#Construct a status bar
-		self.statusBar = self.CreateStatusBar() 
-		self.statusBar.SetFieldsCount(3) 
-		self.statusBar.SetStatusWidths([320, -1, -2])
+		self.statusBar = self.CreateStatusBar(5, wx.ST_SIZEGRIP|wx.ALWAYS_SHOW_SB|wx.RAISED_BORDER, wx.ID_ANY )
+		self.statusBar.SetFieldsCount(5)
 		self.statusBar.SetToolTipString( "Status" )
-
+		self.statusBar.SetStatusText("Ready",0)
+		self.statusBar.SetStatusText("Version",4)
+		
 		#Construct a menu bar
 		self.menuBar = wx.MenuBar( 0 )
 
@@ -116,22 +117,27 @@ class MainFrame ( wx.Frame ):
 		mainSizer = wx.BoxSizer( wx.VERTICAL )
 		mainSizer.SetMinSize( wx.Size( 1,3 ) ) 
 		mainSizer.AddSpacer( ( 0, 1), 0, wx.EXPAND|wx.TOP, 5 )
-		
+
+		#Top sizer
 		topPanelSizer = wx.GridSizer( 1, 2, 0, 0 )
-		
+
 		fileConvSizer = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "File conversion" ), wx.VERTICAL )
-		self.staticTextConv = wx.StaticText( self, wx.ID_ANY, "Please select a file for conversion", wx.DefaultPosition, wx.DefaultSize, 0 )
+		gSizer3 = wx.GridSizer( 1, 2, 0, 0 )
+		self.staticTextConv = wx.StaticText( self, wx.ID_ANY, "Choose a file for conversion", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.staticTextConv.Wrap( -1 )
 		self.staticTextConv.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
-		fileConvSizer.Add( self.staticTextConv, 0, wx.ALL, 5 )
-		self.filePicker = wx.FilePickerCtrl( self, wx.ID_ANY, wx.EmptyString, "Select a file", "*.*", wx.DefaultPosition, wx.DefaultSize, wx.FLP_DEFAULT_STYLE )
-		fileConvSizer.Add( self.filePicker, 0, wx.ALL|wx.EXPAND, 5 )
-		fileConvSizer.AddSpacer( ( 0, 5), 1, wx.EXPAND, 5 )
+		gSizer3.Add( self.staticTextConv, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
 		self.convertButton = wx.Button( self, wx.ID_ANY, "Convert", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.convertButton.SetFont( wx.Font( 9, 74, 90, 92, False, "Arial" ) )
 		self.convertButton.Disable()
-		fileConvSizer.Add( self.convertButton, 0, wx.ALL|wx.ALIGN_RIGHT, 5 )
-		topPanelSizer.Add( fileConvSizer, 0, wx.EXPAND, 5 )
+		gSizer3.Add( self.convertButton, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 5 )
+		fileConvSizer.Add( gSizer3, 2, wx.ALL|wx.EXPAND, 0 )
+		bSizer2 = wx.BoxSizer( wx.VERTICAL )	
+		bSizer2.SetMinSize( wx.Size( 1,1 ) ) 
+		self.filePicker = wx.FilePickerCtrl( self, wx.ID_ANY, wx.EmptyString, "Select a file", u"*.*", wx.DefaultPosition, wx.DefaultSize, wx.FLP_DEFAULT_STYLE )
+		bSizer2.Add( self.filePicker, 0, wx.EXPAND, 2 )	
+		fileConvSizer.Add( bSizer2, 2, wx.ALL|wx.EXPAND, 5 )
+		topPanelSizer.Add( fileConvSizer, 0, wx.ALL|wx.EXPAND, 5 )
 		
 		sbSizer9 = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "Options" ), wx.VERTICAL )
 		
@@ -170,7 +176,7 @@ class MainFrame ( wx.Frame ):
 		self.equationBasedModel.SetToolTipString( "Convert into SBML (kinetics as rate rules)" )
 		optionLayoutSizer.Add( self.equationBasedModel, 0, wx.ALL, 5 )
 		sbSizer9.Add( optionLayoutSizer, 0, wx.EXPAND, 5 )
-		topPanelSizer.Add( sbSizer9, 0, wx.EXPAND, 5 )
+		topPanelSizer.Add( sbSizer9, 0, wx.ALL|wx.EXPAND, 5 )
 		
 		mainSizer.Add( topPanelSizer, 0, wx.ALL|wx.EXPAND, 5 )
 		
@@ -181,8 +187,7 @@ class MainFrame ( wx.Frame ):
 		self.matlabTextCtrl.SetToolTipString( "Input file for conversion" )
 		midPanelSizer.Add( self.matlabTextCtrl, 1, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND, 5 )
 		mainSizer.Add( midPanelSizer, 2, wx.EXPAND, 5 )
-
-		
+	
 		#Bottom sizer
 		bottomPanelSizer = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "Converted File" ), wx.VERTICAL )		
 		self.convertedTextCtrl = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,200 ), wx.HSCROLL|wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP|wx.ALWAYS_SHOW_SB|wx.FULL_REPAINT_ON_RESIZE|wx.RAISED_BORDER )
@@ -270,7 +275,7 @@ class MainFrame ( wx.Frame ):
 		self.matlabTextCtrl.SetValue("")
 		self.convertedTextCtrl.SetValue("")
 		self.filePicker.SetPath("")
-		self.statusBar.SetStatusText( "Ready" )
+		self.statusBar.SetStatusText( "Ready",0 )
 		self.convertButton.Disable()
 		self.convertFile.Enable(0)
 		self.reactionBasedModel.SetValue( True )
@@ -280,7 +285,7 @@ class MainFrame ( wx.Frame ):
 		if(self.matlabTextCtrl.IsEmpty()):
 			event.Skip()
 		else:
-			self.statusBar.SetStatusText( "Generating output ..." )
+			self.statusBar.SetStatusText( "Generating output ..." ,0)
 			try:
 				parser = MatlabGrammar()
 				parse_results = parser.parse_string(self.matlabTextCtrl.GetValue())
@@ -289,11 +294,13 @@ class MainFrame ( wx.Frame ):
 				if self.xppModel.GetValue():
 					output = create_raterule_model(parse_results, self.varsAsSpecies.GetValue(),not self.xppModel.GetValue())
 					self.convertedTextCtrl.SetValue(output)
+					self.statusBar.SetStatusText("ODE file",2)
 
 				#output equation-based SBML					
 				elif self.equationBasedModel.GetValue():
 					output = create_raterule_model(parse_results, self.varsAsSpecies.GetValue(), self.equationBasedModel.GetValue())
 					self.convertedTextCtrl.SetValue(output)
+					self.statusBar.SetStatusText("Equation SBML",2)
 
 				#output equation-based SBML										
 				else:
@@ -313,11 +320,12 @@ class MainFrame ( wx.Frame ):
 						self.convertedTextCtrl.SetValue(response.content)
 						del files
 						os.unlink(xpp_file.name)
+						self.statusBar.SetStatusText("Reaction SBML",2)
 				
 			except IOError as err:
 				print("error: {0}".format(err))
 			finally:
-				self.statusBar.SetStatusText( "Done!" )
+				self.statusBar.SetStatusText( "Done!",0 )
 				
 
 	def onOptions( self, event ):
@@ -347,7 +355,6 @@ class MainFrame ( wx.Frame ):
 		dlg = GMD.GenericMessageDialog(self, msg, "About MOCCASIN",agwStyle=wx.ICON_INFORMATION | wx.OK)               
 		dlg.ShowModal()
 		dlg.Destroy()
-
 
 # -----------------------------------------------------------------------------
 # Helper functions
