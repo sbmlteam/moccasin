@@ -130,6 +130,7 @@ class NumericStringParser(object):
             "factorial": math.factorial,
             "floor": math.floor,
             "fix": lambda a: a,  # not working
+            "ln": math.log,
             "log": math.log,
             "log10": math.log10,
             "round": round,
