@@ -41,6 +41,7 @@ from matlab_parser import *
 # -----------------------------------------------------------------------------
 
 anon_counter = 0
+need_time = False
 
 
 # -----------------------------------------------------------------------------
@@ -457,34 +458,34 @@ def create_sbml_model(document):
     return model
 
 
-def create_sbml_compartment(model, id, size):
+def create_sbml_compartment(model, id, size, const=True):
     c = model.createCompartment()
     check(c,                         'create compartment')
     check(c.setId(id),               'set compartment id')
-    check(c.setConstant(True),       'set compartment "constant"')
+    check(c.setConstant(const),      'set compartment "constant"')
     check(c.setSize(float(size)),    'set compartment "size"')
     check(c.setSpatialDimensions(3), 'set compartment dimensions')
     return c
 
 
-def create_sbml_species(model, id, value):
+def create_sbml_species(model, id, value, const=False):
     comp = model.getCompartment(0)
     s = model.createSpecies()
     check(s,                                       'create species')
     check(s.setId(id),                             'set species id')
     check(s.setCompartment(comp.getId()),          'set species compartment')
-    check(s.setConstant(False),                    'set species "constant"')
+    check(s.setConstant(const),                    'set species "constant"')
     check(s.setInitialConcentration(float(value)), 'set species initial concentration')
     check(s.setBoundaryCondition(False),           'set species "boundaryCondition"')
     check(s.setHasOnlySubstanceUnits(False),       'set species "hasOnlySubstanceUnits"')
     return s
 
 
-def create_sbml_parameter(model, id, value):
+def create_sbml_parameter(model, id, value, const=True):
     p = model.createParameter()
     check(p,                        'create parameter')
     check(p.setId(id),              'set parameter id')
-    check(p.setConstant(True),      'set parameter "constant"')
+    check(p.setConstant(const),     'set parameter "constant"')
     check(p.setValue(float(value)), 'set parameter value')
     return p
 
@@ -499,9 +500,17 @@ def create_sbml_initial_assignment(model, id, ast):
 
 def create_sbml_raterule(model, id, ast):
     rr = model.createRateRule()
-    check(rr,                  'create raterule')
-    check(rr.setVariable(id),  'set raterule variable')
-    check(rr.setMath(ast),     'set raterule formula')
+    check(rr,                  'create rate rule')
+    check(rr.setVariable(id),  'set rate rule variable')
+    check(rr.setMath(ast),     'set rate rule formula')
+    return rr
+
+
+def create_sbml_assignment_rule(model, id, ast):
+    rr = model.createAssignmentRule()
+    check(rr,                  'create assignment rule')
+    check(rr.setVariable(id),  'set assignment rule variable')
+    check(rr.setMath(ast),     'set assignment rule formula')
     return rr
 
 
@@ -509,10 +518,9 @@ def make_indexed(var, index, content, species, model, underscores, context):
     # Helper function:
     def create_species_or_parameter(the_name, the_value):
         if species:
-            item = create_sbml_species(model, the_name, the_value)
+            item = create_sbml_species(model, the_name, the_value, const=False)
         else:
-            item = create_sbml_parameter(model, the_name, the_value)
-        item.setConstant(False)
+            item = create_sbml_parameter(model, the_name, the_value, const=False)
 
     name = rename(var, str(index + 1), underscores)
     if isinstance(content, Number):
@@ -523,15 +531,14 @@ def make_indexed(var, index, content, species, model, underscores, context):
         # *another* variable whose value in turn is a number.
         assigned_value = get_assignment(name, context)
         if assigned_value and isinstance(assigned_value, Number):
-            create_species_or_parameter(name, assigned_value)
+            create_species_or_parameter(name, assigned_value.value)
             return
 
     # Fall-back case: create an initial assignment.
     if species:
-        item = create_sbml_species(model, name, 0)
+        item = create_sbml_species(model, name, 0, const=False)
     else:
-        item = create_sbml_parameter(model, name, 0)
-    item.setConstant(False)
+        item = create_sbml_parameter(model, name, 0, const=False)
     translator = lambda node: munge_reference(node, context, underscores)
     formula = MatlabGrammar.make_formula(content, atrans=translator)
     ast = parseL3Formula(formula)
@@ -777,6 +784,24 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
                 create_sbml_parameter(model, var, rhs.value)
             else:
                 create_xpp_parameter(xpp_variables, var, rhs.value)
+        elif isinstance(rhs, Identifier):
+            # Refers to another variable, i.e., something of the form "x = y".
+            # Keep it if we can, because it might be preferrable that way.
+            # (After all, the user probably wrote x = y for a reason.)
+            if produce_sbml:
+                ast = parseL3Formula(rhs.name)
+                if ast is not None:
+                    create_sbml_parameter(model, var, 0)
+                    create_sbml_initial_assignment(model, var, ast)
+            else:
+                # Can't do that in XPP output.  Check if we can subsitute.
+                assigned_value = get_assignment(rhs.name, function_context)
+                if assigned_value:
+                    result = formula_parser.eval(assigned_value)
+                else:
+                    # Not sure what else to do here.
+                    result = rhs.name
+                create_xpp_parameter(xpp_variables, var, result)
         elif isinstance(rhs, Array):
             if produce_sbml:
                 mloop(rhs,
@@ -793,12 +818,14 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
             # Skip function handles. If any was used in the ode* call, it will
             # have been dealt with earlier.
             continue
-        elif isinstance(rhs, ArrayRef) or isinstance(rhs, list):
-            # A list => math expression, but the stuff below handles it too.
+        elif isinstance(rhs, ArrayRef) or isinstance(rhs, list) \
+             or isinstance(rhs, FunCall) or isinstance(rhs, Expression):
+            # Inefficient way to do this, but for now let's just do this.
+            if isinstance(rhs, ArrayRef):   rhs = rhs.args
+            if isinstance(rhs, FunCall):    rhs = [rhs]
+            if isinstance(rhs, Expression): rhs = rhs.content
             translator = lambda node: munge_reference(node, function_context,
                                                       underscores)
-            if isinstance(rhs, ArrayRef):
-                rhs = rhs.args
             if produce_sbml:
                 formula = MatlabGrammar.make_formula(rhs, atrans=translator)
                 ast = parseL3Formula(formula)
@@ -811,6 +838,11 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
                 if formula:
                     result = formula_parser.eval(formula)
                     create_xpp_parameter(xpp_variables, var, result)
+
+    # Final quirks.
+    if need_time:
+        create_sbml_parameter(model, "t", 0, const=False)
+        create_sbml_assignment_rule(model, "t", parseL3Formula("time"))
 
     # Write the Model
     if produce_sbml:
@@ -897,7 +929,10 @@ def rewrite_known_matlab(thing):
             func = thing.name.name
             if func in matlab_converters:
                 return matlab_converters[func](thing.args)
-
+    elif isinstance(thing, Identifier) and thing.name == "t":
+        # Assume this is a reference to time.
+        global need_time
+        need_time = True
     # Item is none of the above. Leave it untouched.
     return thing
 
