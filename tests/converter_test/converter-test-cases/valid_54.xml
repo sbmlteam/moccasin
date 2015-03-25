@@ -11,18 +11,19 @@
     </listOfSpecies>
     <listOfParameters>
       <parameter id="I" value="1" constant="true"/>
-      <parameter id="k__1" value="4.2416" constant="false"/>
-      <parameter id="k__2" value="5.9816" constant="false"/>
-      <parameter id="k__3" value="0.1009" constant="false"/>
-      <parameter id="k__4" value="1.1549" constant="false"/>
-      <parameter id="k__5" value="1.3618" constant="false"/>
-      <parameter id="k__6" value="1.4219" constant="false"/>
-      <parameter id="k__7" value="0.0051" constant="false"/>
-      <parameter id="k__8" value="0.0972" constant="false"/>
-      <parameter id="k__9" value="0.0012" constant="false"/>
-      <parameter id="k__10" value="56.8583" constant="false"/>
-      <parameter id="k__11" value="0.0111" constant="false"/>
-      <parameter id="k__12" value="0.0014" constant="false"/>
+      <parameter id="k__1" value="4.2416" constant="true"/>
+      <parameter id="k__2" value="5.9816" constant="true"/>
+      <parameter id="k__3" value="0.1009" constant="true"/>
+      <parameter id="k__4" value="1.1549" constant="true"/>
+      <parameter id="k__5" value="1.3618" constant="true"/>
+      <parameter id="k__6" value="1.4219" constant="true"/>
+      <parameter id="k__7" value="0.0051" constant="true"/>
+      <parameter id="k__8" value="0.0972" constant="true"/>
+      <parameter id="k__9" value="0.0012" constant="true"/>
+      <parameter id="k__10" value="56.8583" constant="true"/>
+      <parameter id="k__11" value="0.0111" constant="true"/>
+      <parameter id="k__12" value="0.0014" constant="true"/>
+      <parameter id="t" value="0" constant="false"/>
     </listOfParameters>
     <listOfRules>
       <rateRule variable="SimData__1">
@@ -30,13 +31,25 @@
           <apply>
             <minus/>
             <apply>
-              <times/>
-              <ci> k__1 </ci>
-              <ci> I </ci>
+              <divide/>
               <apply>
-                <minus/>
-                <cn type="integer"> 1 </cn>
-                <ci> SimData__1 </ci>
+                <times/>
+                <ci> k__1 </ci>
+                <ci> I </ci>
+                <apply>
+                  <minus/>
+                  <cn type="integer"> 1 </cn>
+                  <ci> SimData__1 </ci>
+                </apply>
+              </apply>
+              <apply>
+                <plus/>
+                <apply>
+                  <minus/>
+                  <cn type="integer"> 1 </cn>
+                  <ci> SimData__1 </ci>
+                </apply>
+                <ci> k__7 </ci>
               </apply>
             </apply>
             <apply>
@@ -60,13 +73,25 @@
           <apply>
             <minus/>
             <apply>
-              <times/>
-              <ci> k__3 </ci>
-              <ci> SimData__1 </ci>
+              <divide/>
               <apply>
-                <minus/>
-                <cn type="integer"> 1 </cn>
-                <ci> SimData__2 </ci>
+                <times/>
+                <ci> k__3 </ci>
+                <ci> SimData__1 </ci>
+                <apply>
+                  <minus/>
+                  <cn type="integer"> 1 </cn>
+                  <ci> SimData__2 </ci>
+                </apply>
+              </apply>
+              <apply>
+                <plus/>
+                <apply>
+                  <minus/>
+                  <cn type="integer"> 1 </cn>
+                  <ci> SimData__2 </ci>
+                </apply>
+                <ci> k__9 </ci>
               </apply>
             </apply>
             <apply>
@@ -90,24 +115,50 @@
           <apply>
             <minus/>
             <apply>
-              <times/>
-              <ci> k__5 </ci>
-              <ci> SimData__1 </ci>
+              <divide/>
               <apply>
-                <minus/>
-                <cn type="integer"> 1 </cn>
-                <ci> SimData__3 </ci>
+                <times/>
+                <ci> k__5 </ci>
+                <ci> SimData__1 </ci>
+                <apply>
+                  <minus/>
+                  <cn type="integer"> 1 </cn>
+                  <ci> SimData__3 </ci>
+                </apply>
+              </apply>
+              <apply>
+                <plus/>
+                <apply>
+                  <minus/>
+                  <cn type="integer"> 1 </cn>
+                  <ci> SimData__3 </ci>
+                </apply>
+                <ci> k__11 </ci>
               </apply>
             </apply>
             <apply>
-              <times/>
-              <ci> k__6 </ci>
-              <ci> SimData__2 </ci>
-              <ci> SimData__3 </ci>
+              <divide/>
+              <apply>
+                <times/>
+                <ci> k__6 </ci>
+                <ci> SimData__2 </ci>
+                <ci> SimData__3 </ci>
+              </apply>
+              <apply>
+                <plus/>
+                <ci> SimData__3 </ci>
+                <ci> k__12 </ci>
+              </apply>
             </apply>
           </apply>
         </math>
       </rateRule>
+      <assignmentRule variable="t">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <csymbol encoding="text" definitionURL="http://www.sbml.org/sbml/symbols/time"> time </csymbol>
+        </math>
+      </assignmentRule>
     </listOfRules>
   </model>
 </sbml>
+
