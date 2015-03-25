@@ -788,7 +788,7 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
                 rhs = substitute_vars(rhs, working_context)
                 formula = MatlabGrammar.make_formula(rhs, atrans=translator)
                 if formula is not None and formula != '':
-                    result = formula_parser.evel(formula)
+                    result = formula_parser.eval(formula)
                     create_xpp_parameter(xpp_variables, var, result)
 
     # Write the Model
