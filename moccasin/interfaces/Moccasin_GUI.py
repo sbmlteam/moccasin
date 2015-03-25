@@ -38,11 +38,17 @@ import moccasin
 from converter import *
 from matlab_parser import *
 
+# -----------------------------------------------------------------------------
+# Global configuration constants
+# -----------------------------------------------------------------------------
 
-###########################################################################
-## Extended Class MainFrame
-###########################################################################
+_BIOCHAM_URL = 'http://lifeware.inria.fr/biocham/online/rest/export'
+_HELP_URL="https://github.com/sbmlteam/moccasin/blob/setupFix_branch/docs/quickstart.md"
+_LICENSE_URL="https://www.gnu.org/licenses/lgpl.html"
 
+# -----------------------------------------------------------------------------
+# Graphical User Interface (GUI) definition
+# -----------------------------------------------------------------------------
 class MainFrame ( wx.Frame ):
 	
 	def __init__( self, parent ):
@@ -80,9 +86,7 @@ class MainFrame ( wx.Frame ):
 		self.runMenu = wx.Menu()
 		self.convertFile = wx.MenuItem( self.runMenu, wx.ID_ANY, "Convert"+ "\t" + "Ctrl+C", wx.EmptyString, wx.ITEM_NORMAL )
 		self.convertFile.Enable(0)
-		self.runMenu.AppendItem( self.convertFile )
-		self.seeOptions = wx.MenuItem( self.runMenu, wx.ID_ANY, "Options", wx.EmptyString, wx.ITEM_NORMAL )
-		self.runMenu.AppendItem( self.seeOptions )
+		self.runMenu.AppendItem( self.convertFile )		
 		
 		self.menuBar.Append( self.runMenu, "Run" ) 
 		
@@ -124,6 +128,7 @@ class MainFrame ( wx.Frame ):
 		fileConvSizer.Add( self.filePicker, 0, wx.ALL|wx.EXPAND, 5 )
 		fileConvSizer.AddSpacer( ( 0, 5), 1, wx.EXPAND, 5 )
 		self.convertButton = wx.Button( self, wx.ID_ANY, "Convert", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.convertButton.Disable()
 		fileConvSizer.Add( self.convertButton, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5 )
 		topPanelSizer.Add( fileConvSizer, 0, wx.EXPAND, 5 )
 		
@@ -187,7 +192,6 @@ class MainFrame ( wx.Frame ):
 		self.Bind( wx.EVT_MENU, self.onExit, id = self.exit.GetId() )
 		self.Bind( wx.EVT_MENU, self.onClear, id = self.clear.GetId() )
 		self.Bind( wx.EVT_MENU, self.onConvert, id = self.convertFile.GetId() )
-		self.Bind( wx.EVT_MENU, self.onOptions, id = self.seeOptions.GetId() )
 		self.Bind( wx.EVT_MENU, self.onCloseAll, id = self.close.GetId() )
 		self.Bind( wx.EVT_MENU, self.onHelp, id = self.helpItem.GetId() )
 		self.Bind( wx.EVT_MENU, self.onLicense, id = self.license.GetId() )
@@ -198,10 +202,9 @@ class MainFrame ( wx.Frame ):
 		def __del__( self ):
 			pass
 	    
-###########################################################################
-## Virtual Event Handlers
-###########################################################################
-		
+# -----------------------------------------------------------------------------
+# Virtual Event Handlers
+# -----------------------------------------------------------------------------		
 	def onOpen(self, event):
 		dirname=""
 		dlg = wx.FileDialog(self, "Choose a file", dirname, "", "*.m", wx.OPEN)
@@ -252,36 +255,53 @@ class MainFrame ( wx.Frame ):
 		self.statusBar.SetStatusText( "Ready" )
 		self.convertButton.Disable()
 		self.convertFile.Enable(0)
+		self.reactionBasedModel.SetValue( True )
+		self.varsAsSpecies.SetValue( True ) 
 	
-	def onConvert( self, event ):
-		self.statusBar.SetStatusText( "Generating output ..." )
+	def onConvert( self, event ):            
 		if(self.matlabTextCtrl.IsEmpty()):
 			event.Skip()
 		else:
+			self.statusBar.SetStatusText( "Generating output ..." )
 			try:
 				parser = MatlabGrammar()
 				parse_results = parser.parse_string(self.matlabTextCtrl.GetValue())
 
-				#print(parse_results)
-				#Create temp file storing XPP model version				
-				with NamedTemporaryFile(suffix= ".ode", delete=False) as xpp_file:
-					xpp_file.write(create_raterule_model(parse_results, True, False))
-				files = {'file':open(xpp_file.name)}
-				print(xpp_file.name)
-				#Access Biocham to curate and convert equations to reactions
-				url = 'http://lifeware.inria.fr/biocham/online/rest/export'
-				data = {'exportTo':'sbml', 'curate':'true'}
-				response = requests.post(url, files=files, data=data)
-				del files
-				print(response.content)
-				self.convertedTextCtrl.SetValue(response.content)
-				self.statusBar.SetStatusText( "Done!" )
+				#output XPP files
+				if self.xppModel.GetValue():
+					output = create_raterule_model(parse_results, self.varsAsSpecies.GetValue(),not self.xppModel.GetValue())
+					self.convertedTextCtrl.SetValue(output)
+
+				#output equation-based SBML					
+				elif self.equationBasedModel.GetValue():
+					output = create_raterule_model(parse_results, self.varsAsSpecies.GetValue(), self.equationBasedModel.GetValue())
+					self.convertedTextCtrl.SetValue(output)
+
+				#output equation-based SBML										
+				else:
+					if not network_available():
+						msg = "A network connection is needed for this feature" 
+						dlg = GMD.GenericMessageDialog(self, msg, "Warning!",agwStyle=wx.ICON_EXCLAMATION | wx.OK)               
+						dlg.ShowModal()
+						dlg.Destroy()
+					else:
+						#Create temp file storing XPP model version				
+						with NamedTemporaryFile(suffix= ".ode", delete=False) as xpp_file:
+							xpp_file.write(create_raterule_model(parse_results, self.varsAsSpecies.GetValue() , self.reactionBasedModel.GetValue()))
+						files = {'file':open(xpp_file.name)}
+						#Access Biocham to curate and convert equations to reactions
+						data = {'exportTo':'sbml', 'curate':'true'}
+						response = requests.post(_BIOCHAM_URL, files=files, data=data)
+						self.convertedTextCtrl.SetValue(response.content)
+						del files
+						os.unlink(xpp_file.name)
+				
 			except IOError as err:
 				print("error: {0}".format(err))
-			#finally:
-				#os.unlink(xpp_file.name)
+			finally:
+				self.statusBar.SetStatusText( "Done!" )
+				
 
-	
 	def onOptions( self, event ):
 		event.Skip()
 	
@@ -289,15 +309,13 @@ class MainFrame ( wx.Frame ):
 		self.Close(True)
 
 	def onHelp( self, event ):
-		href="https://github.com/sbmlteam/moccasin/blob/setupFix_branch/docs/quickstart.md"
 		wx.BeginBusyCursor() 
-		webbrowser.open(href) 
+		webbrowser.open(_HELP_URL) 
 		wx.EndBusyCursor()
 		
 	def onLicense( self, event ):
-		href="https://www.gnu.org/licenses/lgpl.html"
 		wx.BeginBusyCursor() 
-		webbrowser.open(href) 
+		webbrowser.open(_LICENSE_URL) 
 		wx.EndBusyCursor()
             
 	def onAbout( self, event ):
@@ -312,10 +330,21 @@ class MainFrame ( wx.Frame ):
 		dlg.ShowModal()
 		dlg.Destroy()
 
-###########################################################################
-## Driver
-###########################################################################
-		
+
+# -----------------------------------------------------------------------------
+# Helper functions
+# -----------------------------------------------------------------------------
+def network_available():
+        '''Try to connect somewhere to test if a network is available.'''
+        try:
+                _ = requests.get('http://www.google.com', timeout=5)
+                return True
+        except requests.ConnectionError:
+                return False
+
+# -----------------------------------------------------------------------------
+# Driver
+# -----------------------------------------------------------------------------	
 app = wx.App(False)
 frame = MainFrame(None)
 frame.Show()
