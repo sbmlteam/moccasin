@@ -43,15 +43,15 @@ par k__12=0.0014
 
 # rateRule : variable = SimData__1
 init SimData__1=1.0
-dSimData__1/dt=(((k__1 * I) * (1 - SimData__1)) - ((k__2 * SimData__1) / (SimData__1 + k__8)))
+dSimData__1/dt=((((k__1 * I) * (1 - SimData__1)) / ((1 - SimData__1) + k__7)) - ((k__2 * SimData__1) / (SimData__1 + k__8)))
 
 # rateRule : variable = SimData__2
 init SimData__2=1.0
-dSimData__2/dt=(((k__3 * SimData__1) * (1 - SimData__2)) - ((k__4 * SimData__2) / (SimData__2 + k__10)))
+dSimData__2/dt=((((k__3 * SimData__1) * (1 - SimData__2)) / ((1 - SimData__2) + k__9)) - ((k__4 * SimData__2) / (SimData__2 + k__10)))
 
 # rateRule : variable = SimData__3
 init SimData__3=1.0
-dSimData__3/dt=(((k__5 * SimData__1) * (1 - SimData__3)) - ((k__6 * SimData__2) * SimData__3))
+dSimData__3/dt=((((k__5 * SimData__1) * (1 - SimData__3)) / ((1 - SimData__3) + k__11)) - (((k__6 * SimData__2) * SimData__3) / (SimData__3 + k__12)))
 
 # Species:   id = SimData__1, defined by rule
 
@@ -60,3 +60,4 @@ dSimData__3/dt=(((k__5 * SimData__1) * (1 - SimData__3)) - ((k__6 * SimData__2) 
 # Species:   id = SimData__3, defined by rule
 
 done
+
