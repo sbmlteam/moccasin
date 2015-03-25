@@ -274,7 +274,7 @@ def substitute_vars(rhs, context):
         result.append(item)
     return result
 
-
+
 # -----------------------------------------------------------------------------
 # XPP specific stuff
 # -----------------------------------------------------------------------------
@@ -411,6 +411,8 @@ def create_xpp_string(xpp_elements):
 
     return lines
 
+
+
 # -----------------------------------------------------------------------------
 # SBML-specific stuff.
 # -----------------------------------------------------------------------------
@@ -711,7 +713,22 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
     # the function.)  This defines the formula for the ODE.  We expect this
     # to be a vector.  We take it apart, using each row as an ODE definition,
     # and use this to create SBML "rate rules" for the output variables.
+    #
+    # Tricky case: the file may mix assignments to the output variable as a
+    # single name with assignments to individual elements of an array.  E.g.:
+    #
+    #    function y = foo(t,x)
+    #    y = zeros(4,1);
+    #     ...
+    #    y(1) = ... something
+    #    y(2) = ... something
+    #    ... etc.
+    #
+    # Our problem then is to match up the variables.  We do this by rewriting
+    # the assignments in the call to reconstruct_separate_assignments().
+
     output_var = function_context.returns[0].name
+    reconstruct_separate_assignments(function_context, output_var, underscores)
     var_def = function_context.assignments[output_var]
     if not isinstance(var_def, Array):
         fail('Failed to parse the body of the function {}'.format(handle_name))
@@ -832,6 +849,75 @@ def munge_reference(array, context, underscores):
     return constructed
 
 
+def reconstruct_separate_assignments(context, var, underscores):
+    # Look through the context for assignments to variables having names of
+    # the form "x(1)", where "x" is the value of parameter var.  If we find
+    # any, we assume they are rows of an array.  We collect them into a real
+    # Array object and assign the array as the value of var.  We also delete
+    # the original "x(1)" etc. entries.
+
+    need_adjust = []
+    for name in context.assignments.keys():
+        if name.startswith(var) and name.find('(') > 0:
+            need_adjust.append(name)
+    if need_adjust:
+        # We will build a new array with as many rows as individual elements
+        # have been assigned in this context.
+        new_value = [None]*len(need_adjust)
+        for elem_name in need_adjust:
+            elem_index = re.sub(var + r'\((\d+)\)', r'\1', elem_name)
+            # The -1 is because Python arrays are 0-indexed
+            new_value[int(elem_index) - 1] = [context.assignments[elem_name]]
+            context.assignments.pop(elem_name)
+        context.assignments[var] = Array(rows=new_value, is_cell=False)
+
+
+# -----------------------------------------------------------------------------
+# MATLAB rewriter
+#
+# This rewrites some simple MATLAB constructs to something we can deal with.
+# -----------------------------------------------------------------------------
+
+def rewrite_recognized_matlab(context):
+    for function_name, function_context in context.functions.items():
+        for lhs, rhs in function_context.assignments.items():
+            function_context.assignments[lhs] = rewrite_known_matlab(rhs)
+        for name, args in function_context.calls.items():
+            function_context.calls[name] = rewrite_known_matlab(args)
+        function_context.nodes = rewrite_known_matlab(function_context.nodes)
+        rewrite_recognized_matlab(function_context)
+
+
+def rewrite_known_matlab(thing):
+    if isinstance(thing, list):
+        return [rewrite_known_matlab(item) for item in thing]
+    elif isinstance(thing, FunCall):
+        # Item is a function call.  Is it something we know about?
+        if isinstance(thing.name, Identifier):
+            func = thing.name.name
+            if func in matlab_converters:
+                return matlab_converters[func](thing.args)
+
+    # Item is none of the above. Leave it untouched.
+    return thing
+
+
+# E.g.: zeros(3,1) produces a matrix
+def matlab_zeros(args):
+    if len(args) == 1:
+        rows = int(args[0].value)
+        return Array(rows=[[Number(value='0')]]*rows, is_cell=False)
+    elif len(args) == 2:
+        rows = int(args[0].value)
+        cols = int(args[1].value)
+        return Array(rows=[[Number(value='0')]*cols]*rows, is_cell=False)
+
+
+matlab_converters = {
+    'zeros': matlab_zeros
+}
+
+
 # -----------------------------------------------------------------------------
 # Driver
 # -----------------------------------------------------------------------------
@@ -893,6 +979,7 @@ Available options:
         else:
             print('----- XPP output ' + '-'*50)
 
+    rewrite_recognized_matlab(parse_results)
     code = create_raterule_model(parse_results, use_species, create_sbml)
     print(code)
 
