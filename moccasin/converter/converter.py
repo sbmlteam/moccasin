@@ -841,8 +841,12 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
 
     # Final quirks.
     if need_time:
-        create_sbml_parameter(model, "t", 0, const=False)
-        create_sbml_assignment_rule(model, "t", parseL3Formula("time"))
+        if produce_sbml:
+            create_sbml_parameter(model, "t", 0, const=False)
+            create_sbml_assignment_rule(model, "t", parseL3Formula("time"))
+        else:
+            result = formula_parser.eval("t")
+            create_xpp_parameter(xpp_variables, var, result)
 
     # Write the Model
     if produce_sbml:
