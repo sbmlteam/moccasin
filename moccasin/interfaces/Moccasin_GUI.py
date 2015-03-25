@@ -50,7 +50,7 @@ _LICENSE_URL="https://www.gnu.org/licenses/lgpl.html"
 # Graphical User Interface (GUI) definition
 # -----------------------------------------------------------------------------
 class MainFrame ( wx.Frame ):
-	
+
 	def __init__( self, parent ):
 		wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = "Welcome to MOCCASIN", pos = wx.DefaultPosition, size = wx.Size( 785,691 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
 	
@@ -128,8 +128,9 @@ class MainFrame ( wx.Frame ):
 		fileConvSizer.Add( self.filePicker, 0, wx.ALL|wx.EXPAND, 5 )
 		fileConvSizer.AddSpacer( ( 0, 5), 1, wx.EXPAND, 5 )
 		self.convertButton = wx.Button( self, wx.ID_ANY, "Convert", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.convertButton.SetFont( wx.Font( 9, 74, 90, 92, False, "Arial" ) )
 		self.convertButton.Disable()
-		fileConvSizer.Add( self.convertButton, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5 )
+		fileConvSizer.Add( self.convertButton, 0, wx.ALL|wx.ALIGN_RIGHT, 5 )
 		topPanelSizer.Add( fileConvSizer, 0, wx.EXPAND, 5 )
 		
 		sbSizer9 = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "Options" ), wx.VERTICAL )
@@ -140,24 +141,33 @@ class MainFrame ( wx.Frame ):
 		self.staticTextOpt.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
 		optionLayoutSizer.Add( self.staticTextOpt, 0, wx.ALL, 5 )
 		self.varsAsSpecies = wx.RadioButton( self, wx.ID_ANY, "SBML Species", wx.DefaultPosition, wx.DefaultSize, wx.RB_GROUP )
+		self.varsAsSpecies.SetToolTipString( "Represent model variables as species" )
 		self.varsAsSpecies.SetValue( True ) 
 		optionLayoutSizer.Add( self.varsAsSpecies, 0, wx.ALL, 5 )
+		
 		self.varsAsParams = wx.RadioButton( self, wx.ID_ANY, "SBML Parameters", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.varsAsParams.SetToolTipString( "Represent model variables as parameters" )
 		optionLayoutSizer.Add( self.varsAsParams, 0, wx.ALL, 5 )
 		optionLayoutSizer.AddSpacer( ( 0, 1), 1, 0, 5 )
 		optionLayoutSizer.AddSpacer( ( 0, 1), 1, 0, 5 )
 		optionLayoutSizer.AddSpacer( ( 0, 1), 1, 0, 5 )
-		self.modeType = wx.StaticText( self, wx.ID_ANY, "Output type", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.modeType = wx.StaticText( self, wx.ID_ANY, "Output format", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.modeType.Wrap( -1 )
 		self.modeType.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
 		optionLayoutSizer.Add( self.modeType, 0, wx.ALL, 5 )
+		
 		self.reactionBasedModel = wx.RadioButton( self, wx.ID_ANY, "SBML (reactions)", wx.DefaultPosition, wx.DefaultSize, wx.RB_GROUP )
+		self.reactionBasedModel.SetToolTipString( "Convert into SBML (kinetics as reactions)" )
 		self.reactionBasedModel.SetValue( True ) 
 		optionLayoutSizer.Add( self.reactionBasedModel, 0, wx.ALL, 5 )
-		self.xppModel = wx.RadioButton( self, wx.ID_ANY, "XPP format", wx.DefaultPosition, wx.DefaultSize, 0 )
+		
+		self.xppModel = wx.RadioButton( self, wx.ID_ANY, "ODE", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.xppModel.SetToolTipString( "Convert into ODE file format (XPP)" )
 		optionLayoutSizer.Add( self.xppModel, 0, wx.ALL, 5 )
 		optionLayoutSizer.AddSpacer( ( 0, 1), 1, wx.EXPAND, 5 )
-		self.equationBasedModel = wx.RadioButton( self, wx.ID_ANY, "SBML (equations)", wx.DefaultPosition, wx.DefaultSize, 0 )
+		
+		self.equationBasedModel = wx.RadioButton( self, wx.ID_ANY, "SBML(equations)", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.equationBasedModel.SetToolTipString( "Convert into SBML (kinetics as rate rules)" )
 		optionLayoutSizer.Add( self.equationBasedModel, 0, wx.ALL, 5 )
 		sbSizer9.Add( optionLayoutSizer, 0, wx.EXPAND, 5 )
 		topPanelSizer.Add( sbSizer9, 0, wx.EXPAND, 5 )
@@ -168,7 +178,7 @@ class MainFrame ( wx.Frame ):
 		midPanelSizer = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "Matlab File" ), wx.VERTICAL )
 		self.matlabTextCtrl = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,200 ), wx.HSCROLL|wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP|wx.ALWAYS_SHOW_SB|wx.FULL_REPAINT_ON_RESIZE|wx.RAISED_BORDER )
 		self.matlabTextCtrl.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
-		self.matlabTextCtrl.SetToolTipString( "Input Matlab file for conversion" )
+		self.matlabTextCtrl.SetToolTipString( "Input file for conversion" )
 		midPanelSizer.Add( self.matlabTextCtrl, 1, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND, 5 )
 		mainSizer.Add( midPanelSizer, 2, wx.EXPAND, 5 )
 
@@ -232,11 +242,19 @@ class MainFrame ( wx.Frame ):
 		f.close()		
 
 	def onSave( self, event ):
+		msg = None
+		fileFormat = None
+		if self.xppModel.GetValue():
+			msg = "Save ODE file"
+			fileFormat = "ODE files (*.ODE)|*.ode"			
+		else:
+			msg = "Save SBML file"
+			fileFormat = "SBML files (*.xml)|*.xml"
+                        
 		if(not self.convertedTextCtrl.IsEmpty()):
-			dlg = wx.FileDialog(self, "Save SBML file", "", "", "SBML files (*.xml)|*.xml", wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+			dlg = wx.FileDialog(self, msg, "", "", fileFormat, wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
 			if dlg.ShowModal() == wx.ID_CANCEL:
 				return
-			print(dlg.GetPath())
 			output = open(dlg.GetPath(), 'w')
 			output.write(self.convertedTextCtrl.GetValue())
 			output.close()			
