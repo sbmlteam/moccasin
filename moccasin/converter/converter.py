@@ -272,6 +272,12 @@ def substitute_vars(rhs, context):
             if assigned_value:
                 result.append(assigned_value)
                 continue
+        elif isinstance(item, list):
+            subresult = []
+            for subitem in item:
+                subresult.append(subitem)
+            result.append(substitute_vars(subresult, context))
+            continue
         result.append(item)
     return result
 
@@ -773,6 +779,8 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
     all_vars = dict(itertools.chain(working_context.assignments.items(),
                                     function_context.assignments.items()))
     formula_parser = NumericStringParser()
+    translator = lambda node: munge_reference(node, function_context,
+                                                      underscores)
     for var, rhs in all_vars.items():
         if var in skip_vars:
             continue
@@ -796,11 +804,16 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
             else:
                 # Can't do that in XPP output.  Check if we can subsitute.
                 assigned_value = get_assignment(rhs.name, function_context)
-                if assigned_value:
-                    result = formula_parser.eval(assigned_value)
+                if isinstance(assigned_value, Number):
+                    result = assigned_value.value
                 else:
-                    # Not sure what else to do here.
-                    result = rhs.name
+                    substituted = substitute_vars(assigned_value, working_context)
+                    formula = MatlabGrammar.make_formula(substituted, atrans=translator)
+                    if formula:
+                        result = formula_parser.eval(formula)
+                    else:
+                        # Not sure what else to do here.
+                        result = rhs.name
                 create_xpp_parameter(xpp_variables, var, result)
         elif isinstance(rhs, Array):
             if produce_sbml:
@@ -822,10 +835,16 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
              or isinstance(rhs, FunCall) or isinstance(rhs, Expression):
             # Inefficient way to do this, but for now let's just do this.
             if isinstance(rhs, ArrayRef):   rhs = rhs.args
-            if isinstance(rhs, FunCall):    rhs = [rhs]
+            if isinstance(rhs, FunCall):
+                # we cannot evaluate just any function
+                # leaving this here because I'm not sure whether the
+                # sbml will need it; but xpp does not deal with it
+                # note the sbml ends up with a null ast so exists neatly
+                if produce_sbml:
+                    rhs = [rhs]
+                else:
+                    continue
             if isinstance(rhs, Expression): rhs = rhs.content
-            translator = lambda node: munge_reference(node, function_context,
-                                                      underscores)
             if produce_sbml:
                 formula = MatlabGrammar.make_formula(rhs, atrans=translator)
                 ast = parseL3Formula(formula)
