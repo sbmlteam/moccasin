@@ -311,7 +311,7 @@ def add_xpp_raterule(model, id, ast):
     return
 
 
-def make_xpp_indexed(var, index, content, use_species, use_rules,
+def make_xpp_indexed(var, index, content, use_species, use_rules, use_const,
                      model, underscores, context):
     name = rename(var, str(index + 1), underscores)
     if isinstance(content, Number):
