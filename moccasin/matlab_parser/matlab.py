@@ -598,6 +598,24 @@ class Comment(MatlabNode):
 
 
 
+# Visitor.
+# .........................................................................
+
+class MatlabNodeVisitor(object):
+    def visit(self, node):
+        if isinstance(node, list):
+            return [self.visit(item) for item in node]
+        else:
+            methname = 'visit_' + type(node).__name__
+            meth = getattr(self, methname, None)
+            if meth is None:
+                meth = self.default_visit
+            return meth(node)
+
+    def default_visit(self, node):
+        return node
+
+
 # General helpers.
 # .........................................................................
 

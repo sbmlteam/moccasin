@@ -40,8 +40,12 @@ from matlab_parser import *
 # Globals.
 # -----------------------------------------------------------------------------
 
-anon_counter = 0
-need_time = False
+GLOBALS = {'need time': False, 'anon counter': 0}
+
+def reset_globals():
+    global GLOBALS
+    GLOBALS['need time'] = False
+    GLOBALS['anon counter'] = 0
 
 
 # -----------------------------------------------------------------------------
@@ -259,9 +263,9 @@ def create_array_function(thing, context, underscores):
 
 
 def new_anon_name():
-    global anon_counter
-    anon_counter += 1
-    return 'anon{:03d}'.format(anon_counter)
+    global GLOBALS
+    GLOBALS['anon counter'] += 1
+    return 'anon{:03d}'.format(GLOBALS['anon counter'])
 
 
 def substitute_vars(rhs, context):
@@ -644,6 +648,11 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
     # saving the name of the function handle passed to it as an argument.  We
     # also save the name of the 3rd argument (a vector of initial conditions).
 
+    reset_globals()
+
+    # Massage the input before going any further.
+    rewrite_recognized_matlab(parse_results)
+
     # Gather some preliminary info.
     working_context = get_function_context(parse_results)
     underscores = num_underscores(working_context) + 1
@@ -793,8 +802,8 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
                           xpp_variables, model, underscores, produce_sbml)
 
     # Deal with final quirks.
-    global need_time
-    if need_time:
+    global GLOBALS
+    if GLOBALS['need time']:
         if produce_sbml:
             create_sbml_assigned_parameter(model, "t", parseL3Formula("time"), True)
         else:
@@ -959,31 +968,35 @@ def reconstruct_separate_assignments(context, var, underscores):
 # This rewrites some simple MATLAB constructs to something we can deal with.
 # -----------------------------------------------------------------------------
 
-def rewrite_recognized_matlab(context):
-    for function_name, function_context in context.functions.items():
-        for lhs, rhs in function_context.assignments.items():
-            function_context.assignments[lhs] = rewrite_known_matlab(rhs)
-        for name, args in function_context.calls.items():
-            function_context.calls[name] = rewrite_known_matlab(args)
-        function_context.nodes = rewrite_known_matlab(function_context.nodes)
-        rewrite_recognized_matlab(function_context)
-
-
-def rewrite_known_matlab(thing):
-    if isinstance(thing, list):
-        return [rewrite_known_matlab(item) for item in thing]
-    elif isinstance(thing, FunCall):
-        # Item is a function call.  Is it something we want to convert?
-        if isinstance(thing.name, Identifier):
-            func = thing.name.name
+class MatlabRewriter(MatlabNodeVisitor):
+    def visit_FunCall(self, node):
+        if isinstance(node.name, Identifier):
+            func = node.name.name
             if func in matlab_converters:
-                return matlab_converters[func](thing)
-    elif isinstance(thing, Identifier) and thing.name == "t":
+                return matlab_converters[func](node)
+        return node
+
+    def visit_Identifier(self, node):
         # Assume this is a reference to time.
-        global need_time
-        need_time = True
-    # Item is none of the above. Leave it untouched.
-    return thing
+        if node.name == "t":
+            global GLOBALS
+            GLOBALS['need time'] = True
+        return node
+
+    def visit_Assignment(self, node):
+        node.rhs = self.visit(node.rhs)
+        return node
+
+
+def rewrite_recognized_matlab(context):
+    rewriter = MatlabRewriter()
+    context.nodes = rewriter.visit(context.nodes)
+    for lhs, rhs in context.assignments.items():
+        context.assignments[lhs] = rewriter.visit(rhs)
+    for name, args in context.calls.items():
+        context.calls[name] = rewriter.visit(args)
+    for function_name, function_context in context.functions.items():
+        rewrite_recognized_matlab(function_context)
 
 
 # E.g.: zeros(3,1) produces a matrix
@@ -1022,7 +1035,7 @@ matlab_converters = {
 
 def get_filename_and_options(argv):
     try:
-        options, path = getopt.getopt(argv[1:], "dpqxo")
+        options, path = getopt.getopt(argv[1:], "dpqxor")
     except:
         raise SystemExit(main.__doc__)
     if len(path) != 1 or len(options) > 2:
@@ -1030,9 +1043,10 @@ def get_filename_and_options(argv):
     debug       = any(['-d' in y for y in options])
     quiet       = any(['-q' in y for y in options])
     print_parse = any(['-x' in y for y in options])
+    print_raw   = any(['-r' in y for y in options])
     use_species = not any(['-p' in y for y in options])
     create_sbml = not any(['-o' in y for y in options])
-    return path[0], debug, quiet, print_parse, use_species, create_sbml
+    return path[0], debug, quiet, print_parse, print_raw, use_species, create_sbml
 
 
 def main(argv):
@@ -1042,10 +1056,11 @@ Available options:
  -h   Print this help message and quit
  -p   Turn variables into parameters (default: make them species)
  -q   Be quiet; just produce code, nothing else
+ -r   Print the raw MatlabNode output for the output printed with option -x
  -x   Print extra debugging info about the interpreted MATLAB
  -o   Create the XPP conversion (SBML is created by default)
 '''
-    path, debug, quiet, print_parse, use_species, create_sbml \
+    path, debug, quiet, print_parse, print_raw, use_species, create_sbml \
         = get_filename_and_options(argv)
 
     file = open(path, 'r')
@@ -1065,10 +1080,12 @@ Available options:
     except Exception as err:
         print("error: {0}".format(err))
 
+    code = create_raterule_model(parse_results, use_species, create_sbml)
+
     if print_parse and not quiet:
         print('')
         print('----- interpreted output ' + '-'*50)
-        parser.print_parse_results(parse_results)
+        parser.print_parse_results(parse_results, print_raw)
 
     if not quiet:
         print('')
@@ -1077,8 +1094,6 @@ Available options:
         else:
             print('----- XPP output ' + '-'*50)
 
-    rewrite_recognized_matlab(parse_results)
-    code = create_raterule_model(parse_results, use_species, create_sbml)
     print(code)
 
 
