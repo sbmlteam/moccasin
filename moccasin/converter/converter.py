@@ -311,17 +311,18 @@ def add_xpp_raterule(model, id, ast):
     return
 
 
-def make_xpp_indexed(var, index, content, species, model, underscores, context):
+def make_xpp_indexed(var, index, content, use_species, use_rules,
+                     model, underscores, context):
     name = rename(var, str(index + 1), underscores)
     if isinstance(content, Number):
-        if species:
+        if use_species:
             model = create_xpp_species(model, name, content.value)
         else:
             model = create_xpp_parameter(model, name, content.value, False)
     else:
         translator = lambda node: munge_reference(node, context, underscores)
         formula = MatlabGrammar.make_formula(content, atrans=translator)
-        if species:
+        if use_species:
             model = create_xpp_species(model, name, 0, formula)
         else:
             model = create_xpp_parameter(model, name, 0, False, formula)
@@ -490,6 +491,16 @@ def create_sbml_parameter(model, id, value, const=True):
     return p
 
 
+def create_sbml_assigned_parameter(model, id, value, use_rule=False):
+    # If creating an assignment rule for this, we want const=False in the
+    # call to create the parameter.  Thus, we key off the `use_rule` arg.
+    create_sbml_parameter(model, id, 0, not use_rule)
+    if use_rule:
+        create_sbml_assignment_rule(model, id, value)
+    else:
+        create_sbml_initial_assignment(model, id, value)
+
+
 def create_sbml_initial_assignment(model, id, ast):
     ia = model.createInitialAssignment()
     check(ia,               'create initial assignment')
@@ -514,16 +525,18 @@ def create_sbml_assignment_rule(model, id, ast):
     return rr
 
 
-def make_indexed(var, index, content, species, model, underscores, context):
+def make_indexed(var, index, content, use_species, use_rules, use_const,
+                 model, underscores, context):
     # Helper function:
-    def create_species_or_parameter(the_name, the_value):
-        if species:
-            item = create_sbml_species(model, the_name, the_value, const=False)
+    def create_species_or_parameter(the_name, the_value, const=use_const):
+        if use_species:
+            item = create_sbml_species(model, the_name, the_value, False)
         else:
-            item = create_sbml_parameter(model, the_name, the_value, const=False)
+            item = create_sbml_parameter(model, the_name, the_value, const)
 
     name = rename(var, str(index + 1), underscores)
     if isinstance(content, Number):
+        is_constant = use_species and not use_rules
         create_species_or_parameter(name, content.value)
         return
     elif isinstance(content, Identifier):
@@ -534,15 +547,15 @@ def make_indexed(var, index, content, species, model, underscores, context):
             create_species_or_parameter(name, assigned_value.value)
             return
 
-    # Fall-back case: create an initial assignment.
-    if species:
-        item = create_sbml_species(model, name, 0, const=False)
-    else:
-        item = create_sbml_parameter(model, name, 0, const=False)
+    # Fall-through case: create an initial assignment.
     translator = lambda node: munge_reference(node, context, underscores)
     formula = MatlabGrammar.make_formula(content, atrans=translator)
     ast = parseL3Formula(formula)
-    create_sbml_initial_assignment(model, name, ast)
+    create_species_or_parameter(name, 0, False)
+    if use_rules:
+        create_sbml_assignment_rule(model, name, ast)
+    else:
+        create_sbml_initial_assignment(model, name, ast)
 
 
 def make_raterule(assigned_var, dep_var, index, content, model, underscores, context):
@@ -676,7 +689,10 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
         model = create_sbml_model(document)
         compartment = create_sbml_compartment(model, 'comp1', 1)
     else:
-        xpp_variables = []
+        document = None
+        model = None
+        compartment = None
+    xpp_variables = []
 
     # Now locate our context object for the function definition.  It'll be
     # defined either at the top level (if this file is a script) or inside
@@ -707,12 +723,13 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
     if produce_sbml:
         mloop(init_cond,
               lambda idx, item: make_indexed(assigned_var, idx, item,
-                                             use_species, model, underscores,
-                                             function_context))
+                                             use_species, False, False, model,
+                                             underscores, function_context))
     else:
         mloop(init_cond,
               lambda idx, item: make_xpp_indexed(assigned_var, idx, item,
-                                                 use_species, xpp_variables,
+                                                 use_species, False, False,
+                                                 xpp_variables,
                                                  underscores, function_context))
 
     # Now, look inside the function definition and find the assignment to the
@@ -758,10 +775,7 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
     # showing up inside the function body and outside.  The approach here is
     # to have variables inside the function shadow ones outside, but we
     # should really check if something more complicated is going on in the
-    # Matlab code.  The shadowing is done by virtue of the fact that the
-    # creation of the dict() object for the next for-loop uses the sum of
-    # the working context and function context dictionaries, with the function
-    # context taken second (which means its values are the final ones).
+    # Matlab code.
 
     skip_vars = [init_cond_var, output_var, assigned_var]
     if isinstance(call_arglist[1], Identifier):
@@ -769,84 +783,16 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
         # it doesn't matter for what happens below.  But if it's a named
         # variable, we want to skip it.
         skip_vars.append(call_arglist[1].name)
+    create_remaining_vars(working_context, function_context, skip_vars,
+                          xpp_variables, model, underscores, produce_sbml)
 
-    all_vars = dict(itertools.chain(working_context.assignments.items(),
-                                    function_context.assignments.items()))
-    for var, rhs in all_vars.items():
-        if var in skip_vars:
-            continue
-        # FIXME currently doesn't handle matrices on LHS.
-        if name_is_structured(var):
-            continue
-        if isinstance(rhs, Number):
-            if produce_sbml:
-                create_sbml_parameter(model, var, rhs.value)
-            else:
-                create_xpp_parameter(xpp_variables, var, rhs.value)
-        elif isinstance(rhs, Identifier):
-            # Refers to another variable, i.e., something of the form "x = y".
-            # Keep it if we can, because it might be preferrable that way.
-            # (After all, the user probably wrote x = y for a reason.)
-            if produce_sbml:
-                ast = parseL3Formula(rhs.name)
-                if ast is not None:
-                    create_sbml_parameter(model, var, 0)
-                    create_sbml_initial_assignment(model, var, ast)
-            else:
-                # Can't do that in XPP output.  Check if we can subsitute.
-                assigned_value = get_assignment(rhs.name, function_context)
-                if assigned_value:
-                    formula_parser = NumericStringParser()
-                    result = formula_parser.eval(assigned_value)
-                else:
-                    # Not sure what else to do here.
-                    result = rhs.name
-                create_xpp_parameter(xpp_variables, var, result)
-        elif isinstance(rhs, Array):
-            if produce_sbml:
-                mloop(rhs,
-                      lambda idx, item: make_indexed(var, idx, item, False,
-                                                     model, underscores,
-                                                     function_context))
-            else:
-                mloop(rhs,
-                      lambda idx, item: make_xpp_indexed(var, idx, item, False,
-                                                         xpp_variables,
-                                                         underscores,
-                                                         function_context))
-        elif isinstance(rhs, FunHandle):
-            # Skip function handles. If any was used in the ode* call, it will
-            # have been dealt with earlier.
-            continue
-        elif isinstance(rhs, ArrayRef) or isinstance(rhs, list) \
-             or isinstance(rhs, FunCall) or isinstance(rhs, Expression):
-            # Inefficient way to do this, but for now let's just do this.
-            if isinstance(rhs, ArrayRef):   rhs = rhs.args
-            if isinstance(rhs, FunCall):    rhs = [rhs]
-            if isinstance(rhs, Expression): rhs = rhs.content
-            translator = lambda node: munge_reference(node, function_context,
-                                                      underscores)
-            if produce_sbml:
-                formula = MatlabGrammar.make_formula(rhs, atrans=translator)
-                ast = parseL3Formula(formula)
-                if ast is not None:
-                    create_sbml_parameter(model, var, 0)
-                    create_sbml_initial_assignment(model, var, ast)
-            else:
-                substituted = substitute_vars(rhs, working_context)
-                formula = MatlabGrammar.make_formula(substituted, atrans=translator)
-                if formula:
-                    result = formula_parser.eval(formula)
-                    create_xpp_parameter(xpp_variables, var, result)
-
-    # Final quirks.
+    # Deal with final quirks.
+    global need_time
     if need_time:
         if produce_sbml:
-            create_sbml_parameter(model, "t", 0, const=False)
-            create_sbml_assignment_rule(model, "t", parseL3Formula("time"))
+            create_sbml_assigned_parameter(model, "t", parseL3Formula("time"), True)
         else:
-            result = formula_parser.eval("t")
-            create_xpp_parameter(xpp_variables, var, result)
+            create_xpp_parameter(xpp_variables, var, formula_parser.eval("t"))
 
     # Write the Model
     if produce_sbml:
@@ -883,6 +829,83 @@ def munge_reference(array, context, underscores):
             else:
                 raise ValueError('Unable to handle "' + name + '"')
     return constructed
+
+
+def create_remaining_vars(working_context, function_context, skip_vars,
+                          xpp_variables, model, underscores, produce_sbml):
+
+    all_vars = dict(itertools.chain(working_context.assignments.items(),
+                                    function_context.assignments.items()))
+
+    # We do it slightly differently if the variable is assigned inside the
+    # ODE function versus outside.  Inside, we make them assignment rules
+    # because the values would normally be recomputed every time the function
+    # is called.  Outside, we make them one-time initial assignments.
+
+    for var, rhs in all_vars.items():
+        if var in skip_vars: continue
+        if name_is_structured(var): continue  # FIXME doesn't handle matrices on LHS.
+        in_function = True if var in function_context.assignments else False
+
+        if isinstance(rhs, Number):
+            if produce_sbml:
+                create_sbml_parameter(model, var, rhs.value)
+            else:
+                create_xpp_parameter(xpp_variables, var, rhs.value)
+        elif isinstance(rhs, Identifier):
+            # Refers to another variable, i.e., something of the form "x = y".
+            # Keep it if we can, because it might be preferrable that way.
+            # (After all, the user probably wrote x = y for a reason.)
+            if produce_sbml:
+                ast = parseL3Formula(rhs.name)
+                create_sbml_assigned_parameter(model, var, ast, in_function)
+            else:
+                # Can't do that in XPP output.  Check if we can subsitute.
+                assigned_value = get_assignment(rhs.name, function_context)
+                if assigned_value:
+                    formula_parser = NumericStringParser()
+                    result = formula_parser.eval(assigned_value)
+                else:
+                    # Not sure what else to do here.
+                    result = rhs.name
+                create_xpp_parameter(xpp_variables, var, result)
+        elif isinstance(rhs, Array):
+            if produce_sbml:
+                mloop(rhs,
+                      lambda idx, item: make_indexed(var, idx, item, False,
+                                                     in_function, not in_function,
+                                                     model, underscores, function_context))
+            else:
+                mloop(rhs,
+                      lambda idx, item: make_xpp_indexed(var, idx, item, False,
+                                                         in_function, not in_function,
+                                                         xpp_variables, underscores,
+                                                         function_context))
+        elif isinstance(rhs, ArrayRef) or isinstance(rhs, list) \
+             or isinstance(rhs, FunCall) or isinstance(rhs, Expression):
+            # Inefficient way to do this, but for now let's just do this.
+            if isinstance(rhs, ArrayRef):   rhs = rhs.args
+            if isinstance(rhs, FunCall):    rhs = [rhs]
+            if isinstance(rhs, Expression): rhs = rhs.content
+            translator = lambda node: munge_reference(node, function_context,
+                                                      underscores)
+            if produce_sbml:
+                formula = MatlabGrammar.make_formula(rhs, atrans=translator)
+                ast = parseL3Formula(formula)
+                if ast:
+                    create_sbml_assigned_parameter(model, var, ast, in_function)
+            else:
+                substituted = substitute_vars(rhs, working_context)
+                formula = MatlabGrammar.make_formula(substituted, atrans=translator)
+                if formula:
+                    formula_parser = NumericStringParser()
+                    result = formula_parser.eval(formula)
+                    if result:
+                        create_xpp_parameter(xpp_variables, var, result)
+        elif isinstance(rhs, FunHandle):
+            # Skip function handles. If any was used in the ode* call, it will
+            # have been dealt with earlier.
+            continue
 
 
 def reconstruct_separate_assignments(context, var, underscores):
@@ -928,11 +951,11 @@ def rewrite_known_matlab(thing):
     if isinstance(thing, list):
         return [rewrite_known_matlab(item) for item in thing]
     elif isinstance(thing, FunCall):
-        # Item is a function call.  Is it something we know about?
+        # Item is a function call.  Is it something we want to convert?
         if isinstance(thing.name, Identifier):
             func = thing.name.name
             if func in matlab_converters:
-                return matlab_converters[func](thing.args)
+                return matlab_converters[func](thing)
     elif isinstance(thing, Identifier) and thing.name == "t":
         # Assume this is a reference to time.
         global need_time
@@ -942,7 +965,8 @@ def rewrite_known_matlab(thing):
 
 
 # E.g.: zeros(3,1) produces a matrix
-def matlab_zeros(args):
+def matlab_zeros(thing):
+    args = thing.args
     if len(args) == 1:
         rows = int(args[0].value)
         return Array(rows=[[Number(value='0')]]*rows, is_cell=False)
@@ -950,10 +974,23 @@ def matlab_zeros(args):
         rows = int(args[0].value)
         cols = int(args[1].value)
         return Array(rows=[[Number(value='0')]*cols]*rows, is_cell=False)
+    # Fall back: make sure to return *something*.
+    return thing
+
+
+# Matlab's log(x) is natural log of x, but libSBML's parser defaults to
+# base 10.
+def matlab_log(thing):
+    args = thing.args
+    if len(args) == 1:
+        return FunCall(name=Identifier(name="ln"), args=[args[0]])
+    # Fall back: make sure to return *something*.
+    return thing
 
 
 matlab_converters = {
-    'zeros': matlab_zeros
+    'zeros': matlab_zeros,
+    'log': matlab_log
 }
 
 
