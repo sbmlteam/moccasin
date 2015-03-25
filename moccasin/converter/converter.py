@@ -40,8 +40,14 @@ from matlab_parser import *
 # Globals.
 # -----------------------------------------------------------------------------
 
-anon_counter = 0
-need_time = False
+__anon_counter = 0
+__need_time = False
+
+def reset_globals():
+    global __anon_counter
+    global __need_time
+    __anon_counter = 0
+    __need_time = False
 
 
 # -----------------------------------------------------------------------------
@@ -259,9 +265,9 @@ def create_array_function(thing, context, underscores):
 
 
 def new_anon_name():
-    global anon_counter
-    anon_counter += 1
-    return 'anon{:03d}'.format(anon_counter)
+    global __anon_counter
+    __anon_counter += 1
+    return 'anon{:03d}'.format(__anon_counter)
 
 
 def substitute_vars(rhs, context):
@@ -638,6 +644,11 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
     # saving the name of the function handle passed to it as an argument.  We
     # also save the name of the 3rd argument (a vector of initial conditions).
 
+    reset_globals()
+
+    # Massage the input before going any further.
+    rewrite_recognized_matlab(parse_results)
+
     # Gather some preliminary info.
     working_context = get_function_context(parse_results)
     underscores = num_underscores(working_context) + 1
@@ -787,8 +798,8 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
                           xpp_variables, model, underscores, produce_sbml)
 
     # Deal with final quirks.
-    global need_time
-    if need_time:
+    global __need_time
+    if __need_time:
         if produce_sbml:
             create_sbml_assigned_parameter(model, "t", parseL3Formula("time"), True)
         else:
@@ -959,8 +970,8 @@ def rewrite_known_matlab(thing):
                 return matlab_converters[func](thing)
     elif isinstance(thing, Identifier) and thing.name == "t":
         # Assume this is a reference to time.
-        global need_time
-        need_time = True
+        global __need_time
+        __need_time = True
     # Item is none of the above. Leave it untouched.
     return thing
 
@@ -1056,7 +1067,6 @@ Available options:
         else:
             print('----- XPP output ' + '-'*50)
 
-    rewrite_recognized_matlab(parse_results)
     code = create_raterule_model(parse_results, use_species, create_sbml)
     print(code)
 
