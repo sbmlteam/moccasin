@@ -772,7 +772,6 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
 
     all_vars = dict(itertools.chain(working_context.assignments.items(),
                                     function_context.assignments.items()))
-    formula_parser = NumericStringParser()
     for var, rhs in all_vars.items():
         if var in skip_vars:
             continue
@@ -797,6 +796,7 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
                 # Can't do that in XPP output.  Check if we can subsitute.
                 assigned_value = get_assignment(rhs.name, function_context)
                 if assigned_value:
+                    formula_parser = NumericStringParser()
                     result = formula_parser.eval(assigned_value)
                 else:
                     # Not sure what else to do here.
