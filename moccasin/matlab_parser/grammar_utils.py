@@ -54,7 +54,7 @@ def makeLRlike(numterms):
             while i < len(t):
                 ret = ParseResults([ret] + t[i:i + incr])
                 i += incr
-                return ParseResults([ret])
+            return ParseResults([ret])
 
     # Return the closure.
     return pa
