@@ -1,0 +1,2 @@
+{assign: {identifier: "r2"} = ( ( ( {number: 1e9} {binary op: *} {identifier: "C"} ) {binary op: *} {identifier: "vmax2"} ) {binary op: /} {identifier: "NA"} )}
+
