@@ -30,6 +30,7 @@
           <apply>
             <minus/>
             <apply>
+<<<<<<< HEAD
               <divide/>
               <apply>
                 <times/>
@@ -49,6 +50,15 @@
                   <ci> SimData__1 </ci>
                 </apply>
                 <ci> k__7 </ci>
+=======
+              <times/>
+              <ci> k__1 </ci>
+              <ci> I </ci>
+              <apply>
+                <minus/>
+                <cn type="integer"> 1 </cn>
+                <ci> SimData__1 </ci>
+>>>>>>> develop
               </apply>
             </apply>
             <apply>
@@ -72,6 +82,7 @@
           <apply>
             <minus/>
             <apply>
+<<<<<<< HEAD
               <divide/>
               <apply>
                 <times/>
@@ -91,6 +102,15 @@
                   <ci> SimData__2 </ci>
                 </apply>
                 <ci> k__9 </ci>
+=======
+              <times/>
+              <ci> k__3 </ci>
+              <ci> SimData__1 </ci>
+              <apply>
+                <minus/>
+                <cn type="integer"> 1 </cn>
+                <ci> SimData__2 </ci>
+>>>>>>> develop
               </apply>
             </apply>
             <apply>
@@ -114,6 +134,7 @@
           <apply>
             <minus/>
             <apply>
+<<<<<<< HEAD
               <divide/>
               <apply>
                 <times/>
@@ -148,6 +169,22 @@
                 <ci> SimData__3 </ci>
                 <ci> k__12 </ci>
               </apply>
+=======
+              <times/>
+              <ci> k__5 </ci>
+              <ci> SimData__1 </ci>
+              <apply>
+                <minus/>
+                <cn type="integer"> 1 </cn>
+                <ci> SimData__3 </ci>
+              </apply>
+            </apply>
+            <apply>
+              <times/>
+              <ci> k__6 </ci>
+              <ci> SimData__2 </ci>
+              <ci> SimData__3 </ci>
+>>>>>>> develop
             </apply>
           </apply>
         </math>
