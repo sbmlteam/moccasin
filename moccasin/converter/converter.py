@@ -285,6 +285,11 @@ def substitute_vars(rhs, context):
         result.append(item)
     return result
 
+
+# Clever technique found at http://stackoverflow.com/a/1325265/743730
+def valid_id(text, search=re.compile(r'\A[a-zA-Z_][a-zA-Z0-9_]*\Z').search):
+    return bool(search(text))
+
 
 # -----------------------------------------------------------------------------
 # XPP specific stuff
@@ -313,12 +318,11 @@ def create_xpp_species(xpp_variables, id, value, rate_rule='', init_assign=''):
     return xpp_variables
 
 
-def add_xpp_raterule(model, id, ast):
-    for i in range(0, len(model)):
-        if model[i]['id'] == id:
-            model[i]['rate_rule'] = ast
+def add_xpp_raterule(xpp_variables, id, ast):
+    for i in range(0, len(xpp_variables)):
+        if xpp_variables[i]['id'] == id:
+            xpp_variables[i]['rate_rule'] = ast
             break
-    return
 
 
 def create_xpp_assignment(xpp_variables, id, formula, additional_info=[]):
@@ -337,24 +341,27 @@ def create_xpp_assignment(xpp_variables, id, formula, additional_info=[]):
     return xpp_variables
 
 
-def make_xpp_indexed(var, index, content, use_species, use_rules, use_const,
-                     model, underscores, context):
+def make_xpp_indexed(var, index, content, name_translations, use_species,
+                     xpp_variables, underscores, context):
     name = rename(var, str(index + 1), underscores)
+    real_name = name_translations[name] if name_translations[name] else name
     if isinstance(content, Number):
         if use_species:
-            model = create_xpp_species(model, name, content.value)
+            create_xpp_species(xpp_variables, real_name, content.value)
         else:
-            model = create_xpp_parameter(model, name, content.value, False)
+            create_xpp_parameter(xpp_variables, real_name, content.value, False)
     else:
         translator = lambda node: munge_reference(node, context, underscores)
         formula = MatlabGrammar.make_formula(content, atrans=translator)
+        formula = translate_names(formula, name_translations)
         if use_species:
-            model = create_xpp_species(model, name, 0, formula)
+            create_xpp_species(xpp_variables, real_name, 0, formula)
         else:
-            model = create_xpp_parameter(model, name, 0, False, formula)
+            create_xpp_parameter(xpp_variables, real_name, 0, False, formula)
 
 
-def make_xpp_raterule(assigned_var, dep_var, index, content, model, underscores, context):
+def make_xpp_raterule(assigned_var, dep_var, name_translations, index, content,
+                      xpp_variables, underscores, context):
     # Currently, this assumes there's only one math expression per row or
     # column, meaning, one subscript value per row or column.
 
@@ -372,12 +379,17 @@ def make_xpp_raterule(assigned_var, dep_var, index, content, model, underscores,
 
     # Finally, write the rate rule.
     rule_var = assigned_var + '_'*underscores + str(index + 1)
-    add_xpp_raterule(model, rule_var, formula)
+    if name_translations[rule_var]:
+        rule_var = name_translations[rule_var]
+    formula = translate_names(formula, name_translations)
+    add_xpp_raterule(xpp_variables, rule_var, formula)
+
 
 def add_info(additional_info, id, formula):
     parameter = dict({'id': id,
                       'formula': formula})
     additional_info.append(parameter)
+
 
 def create_additional_xpp_information(additional_info):
     lines=''
@@ -576,8 +588,8 @@ def create_sbml_assignment_rule(model, id, ast):
     return rr
 
 
-def make_indexed(var, index, content, use_species, use_rules, use_const,
-                 model, underscores, context):
+def make_indexed(var, index, content, name_translations, use_species,
+                 use_rules, use_const, model, underscores, context):
     # Helper function:
     def create_species_or_parameter(the_name, the_value, const=use_const):
         if use_species:
@@ -586,30 +598,31 @@ def make_indexed(var, index, content, use_species, use_rules, use_const,
             item = create_sbml_parameter(model, the_name, the_value, const)
 
     name = rename(var, str(index + 1), underscores)
+    real_name = name_translations[name] if name_translations[name] else name
     if isinstance(content, Number):
         is_constant = use_species and not use_rules
-        create_species_or_parameter(name, content.value)
+        create_species_or_parameter(real_name, content.value)
         return
     elif isinstance(content, Identifier):
         # Check if we have the simple case of a variable whose value is
         # *another* variable whose value in turn is a number.
         assigned_value = get_assignment(name, context)
         if assigned_value and isinstance(assigned_value, Number):
-            create_species_or_parameter(name, assigned_value.value)
+            create_species_or_parameter(real_name, assigned_value.value)
             return
 
     # Fall-through case: create an initial assignment.
     translator = lambda node: munge_reference(node, context, underscores)
     formula = MatlabGrammar.make_formula(content, atrans=translator)
     ast = parseL3Formula(formula)
-    create_species_or_parameter(name, 0, False)
+    create_species_or_parameter(real_name, 0, False)
     if use_rules:
-        create_sbml_assignment_rule(model, name, ast)
+        create_sbml_assignment_rule(model, real_name, ast)
     else:
-        create_sbml_initial_assignment(model, name, ast)
+        create_sbml_initial_assignment(model, real_name, ast)
 
 
-def make_raterule(assigned_var, dep_var, index, content, model, underscores, context):
+def make_raterule(assigned_var, dep_var, translations, index, content, model, underscores, context):
     # Currently, this assumes there's only one math expression per row or
     # column, meaning, one subscript value per row or column.
 
@@ -627,6 +640,9 @@ def make_raterule(assigned_var, dep_var, index, content, model, underscores, con
 
     # Finally, write the rate rule.
     rule_var = assigned_var + '_'*underscores + str(index + 1)
+    if translations[rule_var]:
+        rule_var = translations[rule_var]
+    formula = translate_names(formula, translations)
     ast = parseL3Formula(formula)
     create_sbml_raterule(model, rule_var, ast)
 
@@ -682,7 +698,8 @@ def make_raterule(assigned_var, dep_var, index, content, model, underscores, con
 # or
 # 2. an XPP format that captures the parameters and odes
 
-def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
+def create_raterule_model(parse_results, use_species=True, produce_sbml=True,
+                          use_func_param_for_var_name=True):
     # This assumes there's only one call to an ode* function in the file.  We
     # start by finding that call (wherever it is -- whether it's at the top
     # level, or inside some other function), then inspecting the call, and
@@ -738,19 +755,6 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
         fail('Could not determine ODE function from call to {}'
              .format(ode_function))
 
-    # If we get this far, let's start generating some code.
-
-    if produce_sbml:
-        document = create_sbml_document()
-        model = create_sbml_model(document)
-        compartment = create_sbml_compartment(model, 'comp1', 1)
-    else:
-        document = None
-        model = None
-        compartment = None
-    xpp_variables = []
-    additional_info = []
-
     # Now locate our context object for the function definition.  It'll be
     # defined either at the top level (if this file is a script) or inside
     # the context of the file's overall function (if the file is a function).
@@ -769,6 +773,33 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
     else:
         fail('Failed to parse the arguments to function {}.'.format(handle_name))
 
+    # Some people think may want to see the species/independent variables named
+    # after the input parameter, and others may want it named after the output.
+    if use_func_param_for_var_name:
+        ode_var = dependent_var
+    else:
+        ode_var = assigned_var
+
+    # If we get this far, let's start generating some code.
+
+    if produce_sbml:
+        document = create_sbml_document()
+        model = create_sbml_model(document)
+        compartment = create_sbml_compartment(model, 'comp1', 1)
+    else:
+        document = None
+        model = None
+        compartment = None
+    xpp_variables = []
+    additional_info = []
+
+    # First wrinkle: some users want their variables named based on info they
+    # write in comments.  This complicates everything that follows because we
+    # have to rewrite variable names.  And we have to infer the translations
+    # before we do anything else.
+
+    name_translations = infer_real_names(working_context, ode_var, underscores)
+
     # Find the assignment to the initial condition variable, then create
     # either parameters or species (depending on the run-time selection) for
     # each entry.  The initial value of the parameter/species will be the
@@ -779,17 +810,16 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
 
     if produce_sbml:
         mloop(init_cond,
-              lambda idx, item: make_indexed(assigned_var, idx, item,
+              lambda idx, item: make_indexed(ode_var, idx, item, name_translations,
                                              use_species, False, False, model,
                                              underscores, function_context))
     else:
         mloop(init_cond,
-              lambda idx, item: make_xpp_indexed(assigned_var, idx, item,
-                                                 use_species, False, False,
-                                                 xpp_variables,
+              lambda idx, item: make_xpp_indexed(ode_var, idx, item, name_translations,
+                                                 use_species, xpp_variables,
                                                  underscores, function_context))
 
-    # Now, look inside the function definition and find the assignment to the
+    # Look inside the function definition and find the assignment to the
     # function's output variable. (It corresponds to assigned_var, but inside
     # the function.)  This defines the formula for the ODE.  We expect this
     # to be a vector.  We take it apart, using each row as an ODE definition,
@@ -805,8 +835,9 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
     #    y(2) = ... something
     #    ... etc.
     #
-    # Our problem then is to match up the variables.  We do this by rewriting
-    # the assignments in the call to reconstruct_separate_assignments().
+    # Our problem then is to match up the 'y' variables.  We do this by
+    # rewriting the individual y(1) etc. assignments, using
+    # reconstruct_separate_assignments(), to put everything into a common form.
 
     output_var = function_context.returns[0].name
     reconstruct_separate_assignments(function_context, output_var, underscores)
@@ -816,14 +847,13 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
 
     if produce_sbml:
         mloop(var_def,
-              lambda idx, item: make_raterule(assigned_var, dependent_var,
+              lambda idx, item: make_raterule(ode_var, dependent_var, name_translations,
                                               idx, item, model, underscores,
                                               function_context))
     else:
         mloop(var_def,
-              lambda idx, item: make_xpp_raterule(assigned_var, dependent_var,
-                                                  idx, item, xpp_variables,
-                                                  underscores, function_context))
+              lambda idx, item: make_xpp_raterule(ode_var, dependent_var, name_translations,
+                                                  idx, item, xpp_variables, underscores, function_context))
 
     # Create remaining parameters.  This breaks up matrix assignments by
     # looking up the value assigned to the variable; if it's a matrix value,
@@ -834,17 +864,17 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
     # should really check if something more complicated is going on in the
     # Matlab code.
 
-    skip_vars = [init_cond_var, output_var, assigned_var]
+    skip_vars = [init_cond_var, output_var, assigned_var, ode_var]
     if isinstance(call_arglist[1], Identifier):
         # Sometimes people use an array for the time parameter.  In that case,
         # it doesn't matter for what happens below.  But if it's a named
         # variable, we want to skip it.
         skip_vars.append(call_arglist[1].name)
-   # for i in range(3,len(call_arglist)):
-   #     skip_vars.append(call_arglist[i].name)
+    # for i in range(3,len(call_arglist)):
+    #     skip_vars.append(call_arglist[i].name)
     create_remaining_vars(working_context, function_context, skip_vars,
-                          xpp_variables, model, underscores, produce_sbml,
-                          additional_info)
+                          xpp_variables, name_translations, model,
+                          underscores, produce_sbml)
 
     # Deal with final quirks.
     global GLOBALS
@@ -897,7 +927,8 @@ def munge_reference(array, context, underscores):
 
 
 def create_remaining_vars(working_context, function_context, skip_vars,
-                          xpp_variables, model, underscores, produce_sbml, additional_info=[]):
+                          xpp_variables, name_translations, model, underscores,
+                          produce_sbml):
 
     all_vars = dict(itertools.chain(working_context.assignments.items(),
                                     function_context.assignments.items()))
@@ -922,7 +953,8 @@ def create_remaining_vars(working_context, function_context, skip_vars,
             # Keep it if we can, because it might be preferrable that way.
             # (After all, the user probably wrote x = y for a reason.)
             if produce_sbml:
-                ast = parseL3Formula(rhs.name)
+                translated = translate_names(rhs.name, name_translations)
+                ast = parseL3Formula(translated)
                 create_sbml_assigned_parameter(model, var, ast, in_function)
             else:
                 # Can't do that in XPP output.  Check if we can subsitute.
@@ -937,7 +969,8 @@ def create_remaining_vars(working_context, function_context, skip_vars,
                         substituted = substitute_vars(assigned_value, working_context)
                         formula = MatlabGrammar.make_formula(substituted, atrans=translator)
                         if formula:
-                            result = formula_parser.eval(formula)
+                            translated = translate_names(rhs.name, name_translations)
+                            result = formula_parser.eval(translated)
                         else:
                             # Not sure what else to do here.
                             result = rhs.name
@@ -945,13 +978,12 @@ def create_remaining_vars(working_context, function_context, skip_vars,
         elif isinstance(rhs, Array):
             if produce_sbml:
                 mloop(rhs,
-                      lambda idx, item: make_indexed(var, idx, item, False,
+                      lambda idx, item: make_indexed(var, idx, item, name_translations, False,
                                                      in_function, not in_function,
                                                      model, underscores, function_context))
             else:
                 mloop(rhs,
-                      lambda idx, item: make_xpp_indexed(var, idx, item, False,
-                                                         in_function, not in_function,
+                      lambda idx, item: make_xpp_indexed(var, idx, item, name_translations, False,
                                                          xpp_variables, underscores,
                                                          function_context))
         elif isinstance(rhs, ArrayRef) or isinstance(rhs, list) \
@@ -967,13 +999,15 @@ def create_remaining_vars(working_context, function_context, skip_vars,
                                                       underscores)
             if produce_sbml:
                 formula = MatlabGrammar.make_formula(rhs, atrans=translator)
-                ast = parseL3Formula(formula)
+                translated = translate_names(formula, name_translations)
+                ast = parseL3Formula(translated)
                 if ast:
                     create_sbml_assigned_parameter(model, var, ast, in_function)
             else:
                 if in_function:
                     formula = MatlabGrammar.make_formula(rhs, atrans=translator)
-                    create_xpp_assignment(xpp_variables, var, formula, additional_info)
+                    translated = translate_names(formula, name_translations)
+                    create_xpp_assignment(xpp_variables, var, translated)
                 else:
                     substituted = substitute_vars(rhs, working_context)
                     formula = MatlabGrammar.make_formula(substituted, atrans=translator)
@@ -982,8 +1016,9 @@ def create_remaining_vars(working_context, function_context, skip_vars,
                         continue;
 
                     if formula:
+                        translated = translate_names(formula, name_translations)
                         formula_parser = NumericStringParser()
-                        result = formula_parser.eval(formula)
+                        result = formula_parser.eval(translated)
                         if result:
                             create_xpp_parameter(xpp_variables, var, result)
         elif isinstance(rhs, FunHandle):
@@ -1013,6 +1048,57 @@ def reconstruct_separate_assignments(context, var, underscores):
             new_value[int(elem_index) - 1] = [context.assignments[elem_name]]
             context.assignments.pop(elem_name)
         context.assignments[var] = Array(rows=new_value, is_cell=False)
+
+
+# This is currently oriented towards detecting comments like this:
+#
+#    function y = foo(t, x)
+#
+#    % x(1)  [IFNb_mRNA]
+#    y(1)=  r1*myf- k1*x(1);
+#    % x(2)  [IFNb_env]
+#    y(2)=   r2*x(1)/(KK2+x(1));
+#
+# where the comments include a mention of the variable name and a symbol.  It
+# ignores non-alphanumeric characters between the "x(n)" text and subsequent
+# text.  It will get it wrong if there's any text between "x(n)" and the
+# intended label.
+#
+# The approach of looking at all comments has the advantage that it doesn't
+# require comments to be right in front or behind the variable being named.
+# The comments could thus appear as a block somewhere, or be interpersed with
+# the matlab code, or whatever.  It does have the disadvantage that it can
+# get confused by comments that mention "x(n") in other contexts.
+#
+# FIXME: develop a systematic format for these comments and tell users about it.
+
+def infer_real_names(context, ode_var, underscores):
+    # Walk down the list of nodes for the file, looking for comments.
+    # For every comment, look for any that mention the ode variable.
+    # Returns a dictionary of translations.
+    translations = {}
+    if not context.parent or not context.parent.nodes:
+        return translations
+    for node in context.parent.nodes:
+        if not isinstance(node, Comment):
+            continue
+        match = re.search(ode_var + r'\((\d+)\)\s+(\S+)', node.content)
+        if not match:
+            continue
+        # Found a match.
+        index = match.group(1)          # The number inside "x(n)"
+        found = match.group(2)          # The rest of the line after "x(n)"
+        guess = re.sub(r'(\W+)(\w+)(\W+)', r'\2', found)
+        if guess and valid_id(guess):
+            our_name = ode_var + '_'*underscores + index
+            translations[our_name] = guess
+    return translations
+
+
+def translate_names(text, translations):
+    for oldname, newname in translations.items():
+        text = text.replace(oldname, newname)
+    return text
 
 
 # -----------------------------------------------------------------------------
@@ -1088,18 +1174,20 @@ matlab_converters = {
 
 def get_filename_and_options(argv):
     try:
-        options, path = getopt.getopt(argv[1:], "dpqxor")
+        options, path = getopt.getopt(argv[1:], "dlopqrx")
     except:
         raise SystemExit(main.__doc__)
     if len(path) != 1 or len(options) > 2:
         raise SystemExit(main.__doc__)
-    debug       = any(['-d' in y for y in options])
-    quiet       = any(['-q' in y for y in options])
-    print_parse = any(['-x' in y for y in options])
-    print_raw   = any(['-r' in y for y in options])
-    use_species = not any(['-p' in y for y in options])
-    create_sbml = not any(['-o' in y for y in options])
-    return path[0], debug, quiet, print_parse, print_raw, use_species, create_sbml
+    debug             = any(['-d' in y for y in options])
+    quiet             = any(['-q' in y for y in options])
+    print_parse       = any(['-x' in y for y in options])
+    print_raw         = any(['-r' in y for y in options])
+    use_species       = not any(['-p' in y for y in options])
+    use_param_as_name = not any(['-l' in y for y in options])
+    create_sbml       = not any(['-o' in y for y in options])
+    return path[0], debug, quiet, print_parse, print_raw, use_species, \
+        create_sbml, use_param_as_name
 
 
 def main(argv):
@@ -1107,14 +1195,15 @@ def main(argv):
 Available options:
  -d   Drop into pdb before starting to parse the MATLAB input
  -h   Print this help message and quit
- -p   Turn variables into parameters (default: make them species)
- -q   Be quiet; just produce code, nothing else
+ -l   Name variables same as ODE function's output variable (default: use parameter)
+ -o   Convert to XPP .ode file format (default: produce SBML)
+ -p   Turn variables into SBML parameters (default: make them SBML species)
+ -q   Be quiet; just produce the final output, nothing else
  -r   Print the raw MatlabNode output for the output printed with option -x
  -x   Print extra debugging info about the interpreted MATLAB
- -o   Create the XPP conversion (SBML is created by default)
 '''
-    path, debug, quiet, print_parse, print_raw, use_species, create_sbml \
-        = get_filename_and_options(argv)
+    path, debug, quiet, print_parse, print_raw, use_species, create_sbml, \
+        use_param_as_name = get_filename_and_options(argv)
 
     file = open(path, 'r')
     file_contents = file.read()
@@ -1133,7 +1222,7 @@ Available options:
     except Exception as err:
         print("error: {0}".format(err))
 
-    code = create_raterule_model(parse_results, use_species, create_sbml)
+    [sbml, additional] = create_raterule_model(parse_results, use_species, create_sbml, use_param_as_name)
 
     if print_parse and not quiet:
         print('')
@@ -1147,7 +1236,7 @@ Available options:
         else:
             print('----- XPP output ' + '-'*50)
 
-    print(code)
+    print(sbml)
 
 
 def fail(msg):
