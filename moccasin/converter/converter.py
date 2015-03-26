@@ -815,6 +815,8 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
         # it doesn't matter for what happens below.  But if it's a named
         # variable, we want to skip it.
         skip_vars.append(call_arglist[1].name)
+    for i in range(0,len(call_arglist)):
+        skip_vars.append(call_arglist[i].name)
     create_remaining_vars(working_context, function_context, skip_vars,
                           xpp_variables, model, underscores, produce_sbml)
 
