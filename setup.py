@@ -28,6 +28,7 @@ from os import path
 import re
 import sys
 import moccasin
+from moccasin import __version__
 
 here = path.abspath(path.dirname(__file__))
 
@@ -54,7 +55,7 @@ class PyTest(TestCommand):
 
 setup(
     name='moccasin',
-    version=moccasin.__version__,
+    version=__version__,
     url='https://github.com/sbmlteam/moccasin/',
     license='GNU Lesser General Public License',
     author='Michael Hucka, Sarah Keating, and Harold Gomez',
