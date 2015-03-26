@@ -68,11 +68,9 @@ def postSaveEvent( self, event):
 #Checks that output is saved before it's lost
 def saveOutput( self, event ):
 	msg = "MOCCASIN output may be lost. Do you want to save?"
-	print(_IS_OUTPUT_SAVED)
 	dlg = GMD.GenericMessageDialog(self, msg, "Warning",agwStyle=wx.ICON_INFORMATION | wx.YES_NO)               
 	if (not _IS_OUTPUT_SAVED and not self.convertedTextCtrl.IsEmpty()):
-		if dlg.ShowModal() == wx.ID_YES:
-			print("True")
+		if dlg.ShowModal() == wx.ID_YES:			
 			postSaveEvent( self, event)
 		return True
 	dlg.Destroy()
@@ -86,7 +84,8 @@ _BIOCHAM_URL = 'http://lifeware.inria.fr/biocham/online/rest/export'
 _HELP_URL = "https://github.com/sbmlteam/moccasin/blob/setupFix_branch/docs/quickstart.md"
 _LICENSE_URL = "https://www.gnu.org/licenses/lgpl.html"
 _VERSION = "Version:  "+ getPackageVersion()
-_IS_OUTPUT_SAVED= False
+_IS_OUTPUT_SAVED = False
+_SAVEAS_ODE = False #Used to save the right file format
 
 # -----------------------------------------------------------------------------
 # Graphical User Interface (GUI) definition
@@ -175,7 +174,7 @@ class MainFrame ( wx.Frame ):
 		fileConvSizer.Add( gSizer3, 2, wx.ALL|wx.EXPAND, 0 )
 		bSizer2 = wx.BoxSizer( wx.VERTICAL )	
 		bSizer2.SetMinSize( wx.Size( 1,1 ) ) 
-		self.filePicker = wx.FilePickerCtrl( self, wx.ID_ANY, wx.EmptyString, "Select a file", u"*.*", wx.DefaultPosition, wx.DefaultSize, wx.FLP_DEFAULT_STYLE )
+		self.filePicker = wx.FilePickerCtrl( self, wx.ID_ANY, wx.EmptyString, "Select a file", u"*.m", wx.DefaultPosition, wx.DefaultSize, wx.FLP_DEFAULT_STYLE )
 		bSizer2.Add( self.filePicker, 0, wx.EXPAND, 2 )	
 		fileConvSizer.Add( bSizer2, 2, wx.ALL|wx.EXPAND, 5 )
 		topPanelSizer.Add( fileConvSizer, 0, wx.ALL|wx.EXPAND, 5 )
@@ -294,7 +293,7 @@ class MainFrame ( wx.Frame ):
 		global _IS_OUTPUT_SAVED
 		msg = None
 		fileFormat = None
-		if self.xppModel.GetValue():
+		if _SAVEAS_ODE:
 			msg = "Save ODE File"
 			fileFormat = "ODE files (*.ODE)|*.ode"			
 
@@ -334,6 +333,7 @@ class MainFrame ( wx.Frame ):
 	
 	def onConvert( self, event ):
 		global _IS_OUTPUT_SAVED
+		global _SAVEAS_ODE
 		saveOutput( self, event )
 
 		self.statusBar.SetStatusText( "Generating output ..." ,0)
@@ -345,7 +345,8 @@ class MainFrame ( wx.Frame ):
 			if self.xppModel.GetValue():
 				output = create_raterule_model(parse_results, self.varsAsSpecies.GetValue(),not self.xppModel.GetValue())
 				self.convertedTextCtrl.SetValue(output)
-				self.statusBar.SetStatusText("ODE format",2)
+				self.statusBar.SetStatusText("ODE format",2)				
+				
 				#output equation-based SBML					
 			elif self.equationBasedModel.GetValue():
 				output = create_raterule_model(parse_results, self.varsAsSpecies.GetValue(), self.equationBasedModel.GetValue())
@@ -376,6 +377,7 @@ class MainFrame ( wx.Frame ):
 		finally:
 			self.statusBar.SetStatusText( "Done!",0 )
 			_IS_OUTPUT_SAVED = False
+			_SAVEAS_ODE= self.xppModel.GetValue()
 
 	
 	def onCloseAll( self, event ):
