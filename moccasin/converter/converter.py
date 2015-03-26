@@ -880,17 +880,18 @@ def create_remaining_vars(working_context, function_context, skip_vars,
                 assigned_value = get_assignment(rhs.name, function_context)
                 if isinstance(assigned_value, Number):
                     result = assigned_value.value
-                if assigned_value:
-                    formula_parser = NumericStringParser()
-                    result = formula_parser.eval(assigned_value)
                 else:
-                    substituted = substitute_vars(assigned_value, working_context)
-                    formula = MatlabGrammar.make_formula(substituted, atrans=translator)
-                    if formula:
-                        result = formula_parser.eval(formula)
+                    if assigned_value:
+                        formula_parser = NumericStringParser()
+                        result = formula_parser.eval(assigned_value)
                     else:
-                        # Not sure what else to do here.
-                        result = rhs.name
+                        substituted = substitute_vars(assigned_value, working_context)
+                        formula = MatlabGrammar.make_formula(substituted, atrans=translator)
+                        if formula:
+                            result = formula_parser.eval(formula)
+                        else:
+                            # Not sure what else to do here.
+                            result = rhs.name
                 create_xpp_parameter(xpp_variables, var, result)
         elif isinstance(rhs, Array):
             if produce_sbml:
