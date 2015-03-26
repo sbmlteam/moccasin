@@ -832,9 +832,9 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
     if GLOBALS['need time']:
         if produce_sbml:
             create_sbml_assigned_parameter(model, "t", parseL3Formula("time"), True)
-#        else:
+        else:
             # xpp automatically assumes 't' is time so no need to tell it
-
+            create_xpp_parameter(xpp_variables, 't', 0, False)
     # Write the Model
     if produce_sbml:
         return writeSBMLToString(document)
