@@ -20,4 +20,7 @@
 # available online at https://github.com/sbmlteam/moccasin/.
 # ------------------------------------------------------------------------- -->
 
-__version__= '0.3.0'
+try:
+    from .version import __version__
+except ImportError:
+    pass
