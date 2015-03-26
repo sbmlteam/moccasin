@@ -20,31 +20,54 @@
 # available online at https://github.com/sbmlteam/moccasin/.
 #
 
-import wx
-import wx.xrc
 import os
 import webbrowser
-import wx.lib.agw.genericmessagedialog as GMD
-
-#These imports will disappear when logic is made into a separate module
 import requests
 import sys
+import wx
+import wx.xrc
+import wx.lib.agw.genericmessagedialog as GMD
+from pkg_resources import get_distribution, DistributionNotFound
+
+#Some of these imports will disappear when logic is made into a separate module
 from pyparsing import ParseException, ParseResults
 from tempfile import NamedTemporaryFile
-sys.path.append('../../')
+
 sys.path.append('../matlab_parser')
 sys.path.append('../converter')
-import moccasin
 from converter import *
 from matlab_parser import *
+
+
+# -----------------------------------------------------------------------------
+# Helper functions
+# -----------------------------------------------------------------------------
+def network_available():
+	'''Try to connect somewhere to test if a network is available.'''
+	try:
+		_ = requests.get('http://www.google.com', timeout=5)
+		return True
+	except requests.ConnectionError:
+		return False
+	
+def getPackageVersion():
+	project = "MOCCASIN"
+	version = None  # required for initialization of globals
+	try:
+		version = get_distribution(project).version
+	except DistributionNotFound:
+		version = '(local)'
+	return version
 
 # -----------------------------------------------------------------------------
 # Global configuration constants
 # -----------------------------------------------------------------------------
 
 _BIOCHAM_URL = 'http://lifeware.inria.fr/biocham/online/rest/export'
-_HELP_URL="https://github.com/sbmlteam/moccasin/blob/setupFix_branch/docs/quickstart.md"
-_LICENSE_URL="https://www.gnu.org/licenses/lgpl.html"
+_HELP_URL = "https://github.com/sbmlteam/moccasin/blob/setupFix_branch/docs/quickstart.md"
+_LICENSE_URL = "https://www.gnu.org/licenses/lgpl.html"
+VERSION= "Version:  "+ getPackageVersion()
+    
 
 # -----------------------------------------------------------------------------
 # Graphical User Interface (GUI) definition
@@ -62,7 +85,7 @@ class MainFrame ( wx.Frame ):
 		self.statusBar.SetFieldsCount(5)
 		self.statusBar.SetToolTipString( "Status" )
 		self.statusBar.SetStatusText("Ready",0)
-		self.statusBar.SetStatusText("Version",4)
+		self.statusBar.SetStatusText(VERSION ,4)
 		
 		#Construct a menu bar
 		self.menuBar = wx.MenuBar( 0 )
@@ -276,6 +299,7 @@ class MainFrame ( wx.Frame ):
 		self.convertedTextCtrl.SetValue("")
 		self.filePicker.SetPath("")
 		self.statusBar.SetStatusText( "Ready",0 )
+		self.statusBar.SetStatusText( "",2 )
 		self.convertButton.Disable()
 		self.convertFile.Enable(0)
 		self.reactionBasedModel.SetValue( True )
@@ -294,13 +318,13 @@ class MainFrame ( wx.Frame ):
 				if self.xppModel.GetValue():
 					output = create_raterule_model(parse_results, self.varsAsSpecies.GetValue(),not self.xppModel.GetValue())
 					self.convertedTextCtrl.SetValue(output)
-					self.statusBar.SetStatusText("ODE file",2)
+					self.statusBar.SetStatusText("ODE format",2)
 
 				#output equation-based SBML					
 				elif self.equationBasedModel.GetValue():
 					output = create_raterule_model(parse_results, self.varsAsSpecies.GetValue(), self.equationBasedModel.GetValue())
 					self.convertedTextCtrl.SetValue(output)
-					self.statusBar.SetStatusText("Equation SBML",2)
+					self.statusBar.SetStatusText("SBML format - equations",2)
 
 				#output equation-based SBML										
 				else:
@@ -320,7 +344,7 @@ class MainFrame ( wx.Frame ):
 						self.convertedTextCtrl.SetValue(response.content)
 						del files
 						os.unlink(xpp_file.name)
-						self.statusBar.SetStatusText("Reaction SBML",2)
+						self.statusBar.SetStatusText("SBML format - reactions",2)
 				
 			except IOError as err:
 				print("error: {0}".format(err))
@@ -351,21 +375,10 @@ class MainFrame ( wx.Frame ):
 		      "Please report any bugs or requests of improvements\n" + \
                       "to us at the following address:\n" + \
                       "email@sbml.com\n\n"+ \
-		      "Current version:   " + moccasin.__version__ + " !!" 
+		      "Current version:   " + VERSION + " !!" 
 		dlg = GMD.GenericMessageDialog(self, msg, "About MOCCASIN",agwStyle=wx.ICON_INFORMATION | wx.OK)               
 		dlg.ShowModal()
 		dlg.Destroy()
-
-# -----------------------------------------------------------------------------
-# Helper functions
-# -----------------------------------------------------------------------------
-def network_available():
-        '''Try to connect somewhere to test if a network is available.'''
-        try:
-                _ = requests.get('http://www.google.com', timeout=5)
-                return True
-        except requests.ConnectionError:
-                return False
 
 # -----------------------------------------------------------------------------
 # Driver
