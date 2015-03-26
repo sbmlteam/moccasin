@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# ####-*- coding: utf-8 -*-
 #
 # @file    Moccasin_GUI.py
 # @brief   Graphical User Interface (GUI) for Moccasin
@@ -21,85 +20,119 @@
 # available online at https://github.com/sbmlteam/moccasin/.
 #
 
-import wx
-import wx.xrc
 import os
-import webbrowser 
-
-#These imports will disappear when logic is made into a separate module
+import webbrowser
 import requests
 import sys
+import wx
+import wx.xrc
+import wx.lib.agw.genericmessagedialog as GMD
+from pkg_resources import get_distribution, DistributionNotFound
+
+#Some of these imports will disappear when logic is made into a separate module
 from pyparsing import ParseException, ParseResults
 from tempfile import NamedTemporaryFile
-sys.path.append('../converter/')
-from converter import *
+
 sys.path.append('../matlab_parser')
+sys.path.append('../converter')
+from converter import *
 from matlab_parser import *
 
 
-###########################################################################
-## Class MainFrame
-###########################################################################
-
-class MainFrame ( wx.Frame ):
+# -----------------------------------------------------------------------------
+# Helper functions
+# -----------------------------------------------------------------------------
+def network_available():
+	'''Try to connect somewhere to test if a network is available.'''
+	try:
+		_ = requests.get('http://www.google.com', timeout=5)
+		return True
+	except requests.ConnectionError:
+		return False
 	
+def getPackageVersion():
+	project = "MOCCASIN"
+	version = None  # required for initialization of globals
+	try:
+		version = get_distribution(project).version
+	except DistributionNotFound:
+		version = '(local)'
+	return version
+
+# -----------------------------------------------------------------------------
+# Global configuration constants
+# -----------------------------------------------------------------------------
+
+_BIOCHAM_URL = 'http://lifeware.inria.fr/biocham/online/rest/export'
+_HELP_URL = "https://github.com/sbmlteam/moccasin/blob/setupFix_branch/docs/quickstart.md"
+_LICENSE_URL = "https://www.gnu.org/licenses/lgpl.html"
+VERSION= "Version:  "+ getPackageVersion()
+    
+
+# -----------------------------------------------------------------------------
+# Graphical User Interface (GUI) definition
+# -----------------------------------------------------------------------------
+class MainFrame ( wx.Frame ):
+
 	def __init__( self, parent ):
-		wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = u"Welcome to Moccasin", pos = wx.DefaultPosition, size = wx.Size( 564,667 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
-		self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
+		wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = "Welcome to MOCCASIN", pos = wx.DefaultPosition, size = wx.Size( 785,691 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
+		self.SetSizeHintsSz( wx.Size( 721,-1 ), wx.DefaultSize )
+		self.SetExtraStyle( wx.FRAME_EX_METAL )		
 		self.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_BTNFACE ) )
 		
 		#Construct a status bar
-		self.statusBar = self.CreateStatusBar( 1, wx.ST_SIZEGRIP|wx.ALWAYS_SHOW_SB|wx.SUNKEN_BORDER, wx.ID_ANY )
-		self.statusBar.SetToolTipString( u"Status" )
-		self.statusBar.SetStatusText( u"Ready" )
-
+		self.statusBar = self.CreateStatusBar(5, wx.ST_SIZEGRIP|wx.ALWAYS_SHOW_SB|wx.RAISED_BORDER, wx.ID_ANY )
+		self.statusBar.SetFieldsCount(5)
+		self.statusBar.SetToolTipString( "Status" )
+		self.statusBar.SetStatusText("Ready",0)
+		self.statusBar.SetStatusText(VERSION ,4)
+		
 		#Construct a menu bar
 		self.menuBar = wx.MenuBar( 0 )
 
 		self.fileMenu = wx.Menu()
-		self.openFile = wx.MenuItem( self.fileMenu, wx.ID_OPEN, u"Open"+ u"\t" + u"Ctrl+O", wx.EmptyString, wx.ITEM_NORMAL )
+		self.openFile = wx.MenuItem( self.fileMenu, wx.ID_OPEN, "Open"+ "\t" + "Ctrl+O", wx.EmptyString, wx.ITEM_NORMAL )
 		self.fileMenu.AppendItem( self.openFile )		
-		self.saveFile = wx.MenuItem( self.fileMenu, wx.ID_SAVE, u"Save"+ u"\t" + u"Ctrl+S", wx.EmptyString, wx.ITEM_NORMAL )
+		self.saveFile = wx.MenuItem( self.fileMenu, wx.ID_SAVE, "Save"+ "\t" + "Ctrl+S", wx.EmptyString, wx.ITEM_NORMAL )
 		self.fileMenu.AppendItem( self.saveFile )
 		self.fileMenu.AppendSeparator()
-		self.exit = wx.MenuItem( self.fileMenu, wx.ID_EXIT, u"Exit"+ u"\t" + u"Alt+F4", wx.EmptyString, wx.ITEM_NORMAL )
+		self.exit = wx.MenuItem( self.fileMenu, wx.ID_EXIT, "Exit"+ "\t" + "Alt+F4", wx.EmptyString, wx.ITEM_NORMAL )
 		self.fileMenu.AppendItem( self.exit )
 		
-		self.menuBar.Append( self.fileMenu, u"File" ) 
+		self.menuBar.Append( self.fileMenu, "File" ) 
 		
 		self.editMenu = wx.Menu()
-		self.clear = wx.MenuItem( self.editMenu, wx.ID_CLEAR, u"Clear"+ u"\t" + u"Ctrl+L", wx.EmptyString, wx.ITEM_NORMAL )
+		self.clear = wx.MenuItem( self.editMenu, wx.ID_CLEAR, "Clear"+ "\t" + "Ctrl+L", wx.EmptyString, wx.ITEM_NORMAL )
 		self.editMenu.AppendItem( self.clear )
 		
-		self.menuBar.Append( self.editMenu, u"Edit" ) 
+		self.menuBar.Append( self.editMenu, "Edit" ) 
 		
 		self.runMenu = wx.Menu()
-		self.convertFile = wx.MenuItem( self.runMenu, wx.ID_ANY, u"Convert"+ u"\t" + u"Ctrl+C", wx.EmptyString, wx.ITEM_NORMAL )
-		self.runMenu.AppendItem( self.convertFile )
-		self.seeOptions = wx.MenuItem( self.runMenu, wx.ID_ANY, u"Options", wx.EmptyString, wx.ITEM_NORMAL )
-		self.runMenu.AppendItem( self.seeOptions )
+		self.convertFile = wx.MenuItem( self.runMenu, wx.ID_ANY, "Convert"+ "\t" + "Ctrl+C", wx.EmptyString, wx.ITEM_NORMAL )
+		self.convertFile.Enable(0)
+		self.runMenu.AppendItem( self.convertFile )		
 		
-		self.menuBar.Append( self.runMenu, u"Run" ) 
+		self.menuBar.Append( self.runMenu, "Run" ) 
 		
 		self.windowMenu = wx.Menu()
-		self.close = wx.MenuItem( self.windowMenu, wx.ID_CLOSE, u"CloseAll", wx.EmptyString, wx.ITEM_NORMAL )
+		self.close = wx.MenuItem( self.windowMenu, wx.ID_CLOSE, "CloseAll", wx.EmptyString, wx.ITEM_NORMAL )
 		self.windowMenu.AppendItem( self.close )
 		
-		self.menuBar.Append( self.windowMenu, u"Window" ) 
+		self.menuBar.Append( self.windowMenu, "Window" ) 
 		
 		self.helpMenu = wx.Menu()
-		self.helpItem = wx.MenuItem( self.helpMenu, wx.ID_HELP, u"Moccasin Help"+ u"\t" + u"F1", wx.EmptyString, wx.ITEM_NORMAL )
+		self.helpItem = wx.MenuItem( self.helpMenu, wx.ID_HELP, "MOCCASIN Help"+ "\t" + "F1", wx.EmptyString, wx.ITEM_NORMAL )
 		self.helpMenu.AppendItem( self.helpItem )
 		
 		self.helpMenu.AppendSeparator()
 		
-		self.license = wx.MenuItem( self.helpMenu, wx.ID_ANY, u"GNU General Public License", wx.EmptyString, wx.ITEM_NORMAL )
+		self.license = wx.MenuItem( self.helpMenu, wx.ID_ANY, "GNU Lesser General Public License", wx.EmptyString, wx.ITEM_NORMAL )
 		self.helpMenu.AppendItem( self.license )
 		
-		self.about = wx.MenuItem( self.helpMenu, wx.ID_ABOUT, u"About Moccasin", wx.EmptyString, wx.ITEM_NORMAL )
+		self.about = wx.MenuItem( self.helpMenu, wx.ID_ABOUT, "About MOCCASIN", wx.EmptyString, wx.ITEM_NORMAL )
 		self.helpMenu.AppendItem( self.about )
 		
-		self.menuBar.Append( self.helpMenu, u"Help" ) 
+		self.menuBar.Append( self.helpMenu, "Help" ) 
 		
 		self.SetMenuBar( self.menuBar )
 
@@ -107,57 +140,96 @@ class MainFrame ( wx.Frame ):
 		mainSizer = wx.BoxSizer( wx.VERTICAL )
 		mainSizer.SetMinSize( wx.Size( 1,3 ) ) 
 		mainSizer.AddSpacer( ( 0, 1), 0, wx.EXPAND|wx.TOP, 5 )
-		
-		topPanelSizer = wx.BoxSizer( wx.HORIZONTAL )
-		
-		topPanelSizer.SetMinSize( wx.Size( 2,2 ) ) 
-		self.m_staticText7 = wx.StaticText( self, wx.ID_ANY, u" Please choose a file for conversion", wx.Point( -1,-1 ), wx.Size( -1,-1 ), 0 )
-		self.m_staticText7.Wrap( -1 )
-		self.m_staticText7.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
-		self.m_staticText7.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_BTNFACE ) )
 
 		#Top sizer
-		topPanelSizer.Add( self.m_staticText7, 0, wx.ALL|wx.EXPAND, 5 )	
-		self.filePicker = wx.FilePickerCtrl( self, wx.ID_ANY, wx.EmptyString, u"Choose a file", u"*.m", wx.DefaultPosition, wx.Size( 225,-1 ), wx.FLP_DEFAULT_STYLE )
-		
-		topPanelSizer.Add( self.filePicker, 0, wx.ALL, 5 )
-		self.staticline1 = wx.StaticLine( self, wx.ID_ANY, wx.DefaultPosition, wx.Size( 1,-1 ), wx.LI_VERTICAL|wx.DOUBLE_BORDER|wx.TRANSPARENT_WINDOW )
-		self.staticline1.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 74, 90, 90, False, "Arial" ) )
-		self.staticline1.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
-		self.staticline1.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_HIGHLIGHT ) )
-		topPanelSizer.Add( self.staticline1, 0, wx.EXPAND |wx.ALL, 5 )		
-		self.convertButton = wx.Button( self, wx.ID_ANY, u"Convert", wx.DefaultPosition, wx.DefaultSize, 0 )
-		topPanelSizer.Add( self.convertButton, 0, wx.ALL|wx.EXPAND, 5 )
-		mainSizer.Add( topPanelSizer, 0, wx.EXPAND, 5 )
+		topPanelSizer = wx.GridSizer( 1, 2, 0, 0 )
 
+		fileConvSizer = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "File conversion" ), wx.VERTICAL )
+		gSizer3 = wx.GridSizer( 1, 2, 0, 0 )
+		self.staticTextConv = wx.StaticText( self, wx.ID_ANY, "Choose a file for conversion", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.staticTextConv.Wrap( -1 )
+		self.staticTextConv.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
+		gSizer3.Add( self.staticTextConv, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+		self.convertButton = wx.Button( self, wx.ID_ANY, "Convert", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.convertButton.SetFont( wx.Font( 9, 74, 90, 92, False, "Arial" ) )
+		self.convertButton.Disable()
+		gSizer3.Add( self.convertButton, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 5 )
+		fileConvSizer.Add( gSizer3, 2, wx.ALL|wx.EXPAND, 0 )
+		bSizer2 = wx.BoxSizer( wx.VERTICAL )	
+		bSizer2.SetMinSize( wx.Size( 1,1 ) ) 
+		self.filePicker = wx.FilePickerCtrl( self, wx.ID_ANY, wx.EmptyString, "Select a file", u"*.*", wx.DefaultPosition, wx.DefaultSize, wx.FLP_DEFAULT_STYLE )
+		bSizer2.Add( self.filePicker, 0, wx.EXPAND, 2 )	
+		fileConvSizer.Add( bSizer2, 2, wx.ALL|wx.EXPAND, 5 )
+		topPanelSizer.Add( fileConvSizer, 0, wx.ALL|wx.EXPAND, 5 )
+		
+		sbSizer9 = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "Options" ), wx.VERTICAL )
+		
+		optionLayoutSizer = wx.GridSizer( 4, 3, 0, 0)
+		self.staticTextOpt = wx.StaticText( self, wx.ID_ANY, "Variable encoding", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.staticTextOpt.Wrap( -1 )
+		self.staticTextOpt.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
+		optionLayoutSizer.Add( self.staticTextOpt, 0, wx.ALL, 5 )
+		self.varsAsSpecies = wx.RadioButton( self, wx.ID_ANY, "SBML Species", wx.DefaultPosition, wx.DefaultSize, wx.RB_GROUP )
+		self.varsAsSpecies.SetToolTipString( "Represent model variables as species" )
+		self.varsAsSpecies.SetValue( True ) 
+		optionLayoutSizer.Add( self.varsAsSpecies, 0, wx.ALL, 5 )
+		
+		self.varsAsParams = wx.RadioButton( self, wx.ID_ANY, "SBML Parameters", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.varsAsParams.SetToolTipString( "Represent model variables as parameters" )
+		optionLayoutSizer.Add( self.varsAsParams, 0, wx.ALL, 5 )
+		optionLayoutSizer.AddSpacer( ( 0, 1), 1, 0, 5 )
+		optionLayoutSizer.AddSpacer( ( 0, 1), 1, 0, 5 )
+		optionLayoutSizer.AddSpacer( ( 0, 1), 1, 0, 5 )
+		self.modeType = wx.StaticText( self, wx.ID_ANY, "Output format", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.modeType.Wrap( -1 )
+		self.modeType.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
+		optionLayoutSizer.Add( self.modeType, 0, wx.ALL, 5 )
+		
+		self.reactionBasedModel = wx.RadioButton( self, wx.ID_ANY, "SBML (reactions)", wx.DefaultPosition, wx.DefaultSize, wx.RB_GROUP )
+		self.reactionBasedModel.SetToolTipString( "Convert into SBML (kinetics as reactions)" )
+		self.reactionBasedModel.SetValue( True ) 
+		optionLayoutSizer.Add( self.reactionBasedModel, 0, wx.ALL, 5 )
+		
+		self.xppModel = wx.RadioButton( self, wx.ID_ANY, "ODE", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.xppModel.SetToolTipString( "Convert into ODE file format (XPP)" )
+		optionLayoutSizer.Add( self.xppModel, 0, wx.ALL, 5 )
+		optionLayoutSizer.AddSpacer( ( 0, 1), 1, wx.EXPAND, 5 )
+		
+		self.equationBasedModel = wx.RadioButton( self, wx.ID_ANY, "SBML(equations)", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.equationBasedModel.SetToolTipString( "Convert into SBML (kinetics as rate rules)" )
+		optionLayoutSizer.Add( self.equationBasedModel, 0, wx.ALL, 5 )
+		sbSizer9.Add( optionLayoutSizer, 0, wx.EXPAND, 5 )
+		topPanelSizer.Add( sbSizer9, 0, wx.ALL|wx.EXPAND, 5 )
+		
+		mainSizer.Add( topPanelSizer, 0, wx.ALL|wx.EXPAND, 5 )
+		
 		#Mid sizer
-		midPanelSizer = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, u"Matlab File" ), wx.VERTICAL )
+		midPanelSizer = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "Matlab File" ), wx.VERTICAL )
 		self.matlabTextCtrl = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,200 ), wx.HSCROLL|wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP|wx.ALWAYS_SHOW_SB|wx.FULL_REPAINT_ON_RESIZE|wx.RAISED_BORDER )
 		self.matlabTextCtrl.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
-		self.matlabTextCtrl.SetToolTipString( u"Input Matlab file for conversion" )
+		self.matlabTextCtrl.SetToolTipString( "Input file for conversion" )
 		midPanelSizer.Add( self.matlabTextCtrl, 1, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND, 5 )
-		mainSizer.Add( midPanelSizer, 1, wx.EXPAND, 5 )
-
+		mainSizer.Add( midPanelSizer, 2, wx.EXPAND, 5 )
+	
 		#Bottom sizer
-		bottomPanelSizer = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, u"Converted File" ), wx.VERTICAL )		
+		bottomPanelSizer = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "Converted File" ), wx.VERTICAL )		
 		self.convertedTextCtrl = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,200 ), wx.HSCROLL|wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP|wx.ALWAYS_SHOW_SB|wx.FULL_REPAINT_ON_RESIZE|wx.RAISED_BORDER )
 		self.convertedTextCtrl.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 90, False, wx.EmptyString ) )
-		self.convertedTextCtrl.SetToolTipString( u"Output file after conversion" )
+		self.convertedTextCtrl.SetToolTipString( "Output file after conversion" )
 		bottomPanelSizer.Add( self.convertedTextCtrl, 1, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND, 5 )
-		mainSizer.Add( bottomPanelSizer, 1, wx.EXPAND, 5 )
+		mainSizer.Add( bottomPanelSizer, 2, wx.EXPAND, 5 )
 
 		#Set frame sizer
 		self.SetSizer( mainSizer )
 		self.Layout()
 		self.Centre( wx.BOTH )
 		
-		# Connect Events with GUI elements
+		# Bind GUI elements to specific events
 		self.Bind( wx.EVT_MENU, self.onOpen, id = self.openFile.GetId() )
 		self.Bind( wx.EVT_MENU, self.onSave, id = self.saveFile.GetId() )
 		self.Bind( wx.EVT_MENU, self.onExit, id = self.exit.GetId() )
 		self.Bind( wx.EVT_MENU, self.onClear, id = self.clear.GetId() )
 		self.Bind( wx.EVT_MENU, self.onConvert, id = self.convertFile.GetId() )
-		self.Bind( wx.EVT_MENU, self.onOptions, id = self.seeOptions.GetId() )
 		self.Bind( wx.EVT_MENU, self.onCloseAll, id = self.close.GetId() )
 		self.Bind( wx.EVT_MENU, self.onHelp, id = self.helpItem.GetId() )
 		self.Bind( wx.EVT_MENU, self.onLicense, id = self.license.GetId() )
@@ -168,35 +240,54 @@ class MainFrame ( wx.Frame ):
 		def __del__( self ):
 			pass
 	    
-	# Virtual event handlers, overide them in your derived class
+# -----------------------------------------------------------------------------
+# Virtual Event Handlers
+# -----------------------------------------------------------------------------		
 	def onOpen(self, event):
-		dirname=u""
-		dlg = wx.FileDialog(self, u"Choose a file", dirname, u"", u"*.m", wx.OPEN)
+		dirname=""
+		dlg = wx.FileDialog(self, "Choose a file", dirname, "", "*.m", wx.OPEN)
 		if dlg.ShowModal() == wx.ID_OK:
 			filename = dlg.GetFilename()
 			dirname = dlg.GetDirectory()
-			f = open(os.path.join(dirname, filename), 'r')
+			path=os.path.join(dirname, filename)
+			f = open(path, 'r')
 			self.matlabTextCtrl.SetValue(f.read())
+			self.filePicker.SetPath(path)
 			f.close()
+			#Only reset values when file was loaded
+			self.convertButton.Enable()
+			self.convertFile.Enable(1)
+			self.convertedTextCtrl.SetValue("")
 		dlg.Destroy()
 
 	def onFilePicker(self, event):
+		self.convertedTextCtrl.SetValue("")
+		self.convertButton.Enable()
+		self.convertFile.Enable(1)
 		path=self.filePicker.GetPath()
 		f = open(path, 'r')
-		self.matlabTextCtrl.SetValue(f.read())
+		self.matlabTextCtrl.SetValue(f.read())		
 		f.close()		
 
 	def onSave( self, event ):
+		msg = None
+		fileFormat = None
+		if self.xppModel.GetValue():
+			msg = "Save ODE file"
+			fileFormat = "ODE files (*.ODE)|*.ode"			
+		else:
+			msg = "Save SBML file"
+			fileFormat = "SBML files (*.xml)|*.xml"
+                        
 		if(not self.convertedTextCtrl.IsEmpty()):
-			dlg = wx.FileDialog(self, u"Save SBML file", u"", u"", u"SBML files (*.xml)|*.xml", wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+			dlg = wx.FileDialog(self, msg, "", "", fileFormat, wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
 			if dlg.ShowModal() == wx.ID_CANCEL:
 				return
-			print(dlg.GetPath())
 			output = open(dlg.GetPath(), 'w')
 			output.write(self.convertedTextCtrl.GetValue())
 			output.close()			
 		else:
-			dlg = wx.MessageDialog(self, u"Please convert a matlab file before saving", u"Warning", wx.OK)
+			dlg = wx.MessageDialog(self, "Please convert a matlab file before saving", "Warning", wx.OK)
 			dlg.ShowModal()
 			dlg.Destroy()
 	
@@ -204,31 +295,63 @@ class MainFrame ( wx.Frame ):
 		self.Close(True)
 	
 	def onClear( self, event ):
-		self.matlabTextCtrl.SetValue(u"")
-		self.convertedTextCtrl.SetValue(u"")
+		self.matlabTextCtrl.SetValue("")
+		self.convertedTextCtrl.SetValue("")
+		self.filePicker.SetPath("")
+		self.statusBar.SetStatusText( "Ready",0 )
+		self.statusBar.SetStatusText( "",2 )
+		self.convertButton.Disable()
+		self.convertFile.Enable(0)
+		self.reactionBasedModel.SetValue( True )
+		self.varsAsSpecies.SetValue( True ) 
 	
-	def onConvert( self, event ):
-		event.Skip()
-##		try:
-##			parser = MatlabGrammar()
-##			parse_results = parser.parse_string(self.matlabTextCtrl.GetValue())
-##			#Create temp file storing XPP model version
-##			parse_results=parse_results.replace("text:u","")
-##			with NamedTemporaryFile(suffix= ".ode", delete=False) as xpp_file:
-##				xpp_file.write(create_raterule_model(parse_results))
-##			files = {'file':open(xpp_file.name)}                
-##			#Access Biocham to curate and convert equations to reactions
-##			url = 'http://lifeware.inria.fr/biocham/online/rest/export'
-##			data = {'exportTo':'sbml', 'curate':'true'}
-##			response = requests.post(url, files=files, data=data)
-##			del files
-##			self.convertedTextCtrl.SetValue(response.content)
-##			os.unlink(xpp_file.name)
-##
-##		except IOError as err:
-##			print("error: {0}".format(err))			
+	def onConvert( self, event ):            
+		if(self.matlabTextCtrl.IsEmpty()):
+			event.Skip()
+		else:
+			self.statusBar.SetStatusText( "Generating output ..." ,0)
+			try:
+				parser = MatlabGrammar()
+				parse_results = parser.parse_string(self.matlabTextCtrl.GetValue())
 
-	
+				#output XPP files
+				if self.xppModel.GetValue():
+					output = create_raterule_model(parse_results, self.varsAsSpecies.GetValue(),not self.xppModel.GetValue())
+					self.convertedTextCtrl.SetValue(output)
+					self.statusBar.SetStatusText("ODE format",2)
+
+				#output equation-based SBML					
+				elif self.equationBasedModel.GetValue():
+					output = create_raterule_model(parse_results, self.varsAsSpecies.GetValue(), self.equationBasedModel.GetValue())
+					self.convertedTextCtrl.SetValue(output)
+					self.statusBar.SetStatusText("SBML format - equations",2)
+
+				#output equation-based SBML										
+				else:
+					if not network_available():
+						msg = "A network connection is needed for this feature" 
+						dlg = GMD.GenericMessageDialog(self, msg, "Warning!",agwStyle=wx.ICON_EXCLAMATION | wx.OK)               
+						dlg.ShowModal()
+						dlg.Destroy()
+					else:
+						#Create temp file storing XPP model version				
+						with NamedTemporaryFile(suffix= ".ode", delete=False) as xpp_file:
+							xpp_file.write(create_raterule_model(parse_results, self.varsAsSpecies.GetValue() , self.reactionBasedModel.GetValue()))
+						files = {'file':open(xpp_file.name)}
+						#Access Biocham to curate and convert equations to reactions
+						data = {'exportTo':'sbml', 'curate':'true'}
+						response = requests.post(_BIOCHAM_URL, files=files, data=data)
+						self.convertedTextCtrl.SetValue(response.content)
+						del files
+						os.unlink(xpp_file.name)
+						self.statusBar.SetStatusText("SBML format - reactions",2)
+				
+			except IOError as err:
+				print("error: {0}".format(err))
+			finally:
+				self.statusBar.SetStatusText( "Done!",0 )
+				
+
 	def onOptions( self, event ):
 		event.Skip()
 	
@@ -236,24 +359,30 @@ class MainFrame ( wx.Frame ):
 		self.Close(True)
 
 	def onHelp( self, event ):
-		href=u"https://github.com/sbmlteam/moccasin/blob/setupFix_branch/docs/quickstart.md"
 		wx.BeginBusyCursor() 
-		webbrowser.open(href) 
+		webbrowser.open(_HELP_URL) 
 		wx.EndBusyCursor()
 		
 	def onLicense( self, event ):
-		href=u"http://www.gnu.org/licenses/gpl-2.0.html"
 		wx.BeginBusyCursor() 
-		webbrowser.open(href) 
+		webbrowser.open(_LICENSE_URL) 
 		wx.EndBusyCursor()
             
 	def onAbout( self, event ):
-		dlg = wx.MessageDialog(self, u"MOCCASIN stands for (Model ODE Converter for Creating Awesome SBML INteroperability). It is a project to develop a user-assisted converter that can take MATLAB or Octave ODE-based models in biology and translate them into SBML format.", u"About Moccasin", wx.OK)
-		dlg.ShowModal() 
+		msg = "MOCCASIN \n\n" + \
+		      "A user-assisted converter that can take MATLAB or Octave ODE-based \n" + \
+                      "models in biology and translate them into SBML format.\n\n" + \
+		      "Please report any bugs or requests of improvements\n" + \
+                      "to us at the following address:\n" + \
+                      "email@sbml.com\n\n"+ \
+		      "Current version:   " + VERSION + " !!" 
+		dlg = GMD.GenericMessageDialog(self, msg, "About MOCCASIN",agwStyle=wx.ICON_INFORMATION | wx.OK)               
+		dlg.ShowModal()
 		dlg.Destroy()
-	
 
-		
+# -----------------------------------------------------------------------------
+# Driver
+# -----------------------------------------------------------------------------	
 app = wx.App(False)
 frame = MainFrame(None)
 frame.Show()

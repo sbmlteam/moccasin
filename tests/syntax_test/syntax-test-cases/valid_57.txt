@@ -1,16 +1,16 @@
 {function definition: {identifier: "valid_57"} parameters ( {identifier: "x"} ) output none}
-{assign: {identifier: "y"} = ( ( ( {number: 1.5} {binary op: *} {function/array: {identifier: "cos"} ( {identifier: "x"} )} ) {binary op: +} ( {number: 6} {binary op: *} {function/array: {identifier: "exp"} ( ( ( {unary op: -} {number: .1} ) {binary op: *} {identifier: "x"} ) )} ) ) {binary op: +} ( {function/array: {identifier: "exp"} ( ( {number: .07} {binary op: *} {identifier: "x"} ) )} {binary op: .*} {function/array: {identifier: "sin"} ( ( {number: 3} {binary op: *} {identifier: "x"} ) )} ) )}
-{assign: {identifier: "ym"} = {function/array: {identifier: "mean"} ( {identifier: "y"} )}}
-{assign: {identifier: "hfig"} = {function/array: {identifier: "figure"} ( {string: "Name"}, {string: "Function and Mean"} )}}
-{assign: {identifier: "hax"} = {function/array: {identifier: "axes"} ( {string: "Parent"}, {identifier: "hfig"} )}}
-( {function/array: {identifier: "plot"} ( {identifier: "hax"}, {identifier: "x"}, {identifier: "y"} )} )
+{assign: {identifier: "y"} = ( ( ( {number: 1.5} {binary op: *} {function {identifier: "cos"} ( {identifier: "x"} ) } ) {binary op: +} ( {number: 6} {binary op: *} {function {identifier: "exp"} ( ( {number: -.1} {binary op: *} {identifier: "x"} ) ) } ) ) {binary op: +} ( {function {identifier: "exp"} ( ( {number: .07} {binary op: *} {identifier: "x"} ) ) } {binary op: .*} {function {identifier: "sin"} ( ( {number: 3} {binary op: *} {identifier: "x"} ) ) } ) )}
+{assign: {identifier: "ym"} = {function {identifier: "mean"} ( {identifier: "y"} ) }}
+{assign: {identifier: "hfig"} = {function {identifier: "figure"} ( {string: "Name"}, {string: "Function and Mean"} ) }}
+{assign: {identifier: "hax"} = {function {identifier: "axes"} ( {string: "Parent"}, {identifier: "hfig"} ) }}
+( {function {identifier: "plot"} ( {identifier: "hax"}, {identifier: "x"}, {identifier: "y"} ) } )
 {command: name {identifier: "hold"} args  on}
-( {function/array: {identifier: "plot"} ( {identifier: "hax"}, {array: [ {row 1: {function/array: {identifier: "min"} ( {identifier: "x"} )}, {function/array: {identifier: "max"} ( {identifier: "x"} )}} ]}, {array: [ {row 1: {identifier: "ym"}, {identifier: "ym"}} ]}, {string: "Color"}, {string: "red"} )} )
+( {function {identifier: "plot"} ( {identifier: "hax"}, {array: [ {row 1: {function {identifier: "min"} ( {identifier: "x"} ) }, {function {identifier: "max"} ( {identifier: "x"} ) }} ]}, {array: [ {row 1: {identifier: "ym"}, {identifier: "ym"}} ]}, {string: "Color"}, {string: "red"} ) } )
 {command: name {identifier: "hold"} args  off}
 {assign: {identifier: "ylab"} = {struct: {identifier: "hax"}.{identifier: "YTick"} }}
-{assign: {identifier: "new_ylab"} = {function/array: {identifier: "sort"} ( {array: [ {row 1: {identifier: "ylab"}, {identifier: "ym"}} ]} )}}
+{assign: {identifier: "new_ylab"} = {function {identifier: "sort"} ( {array: [ {row 1: {identifier: "ylab"}, {identifier: "ym"}} ]} ) }}
 {assign: {struct: {identifier: "hax"}.{identifier: "YTick"} } = {identifier: "new_ylab"}}
-( {function/array: {identifier: "title"} ( {string: "y = 1.5cos(x) + 6e^{-0.1x} + e^{0.07x}sin(3x)"} )} )
-( {function/array: {identifier: "xlabel"} ( {string: "X Axis"} )} )
-( {function/array: {identifier: "ylabel"} ( {string: "Y Axis"} )} )
+( {function {identifier: "title"} ( {string: "y = 1.5cos(x) + 6e^{-0.1x} + e^{0.07x}sin(3x)"} ) } )
+( {function {identifier: "xlabel"} ( {string: "X Axis"} ) } )
+( {function {identifier: "ylabel"} ( {string: "Y Axis"} ) } )
 {end}
