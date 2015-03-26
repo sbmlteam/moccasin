@@ -31,6 +31,7 @@ sys.path.append('moccasin/')
 sys.path.append('../moccasin/')
 sys.path.append('moccasin/converter/')
 sys.path.append('../moccasin/converter/')
+from version import __version__
 from matlab_parser import *
 from converter import *
 
@@ -47,8 +48,8 @@ _BIOCHAM_URL = 'http://lifeware.inria.fr/biocham/online/rest/export'
 # Main function - driver
 # -----------------------------------------------------------------------------
 
-def main(path, debug=False, quiet=False, print_parse=False, use_params=False,
-         use_equations=False, output_XPP=False):
+def main(path, debug=False, quiet=False, use_equations=False, use_params=False,
+         output_XPP=False, no_comments=False, print_parse=False):
     '''A minimal interface for converting simple MATLAB models to SBML.'''
     #Flag-Option-Required-Default(FORD) convention was followed for function args declaration.
     #Flag arguments are first, then option arguments and required arguments, and finally default arguments.
@@ -76,11 +77,13 @@ def main(path, debug=False, quiet=False, print_parse=False, use_params=False,
 
             if output_XPP:
                 print_header(' XPP output ', quiet)
-                output = create_raterule_model(parse_results, not use_params, not output_XPP)
+                output = create_raterule_model(parse_results, not use_params,
+                                               not output_XPP, not no_comments)
                 print(output)
             elif use_equations:
                 print_header(' Equation-based SBML output ', quiet)
-                output = create_raterule_model(parse_results, not use_params, not output_XPP)
+                output = create_raterule_model(parse_results, not use_params,
+                                               not output_XPP, not no_comments)
                 print(output)
             else:
                 print_header(' Reaction-based SBML output ', quiet)
@@ -134,12 +137,13 @@ def network_available():
 # Argument annotation follows (help, kind, abbrev, type, choices, metavar) convention
 main.__annotations__ = dict(
     path          = ('path to MATLAB input file'),
-    debug         = ('drop into pdb before parsing the MATLAB input', 'flag', 'd'),
-    quiet         = ('be quiet: produce SBML and nothing else', 'flag', 'q'),
-    print_parse   = ('print extra debugging info about the interpreted MATLAB code', 'flag', 'x'),
-    use_params    = ('encode variables as SBML parameters instead of species', 'flag', 'p'),
+    no_comments   = ('do not include comments about version in the output',                 'flag', 'c'),
+    debug         = ('drop into pdb before parsing the MATLAB input',                       'flag', 'd'),
+    quiet         = ('be quiet: produce SBML and nothing else',                             'flag', 'q'),
+    print_parse   = ('print extra debugging info about the interpreted MATLAB code',        'flag', 'x'),
+    use_params    = ('encode variables as SBML parameters instead of species',              'flag', 'p'),
     use_equations = ('returns model as equation-based SBML (default: reaction-based SBML)', 'flag', 'e'),
-    output_XPP    = ('returns model in XPP format (default: SBML format)', 'flag', 'o')
+    output_XPP    = ('returns model in XPP format (default: SBML format)',                  'flag', 'o')
 )
 
 # -----------------------------------------------------------------------------
