@@ -27,6 +27,7 @@ import sys
 import wx
 import wx.xrc
 import wx.lib.agw.genericmessagedialog as GMD
+
 from pkg_resources import get_distribution, DistributionNotFound
 
 #Some of these imports will disappear when logic is made into a separate module
@@ -59,6 +60,24 @@ def getPackageVersion():
 		version = '(local)'
 	return version
 
+#Used for manually posts an event
+def postSaveEvent( self, event):
+	evt = wx.PyCommandEvent(wx.EVT_MENU.typeId,self.saveFile.GetId())
+	wx.PostEvent(self, evt)
+
+#Checks that output is saved before it's lost
+def saveOutput( self, event ):
+	msg = "MOCCASIN output may be lost. Do you want to save?"
+	print(_IS_OUTPUT_SAVED)
+	dlg = GMD.GenericMessageDialog(self, msg, "Warning",agwStyle=wx.ICON_INFORMATION | wx.YES_NO)               
+	if (not _IS_OUTPUT_SAVED and not self.convertedTextCtrl.IsEmpty()):
+		if dlg.ShowModal() == wx.ID_YES:
+			print("True")
+			postSaveEvent( self, event)
+		return True
+	dlg.Destroy()
+	return False
+
 # -----------------------------------------------------------------------------
 # Global configuration constants
 # -----------------------------------------------------------------------------
@@ -66,14 +85,13 @@ def getPackageVersion():
 _BIOCHAM_URL = 'http://lifeware.inria.fr/biocham/online/rest/export'
 _HELP_URL = "https://github.com/sbmlteam/moccasin/blob/setupFix_branch/docs/quickstart.md"
 _LICENSE_URL = "https://www.gnu.org/licenses/lgpl.html"
-VERSION= "Version:  "+ getPackageVersion()
-    
+_VERSION = "Version:  "+ getPackageVersion()
+_IS_OUTPUT_SAVED= False
 
 # -----------------------------------------------------------------------------
 # Graphical User Interface (GUI) definition
 # -----------------------------------------------------------------------------
 class MainFrame ( wx.Frame ):
-
 	def __init__( self, parent ):
 		wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = "Welcome to MOCCASIN", pos = wx.DefaultPosition, size = wx.Size( 785,691 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
 		self.SetSizeHintsSz( wx.Size( 721,-1 ), wx.DefaultSize )
@@ -85,7 +103,7 @@ class MainFrame ( wx.Frame ):
 		self.statusBar.SetFieldsCount(5)
 		self.statusBar.SetToolTipString( "Status" )
 		self.statusBar.SetStatusText("Ready",0)
-		self.statusBar.SetStatusText(VERSION ,4)
+		self.statusBar.SetStatusText(_VERSION ,4)
 		
 		#Construct a menu bar
 		self.menuBar = wx.MenuBar( 0 )
@@ -226,7 +244,7 @@ class MainFrame ( wx.Frame ):
 		
 		# Bind GUI elements to specific events
 		self.Bind( wx.EVT_MENU, self.onOpen, id = self.openFile.GetId() )
-		self.Bind( wx.EVT_MENU, self.onSave, id = self.saveFile.GetId() )
+		self.Bind( wx.EVT_MENU, self.onSaveAs, id = self.saveFile.GetId() )
 		self.Bind( wx.EVT_MENU, self.onExit, id = self.exit.GetId() )
 		self.Bind( wx.EVT_MENU, self.onClear, id = self.clear.GetId() )
 		self.Bind( wx.EVT_MENU, self.onConvert, id = self.convertFile.GetId() )
@@ -234,8 +252,9 @@ class MainFrame ( wx.Frame ):
 		self.Bind( wx.EVT_MENU, self.onHelp, id = self.helpItem.GetId() )
 		self.Bind( wx.EVT_MENU, self.onLicense, id = self.license.GetId() )
 		self.Bind( wx.EVT_MENU, self.onAbout, id = self.about.GetId() )
-		self.Bind( wx.EVT_FILEPICKER_CHANGED, self.onFilePicker, id = self.filePicker.GetId())
-		self.Bind( wx.EVT_BUTTON, self.onConvert, id = self.convertButton.GetId())
+		self.Bind( wx.EVT_FILEPICKER_CHANGED, self.onFilePicker, id = self.filePicker.GetId() )
+		self.Bind( wx.EVT_BUTTON, self.onConvert, id = self.convertButton.GetId() )
+		self.Bind( wx.EVT_CLOSE, self.onClose ) 
 
 		def __del__( self ):
 			pass
@@ -244,6 +263,7 @@ class MainFrame ( wx.Frame ):
 # Virtual Event Handlers
 # -----------------------------------------------------------------------------		
 	def onOpen(self, event):
+		global _IS_OUTPUT_SAVED		
 		dirname=""
 		dlg = wx.FileDialog(self, "Choose a file", dirname, "", "*.m", wx.OPEN)
 		if dlg.ShowModal() == wx.ID_OK:
@@ -259,6 +279,7 @@ class MainFrame ( wx.Frame ):
 			self.convertFile.Enable(1)
 			self.convertedTextCtrl.SetValue("")
 		dlg.Destroy()
+		_IS_OUTPUT_SAVED = False
 
 	def onFilePicker(self, event):
 		self.convertedTextCtrl.SetValue("")
@@ -269,32 +290,36 @@ class MainFrame ( wx.Frame ):
 		self.matlabTextCtrl.SetValue(f.read())		
 		f.close()		
 
-	def onSave( self, event ):
+	def onSaveAs( self, event ):
+		global _IS_OUTPUT_SAVED
 		msg = None
 		fileFormat = None
 		if self.xppModel.GetValue():
-			msg = "Save ODE file"
+			msg = "Save ODE File"
 			fileFormat = "ODE files (*.ODE)|*.ode"			
+
+		elif self.convertedTextCtrl.IsEmpty():
+			msg = "Save File As"
+			fileFormat = "All files (*.*)|*.*"	
 		else:
-			msg = "Save SBML file"
-			fileFormat = "SBML files (*.xml)|*.xml"
-                        
-		if(not self.convertedTextCtrl.IsEmpty()):
-			dlg = wx.FileDialog(self, msg, "", "", fileFormat, wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
-			if dlg.ShowModal() == wx.ID_CANCEL:
-				return
+			msg = "Save SBML File"
+			fileFormat = "SBML files (*.xml)|*.xml"                        
+		
+		dlg = wx.FileDialog(self, msg, "", "", fileFormat, wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+		if dlg.ShowModal() == wx.ID_CANCEL:
+			return
+		else:
 			output = open(dlg.GetPath(), 'w')
 			output.write(self.convertedTextCtrl.GetValue())
-			output.close()			
-		else:
-			dlg = wx.MessageDialog(self, "Please convert a matlab file before saving", "Warning", wx.OK)
-			dlg.ShowModal()
-			dlg.Destroy()
-	
-	def onExit( self, event ):		
+			output.close()
+			_IS_OUTPUT_SAVED = True
+			
+
+	def onExit( self, event ):
 		self.Close(True)
 	
 	def onClear( self, event ):
+		global _IS_OUTPUT_SAVED
 		self.matlabTextCtrl.SetValue("")
 		self.convertedTextCtrl.SetValue("")
 		self.filePicker.SetPath("")
@@ -303,57 +328,55 @@ class MainFrame ( wx.Frame ):
 		self.convertButton.Disable()
 		self.convertFile.Enable(0)
 		self.reactionBasedModel.SetValue( True )
-		self.varsAsSpecies.SetValue( True ) 
+		self.varsAsSpecies.SetValue( True )
+		_IS_OUTPUT_SAVED = False
+		
 	
-	def onConvert( self, event ):            
-		if(self.matlabTextCtrl.IsEmpty()):
-			event.Skip()
-		else:
-			self.statusBar.SetStatusText( "Generating output ..." ,0)
-			try:
-				parser = MatlabGrammar()
-				parse_results = parser.parse_string(self.matlabTextCtrl.GetValue())
+	def onConvert( self, event ):
+		global _IS_OUTPUT_SAVED
+		saveOutput( self, event )
 
-				#output XPP files
-				if self.xppModel.GetValue():
-					output = create_raterule_model(parse_results, self.varsAsSpecies.GetValue(),not self.xppModel.GetValue())
-					self.convertedTextCtrl.SetValue(output)
-					self.statusBar.SetStatusText("ODE format",2)
-
+		self.statusBar.SetStatusText( "Generating output ..." ,0)
+		try:
+			parser = MatlabGrammar()
+			parse_results = parser.parse_string(self.matlabTextCtrl.GetValue())
+			
+			#output XPP files
+			if self.xppModel.GetValue():
+				output = create_raterule_model(parse_results, self.varsAsSpecies.GetValue(),not self.xppModel.GetValue())
+				self.convertedTextCtrl.SetValue(output)
+				self.statusBar.SetStatusText("ODE format",2)
 				#output equation-based SBML					
-				elif self.equationBasedModel.GetValue():
-					output = create_raterule_model(parse_results, self.varsAsSpecies.GetValue(), self.equationBasedModel.GetValue())
-					self.convertedTextCtrl.SetValue(output)
-					self.statusBar.SetStatusText("SBML format - equations",2)
-
+			elif self.equationBasedModel.GetValue():
+				output = create_raterule_model(parse_results, self.varsAsSpecies.GetValue(), self.equationBasedModel.GetValue())
+				self.convertedTextCtrl.SetValue(output)
+				self.statusBar.SetStatusText("SBML format - equations",2)
 				#output equation-based SBML										
+			else:
+				if not network_available():
+					msg = "A network connection is needed for this feature" 
+					dlg = GMD.GenericMessageDialog(self, msg, "Warning!",agwStyle=wx.ICON_EXCLAMATION | wx.OK)               
+					dlg.ShowModal()
+					dlg.Destroy()
 				else:
-					if not network_available():
-						msg = "A network connection is needed for this feature" 
-						dlg = GMD.GenericMessageDialog(self, msg, "Warning!",agwStyle=wx.ICON_EXCLAMATION | wx.OK)               
-						dlg.ShowModal()
-						dlg.Destroy()
-					else:
-						#Create temp file storing XPP model version				
-						with NamedTemporaryFile(suffix= ".ode", delete=False) as xpp_file:
-							xpp_file.write(create_raterule_model(parse_results, self.varsAsSpecies.GetValue() , self.reactionBasedModel.GetValue()))
-						files = {'file':open(xpp_file.name)}
-						#Access Biocham to curate and convert equations to reactions
-						data = {'exportTo':'sbml', 'curate':'true'}
-						response = requests.post(_BIOCHAM_URL, files=files, data=data)
-						self.convertedTextCtrl.SetValue(response.content)
-						del files
-						os.unlink(xpp_file.name)
-						self.statusBar.SetStatusText("SBML format - reactions",2)
-				
-			except IOError as err:
-				print("error: {0}".format(err))
-			finally:
-				self.statusBar.SetStatusText( "Done!",0 )
-				
+					#Create temp file storing XPP model version				
+					with NamedTemporaryFile(suffix= ".ode", delete=False) as xpp_file:
+						xpp_file.write(create_raterule_model(parse_results, self.varsAsSpecies.GetValue() , self.reactionBasedModel.GetValue()))
+					files = {'file':open(xpp_file.name)}
+					#Access Biocham to curate and convert equations to reactions
+					data = {'exportTo':'sbml', 'curate':'true'}
+					response = requests.post(_BIOCHAM_URL, files=files, data=data)
+					self.convertedTextCtrl.SetValue(response.content)
+					del files
+					os.unlink(xpp_file.name)
+					self.statusBar.SetStatusText("SBML format - reactions",2)
+			
+		except IOError as err:
+			print("error: {0}".format(err))
+		finally:
+			self.statusBar.SetStatusText( "Done!",0 )
+			_IS_OUTPUT_SAVED = False
 
-	def onOptions( self, event ):
-		event.Skip()
 	
 	def onCloseAll( self, event ):
 		self.Close(True)
@@ -375,10 +398,14 @@ class MainFrame ( wx.Frame ):
 		      "Please report any bugs or requests of improvements\n" + \
                       "to us at the following address:\n" + \
                       "email@sbml.com\n\n"+ \
-		      "Current version:   " + VERSION + " !!" 
+		      "Current version:   " + _VERSION + " !!" 
 		dlg = GMD.GenericMessageDialog(self, msg, "About MOCCASIN",agwStyle=wx.ICON_INFORMATION | wx.OK)               
 		dlg.ShowModal()
 		dlg.Destroy()
+
+	def onClose( self, event ):
+		saveOutput( self,event )
+		self.Destroy()
 
 # -----------------------------------------------------------------------------
 # Driver
