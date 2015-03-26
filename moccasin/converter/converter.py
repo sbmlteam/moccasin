@@ -321,6 +321,14 @@ def add_xpp_raterule(model, id, ast):
     return
 
 
+def create_xpp_assignment(xpp_variables, id, formula):
+    parameter = dict({'SBML_type': 'AssignmentRule',
+                      'id': id,
+                      'rule': formula})
+    xpp_variables.append(parameter)
+    return xpp_variables
+
+
 def make_xpp_indexed(var, index, content, use_species, use_rules, use_const,
                      model, underscores, context):
     name = rename(var, str(index + 1), underscores)
@@ -385,6 +393,15 @@ def create_xpp_string(xpp_elements):
                 lines += ('# Parameter id = {}, '
                           'non-constant but no rule supplied\n'.format(id))
                 lines += ('par {}={}\n\n'.format(id, value))
+
+    # output any assignments
+    for i in range(0, num_objects):
+        element = xpp_elements[i]
+        if element['SBML_type'] == 'AssignmentRule':
+            id = element['id']
+            formula = element['rule']
+            lines += ('# function/assignment\n')
+            lines += ('{}={}\n\n'.format(id, formula))
 
     # output odes
     for i in range(0, num_objects):
@@ -806,8 +823,8 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
     if GLOBALS['need time']:
         if produce_sbml:
             create_sbml_assigned_parameter(model, "t", parseL3Formula("time"), True)
-        else:
-            create_xpp_parameter(xpp_variables, "t", 0, False)
+#        else:
+            # xpp automatically assumes 't' is time so no need to tell it
 
     # Write the Model
     if produce_sbml:
@@ -907,17 +924,12 @@ def create_remaining_vars(working_context, function_context, skip_vars,
         elif isinstance(rhs, ArrayRef) or isinstance(rhs, list) \
              or isinstance(rhs, FunCall) or isinstance(rhs, Expression):
             # Inefficient way to do this, but for now let's just do this.
-            if isinstance(rhs, ArrayRef):   rhs = rhs.args
+            if isinstance(rhs, ArrayRef):
+                rhs = rhs.args
             if isinstance(rhs, FunCall):
-                # we cannot evaluate just any function
-                # leaving this here because I'm not sure whether the
-                # sbml will need it; but xpp does not deal with it
-                # note the sbml ends up with a null ast so exists neatly
-                if produce_sbml:
-                    rhs = [rhs]
-                else:
-                    continue
-            if isinstance(rhs, Expression): rhs = rhs.content
+                rhs = [rhs]
+            if isinstance(rhs, Expression):
+                rhs = rhs.content
             translator = lambda node: munge_reference(node, function_context,
                                                       underscores)
             if produce_sbml:
@@ -926,13 +938,17 @@ def create_remaining_vars(working_context, function_context, skip_vars,
                 if ast:
                     create_sbml_assigned_parameter(model, var, ast, in_function)
             else:
-                substituted = substitute_vars(rhs, working_context)
-                formula = MatlabGrammar.make_formula(substituted, atrans=translator)
-                if formula:
-                    formula_parser = NumericStringParser()
-                    result = formula_parser.eval(formula)
-                    if result:
-                        create_xpp_parameter(xpp_variables, var, result)
+                if in_function:
+                    formula = MatlabGrammar.make_formula(rhs, atrans=translator)
+                    create_xpp_assignment(xpp_variables, var, formula)
+                else:
+                    substituted = substitute_vars(rhs, working_context)
+                    formula = MatlabGrammar.make_formula(substituted, atrans=translator)
+                    if formula:
+                        formula_parser = NumericStringParser()
+                        result = formula_parser.eval(formula)
+                        if result:
+                            create_xpp_parameter(xpp_variables, var, result)
         elif isinstance(rhs, FunHandle):
             # Skip function handles. If any was used in the ode* call, it will
             # have been dealt with earlier.
