@@ -366,14 +366,16 @@ class MainFrame ( wx.Frame ):
 					files = {'file':open(xpp_file.name)}
 					#Access Biocham to curate and convert equations to reactions
 					data = {'exportTo':'sbml', 'curate':'true'}
-					response = requests.post(_BIOCHAM_URL, files=files, data=data)
+					response = requests.post(_BIOCHAM_URL, files=files, data=data, timeout=1)
 					self.convertedTextCtrl.SetValue(response.content)
 					del files
 					os.unlink(xpp_file.name)
 					self.statusBar.SetStatusText("SBML format - reactions",2)
 			
 		except IOError as err:
-			print("error: {0}".format(err))
+			print("IOError: {0}".format(err))
+		except Exception as exc:
+			print("Exception: {0}".format(exc))
 		finally:
 			self.statusBar.SetStatusText( "Done!",0 )
 			_IS_OUTPUT_SAVED = False
