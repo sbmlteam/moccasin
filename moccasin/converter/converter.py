@@ -322,9 +322,16 @@ def add_xpp_raterule(model, id, ast):
 
 
 def create_xpp_assignment(xpp_variables, id, formula):
-    parameter = dict({'SBML_type': 'AssignmentRule',
+    # hack to make this work by putting in a parameter
+    parameter = dict({'SBML_type': 'Parameter',
                       'id': id,
-                      'rule': formula})
+                      'value': 0,
+                      'constant': False,
+                      'init_assign': '',
+                      'rate_rule': ''})
+    # parameter = dict({'SBML_type': 'AssignmentRule',
+    #                   'id': id,
+    #                   'rule': formula})
     xpp_variables.append(parameter)
     return xpp_variables
 
