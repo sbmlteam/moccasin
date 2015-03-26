@@ -34,6 +34,7 @@ from libsbml import *
 
 sys.path.append('..')
 from matlab_parser import *
+from version import __version__
 
 
 # -----------------------------------------------------------------------------
@@ -641,7 +642,8 @@ def make_raterule(assigned_var, dep_var, index, content, model, underscores, con
 # or
 # 2. an XPP format that captures the parameters and odes
 
-def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
+def create_raterule_model(parse_results, use_species=True, produce_sbml=True,
+                          include_comments=False):
     # This assumes there's only one call to an ode* function in the file.  We
     # start by finding that call (wherever it is -- whether it's at the top
     # level, or inside some other function), then inspecting the call, and
@@ -812,7 +814,11 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
 
     # Write the Model
     if produce_sbml:
-        return writeSBMLToString(document)
+        writer = SBMLWriter();
+        if include_comments:
+            writer.setProgramName("MOCCASIN")
+            writer.setProgramVersion(__version__)
+        return writer.writeSBMLToString(document);
     else:
         return create_xpp_string(xpp_variables)
 
@@ -1034,34 +1040,38 @@ matlab_converters = {
 # -----------------------------------------------------------------------------
 
 def get_filename_and_options(argv):
+    help_msg = 'MOCCASIN version ' + __version__ + '\n' + main.__doc__
     try:
-        options, path = getopt.getopt(argv[1:], "dpqxor")
+        options, path = getopt.getopt(argv[1:], "cdpqxorv")
     except:
-        raise SystemExit(main.__doc__)
+        raise SystemExit(help_msg)
     if len(path) != 1 or len(options) > 2:
-        raise SystemExit(main.__doc__)
-    debug       = any(['-d' in y for y in options])
-    quiet       = any(['-q' in y for y in options])
-    print_parse = any(['-x' in y for y in options])
-    print_raw   = any(['-r' in y for y in options])
-    use_species = not any(['-p' in y for y in options])
-    create_sbml = not any(['-o' in y for y in options])
-    return path[0], debug, quiet, print_parse, print_raw, use_species, create_sbml
+        raise SystemExit(help_msg)
+    comments     = any(['-c' in y for y in options])
+    debug        = any(['-d' in y for y in options])
+    quiet        = any(['-q' in y for y in options])
+    print_parse  = any(['-x' in y for y in options])
+    print_raw    = any(['-r' in y for y in options])
+    use_species  = not any(['-p' in y for y in options])
+    create_sbml  = not any(['-o' in y for y in options])
+    return path[0], debug, quiet, print_parse, print_raw, use_species, \
+        create_sbml, comments
 
 
 def main(argv):
     '''Usage: converter.py [options] FILENAME.m
 Available options:
+ -c   Add comments into the SBML file for program version and other info
  -d   Drop into pdb before starting to parse the MATLAB input
  -h   Print this help message and quit
+ -o   Create the XPP conversion (SBML is created by default)
  -p   Turn variables into parameters (default: make them species)
  -q   Be quiet; just produce code, nothing else
  -r   Print the raw MatlabNode output for the output printed with option -x
  -x   Print extra debugging info about the interpreted MATLAB
- -o   Create the XPP conversion (SBML is created by default)
 '''
-    path, debug, quiet, print_parse, print_raw, use_species, create_sbml \
-        = get_filename_and_options(argv)
+    path, debug, quiet, print_parse, print_raw, use_species, create_sbml, \
+        comments = get_filename_and_options(argv)
 
     file = open(path, 'r')
     file_contents = file.read()
@@ -1080,7 +1090,7 @@ Available options:
     except Exception as err:
         print("error: {0}".format(err))
 
-    code = create_raterule_model(parse_results, use_species, create_sbml)
+    code = create_raterule_model(parse_results, use_species, create_sbml, comments)
 
     if print_parse and not quiet:
         print('')
