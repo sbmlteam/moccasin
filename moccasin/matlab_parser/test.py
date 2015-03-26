@@ -8,9 +8,10 @@
 # This software is part of MOCCASIN, the Model ODE Converter for Creating
 # Awesome SBML INteroperability. Visit https://github.com/sbmlteam/moccasin/.
 #
-# Copyright (C) 2014 jointly by the following organizations:
+# Copyright (C) 2014-2015 jointly by the following organizations:
 #  1. California Institute of Technology, Pasadena, CA, USA
 #  2. Mount Sinai School of Medicine, New York, NY, USA
+#  3. Boston University, Boston, MA, USA
 #
 # This is free software; you can redistribute it and/or modify it under the
 # terms of the GNU Lesser General Public License as published by the Free
@@ -27,37 +28,42 @@ from grammar import *
 
 def get_filename_and_options(argv):
     try:
-        options, path = getopt.getopt(argv[1:], "dp")
+        options, path = getopt.getopt(argv[1:], "dpq")
     except:
         raise SystemExit(main.__doc__)
     if len(path) != 1 or len(options) > 2:
         raise SystemExit(main.__doc__)
     debug = any(['-d' in y for y in options])
     do_print = any(['-p' in y for y in options])
-    return path[0], debug, do_print
+    quiet = any(['-q' in y for y in options])
+    return path[0], debug, do_print, quiet
 
 
 def main(argv):
-    '''Usage: matlab_parser.py [-p] [-d] FILENAME.m
+    '''Usage: matlab_parser.py [-p] [-d] [-q] FILENAME.m
 Arguments:
-  -p   (Optional) Print a representation of the interpreted input
+  -q   (Optional) Be quiet -- just print the output
+  -p   (Optional) Print a representation of the output in the "old" format
   -d   (Optional) Drop into pdb as the final step
 '''
 
-    path, debug, print_interpreted = get_filename_and_options(argv)
+    path, debug, print_old_format, quiet = get_filename_and_options(argv)
 
     file = open(path, 'r')
-    print('----- file ' + path + ' ' + '-'*30)
+    if not quiet: print('----- file ' + path + ' ' + '-'*30)
     contents = file.read()
-    print(contents)
+    if not quiet: print(contents)
 
-    print('----- raw parse results ' + '-'*50)
     parser  = MatlabGrammar()
-    results = parser.parse_string(contents, True)
-    print('')
-
-    if print_interpreted:
-        print('----- interpreted output ' + '-'*50)
+    results = parser.parse_string(contents)
+    if not print_old_format:
+        if not quiet: print('----- raw parse results ' + '-'*50)
+        parser.print_parse_results(results, print_raw=True)
+    else:
+        if not quiet:
+            print('----- raw parse results ' + '-'*50)
+            parser.print_parse_results(results, print_raw=True)
+        if not quiet: print('----- old format ' + '-'*50)
         parser.print_parse_results(results)
 
     if debug:
