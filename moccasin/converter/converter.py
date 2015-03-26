@@ -807,8 +807,7 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True):
         if produce_sbml:
             create_sbml_assigned_parameter(model, "t", parseL3Formula("time"), True)
         else:
-            formula_parser = NumericStringParser()
-            create_xpp_parameter(xpp_variables, "t", formula_parser.eval("t"))
+            create_xpp_parameter(xpp_variables, "t", 0, False)
 
     # Write the Model
     if produce_sbml:
