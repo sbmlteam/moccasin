@@ -1360,10 +1360,10 @@ class MatlabGrammar:
     # The next variable and function are for printing low-level PyParsing
     # matches.  To use this, manually add objects to the list, like so:
     #   _to_print_raw = [_cell_access, _cell_array, _bare_cell, _expr]
-    _to_print_raw = []
+    _to_print_debug = []
 
-    def _init_print_raw(self):
-        for obj in self._to_print_raw:
+    def _init_print_debug(self):
+        for obj in self._to_print_debug:
             obj.setDebug(True)
 
 
@@ -1732,7 +1732,7 @@ class MatlabGrammar:
     def __init__(self):
         self._init_grammar_names()
         # self._init_parse_actions()
-        self._init_print_raw()
+        self._init_print_debug()
         self._reset()
 
 
