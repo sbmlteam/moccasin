@@ -1,3 +1,5 @@
 .git/config
 *~
 @moccasin-notebook.nb
+.eggs
+moccasin.egg-info

@@ -1,0 +1,4 @@
+{shell command: echo 'foo', 'bar', 'biff'; echo 'foo'}
+{shell command: echo 'zoo', 'zee'}
+( {function/array: {identifier: "foo"} ( {identifier: "x"} )} )
+{command: name {identifier: "save"} args   /tmp/foo.mat}

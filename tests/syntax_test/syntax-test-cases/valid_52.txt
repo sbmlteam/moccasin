@@ -1,0 +1,25 @@
+{function definition: {identifier: "valid_52"} parameters ( none ) output [ {identifier: "Tsim"}, {identifier: "SimData"} ]}
+{comment: model_example_Hill kinetics}
+{command: name {identifier: "close"} args  all}
+{assign: {identifier: "k"} = {array: [ {row 1: {number: 4.2416}, {number: 5.9816}, {number: 0.1009}, {number: 1.1549}, {number: 1.3618}, {number: 1.4219}, {number: 0.0051}, {number: 0.0972}, {number: 0.0012}, {number: 56.8583}, {number: 0.0111}, {number: 0.0014}} ]}}
+{comment:  parameters}
+{assign: {identifier: "tspan"} = {array: [ {row 1: {number: 0}, {number: 1.5}} ]}}
+{comment:  integration times}
+{assign: {identifier: "x0"} = {array: [ {row 1: {number: 1}, {number: 1}, {number: 1}} ]}}
+{comment:  initial conditions}
+{assign: {identifier: "I"} = {number: 1}}
+{comment:  input signal, could also be defined as just another parameter in k}
+{assign: {array: [ {row 1: {identifier: "Tsim"}, {identifier: "SimData"}} ]} = {function {identifier: "ode15s"} ( {function @ handle: {identifier: "rhss"}}, {identifier: "tspan"}, {identifier: "x0"}, {array: [] }, {identifier: "k"}, {identifier: "I"} ) }}
+{comment: % plotting}
+( {identifier: "figure"} )
+( {function {identifier: "subplot"} ( {number: 3}, {number: 1}, {number: 1} ) } )
+( {function {identifier: "plot"} ( {identifier: "Tsim"}, {array {identifier: "SimData"}: [ {colon}, {number: 1} ]} ) } )
+( {function {identifier: "subplot"} ( {number: 3}, {number: 1}, {number: 2} ) } )
+( {function {identifier: "plot"} ( {identifier: "Tsim"}, {array {identifier: "SimData"}: [ {colon}, {number: 2} ]} ) } )
+( {function {identifier: "subplot"} ( {number: 3}, {number: 1}, {number: 3} ) } )
+( {function {identifier: "plot"} ( {identifier: "Tsim"}, {array {identifier: "SimData"}: [ {colon}, {number: 3} ]} ) } )
+{function definition: {identifier: "rhss"} parameters ( {identifier: "t"}, {identifier: "x"}, {identifier: "k"}, {identifier: "I"} ) output {identifier: "dxdt"}}
+{comment:  three component incoherent feed-forward network}
+{assign: {identifier: "dxdt"} = {array: [ {row 1: ( ( ( ( {array {identifier: "k"}: [ {number: 1} ]} {binary op: *} {identifier: "I"} ) {binary op: *} {array {identifier: "x"}: [ {number: 1} ]} ) {binary op: /} ( {array {identifier: "x"}: [ {number: 1} ]} {binary op: +} {array {identifier: "k"}: [ {number: 7} ]} ) ) {binary op: -} ( ( {array {identifier: "k"}: [ {number: 2} ]} {binary op: *} {array {identifier: "x"}: [ {number: 1} ]} ) {binary op: /} ( {array {identifier: "x"}: [ {number: 1} ]} {binary op: +} {array {identifier: "k"}: [ {number: 8} ]} ) ) )}; {row 2: ( ( ( ( {array {identifier: "k"}: [ {number: 3} ]} {binary op: *} {array {identifier: "x"}: [ {number: 1} ]} ) {binary op: *} {array {identifier: "x"}: [ {number: 2} ]} ) {binary op: /} ( {array {identifier: "x"}: [ {number: 2} ]} {binary op: +} {array {identifier: "k"}: [ {number: 9} ]} ) ) {binary op: -} ( ( {array {identifier: "k"}: [ {number: 4} ]} {binary op: *} {array {identifier: "x"}: [ {number: 2} ]} ) {binary op: /} ( {array {identifier: "x"}: [ {number: 2} ]} {binary op: +} {array {identifier: "k"}: [ {number: 10} ]} ) ) )}; {row 3: ( ( ( ( {array {identifier: "k"}: [ {number: 5} ]} {binary op: *} {array {identifier: "x"}: [ {number: 1} ]} ) {binary op: *} {array {identifier: "x"}: [ {number: 3} ]} ) {binary op: /} ( {array {identifier: "x"}: [ {number: 3} ]} {binary op: +} {array {identifier: "k"}: [ {number: 11} ]} ) ) {binary op: -} ( ( ( {array {identifier: "k"}: [ {number: 6} ]} {binary op: *} {array {identifier: "x"}: [ {number: 2} ]} ) {binary op: *} {array {identifier: "x"}: [ {number: 3} ]} ) {binary op: /} ( {array {identifier: "x"}: [ {number: 3} ]} {binary op: +} {array {identifier: "k"}: [ {number: 12} ]} ) ) )} ]}}
+{end}
+{end}

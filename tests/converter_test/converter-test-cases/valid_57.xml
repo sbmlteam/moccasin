@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version1/core" level="3" version="1">
+  <model>
+    <listOfCompartments>
+      <compartment id="comp1" spatialDimensions="3" size="1" constant="true"/>
+    </listOfCompartments>
+    <listOfSpecies>
+      <species id="Y_1" compartment="comp1" initialConcentration="1" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"/>
+      <species id="Y_2" compartment="comp1" initialConcentration="1" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"/>
+      <species id="Y_3" compartment="comp1" initialConcentration="1" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"/>
+    </listOfSpecies>
+    <listOfParameters>
+      <parameter id="k1" value="1" constant="true"/>
+    </listOfParameters>
+    <listOfRules>
+      <rateRule variable="Y_1">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <times/>
+            <ci> k1 </ci>
+            <ci> Y_1 </ci>
+          </apply>
+        </math>
+      </rateRule>
+      <rateRule variable="Y_2">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <cos/>
+            <ci> k1 </ci>
+          </apply>
+        </math>
+      </rateRule>
+      <rateRule variable="Y_3">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <cos/>
+            <apply>
+              <times/>
+              <ci> k1 </ci>
+              <ci> Y_1 </ci>
+            </apply>
+          </apply>
+        </math>
+      </rateRule>
+    </listOfRules>
+  </model>
+</sbml>
