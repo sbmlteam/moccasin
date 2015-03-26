@@ -953,6 +953,10 @@ def create_remaining_vars(working_context, function_context, skip_vars,
                 else:
                     substituted = substitute_vars(rhs, working_context)
                     formula = MatlabGrammar.make_formula(substituted, atrans=translator)
+                    # horrible hack to not look at a function used odeset
+                    if formula.startswith('odeset') or formula.startswith('(odeset'):
+                        continue;
+
                     if formula:
                         formula_parser = NumericStringParser()
                         result = formula_parser.eval(formula)
