@@ -1,4 +1,4 @@
-function[Y]=parse_fails
+function[Y]=valid_57
 tspan=[0 12];
 initCond = [1,1,1]
 [T,Y] = ode45(@rigid,tspan,initCond)

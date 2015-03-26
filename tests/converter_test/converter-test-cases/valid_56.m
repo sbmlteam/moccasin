@@ -1,4 +1,4 @@
-function[Y]=valid_51
+function[Y]=valid_56
 tspan=[0 12];
 initCond = [1 2 3]
 k1=1;
