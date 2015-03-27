@@ -344,7 +344,7 @@ def create_xpp_assignment(xpp_variables, id, formula, additional_info=[]):
 def make_xpp_indexed(var, index, content, name_translations, use_species,
                      xpp_variables, underscores, context):
     name = rename(var, str(index + 1), underscores)
-    real_name = name_translations[name] if name_translations[name] else name
+    real_name = name_translations[name] if name in name_translations else name
     if isinstance(content, Number):
         if use_species:
             create_xpp_species(xpp_variables, real_name, content.value)
@@ -379,7 +379,7 @@ def make_xpp_raterule(assigned_var, dep_var, name_translations, index, content,
 
     # Finally, write the rate rule.
     rule_var = assigned_var + '_'*underscores + str(index + 1)
-    if name_translations[rule_var]:
+    if rule_var in name_translations:
         rule_var = name_translations[rule_var]
     formula = translate_names(formula, name_translations)
     add_xpp_raterule(xpp_variables, rule_var, formula)
@@ -598,7 +598,7 @@ def make_indexed(var, index, content, name_translations, use_species,
             item = create_sbml_parameter(model, the_name, the_value, const)
 
     name = rename(var, str(index + 1), underscores)
-    real_name = name_translations[name] if name_translations[name] else name
+    real_name = name_translations[name] if name in name_translations else name
     if isinstance(content, Number):
         is_constant = use_species and not use_rules
         create_species_or_parameter(real_name, content.value)
@@ -640,7 +640,7 @@ def make_raterule(assigned_var, dep_var, translations, index, content, model, un
 
     # Finally, write the rate rule.
     rule_var = assigned_var + '_'*underscores + str(index + 1)
-    if translations[rule_var]:
+    if rule_var in translations:
         rule_var = translations[rule_var]
     formula = translate_names(formula, translations)
     ast = parseL3Formula(formula)
