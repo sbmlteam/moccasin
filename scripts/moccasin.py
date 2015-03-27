@@ -61,7 +61,7 @@ def main(path, debug=False, quiet=False, print_parse=False, use_params=False,
         with open(path) as file:
             file_contents = file.read()
             if not quiet:
-                print_header(' File ' + path + ' ')
+                print_header('File ' + path)
                 print(file_contents)
 
             if debug:
@@ -71,33 +71,37 @@ def main(path, debug=False, quiet=False, print_parse=False, use_params=False,
             parse_results = parser.parse_string(file_contents)
 
             if print_parse and not quiet:
-                print_header(' Parsed MATLAB output ')
+                print_header('Parsed MATLAB output')
                 parser.print_parse_results(parse_results)
 
             if output_XPP:
-                print_header(' XPP output ', quiet)
-                output = create_raterule_model(parse_results, not use_params, not output_XPP)
+                print_header('XPP output', quiet)
+                output = create_raterule_model(parse_results, not use_params, False)
                 print(output)
             elif use_equations:
-                print_header(' Equation-based SBML output ', quiet)
-                output = create_raterule_model(parse_results, not use_params, not output_XPP)
+                print_header('Equation-based SBML output', quiet)
+                output = create_raterule_model(parse_results, not use_params)
                 print(output)
             else:
-                print_header(' Reaction-based SBML output ', quiet)
+                print_header('Reaction-based SBML output', quiet)
                 if not network_available() and not quiet:
                     print('Error: a network connection is needed for this feature.')
                     sys.exit(1)
                 try:
                     # Create temp file storing XPP model version
                     with NamedTemporaryFile(suffix=".ode", delete=False) as xpp_file:
-                        output = create_raterule_model(parse_results, not use_params, output_XPP)
+                        [output, extra] = create_raterule_model(parse_results,
+                                                                not use_params, False)
                         xpp_file.write(output)
-                    files = {'file':open(xpp_file.name)}
+                    files = {'file': open(xpp_file.name)}
                     # Access Biocham to curate and convert equations to reactions
                     data = {'exportTo':'sbml', 'curate':'true'}
                     response = requests.post(_BIOCHAM_URL, files=files, data=data)
                     del files
-                    yield(response.content)
+                    # We need to post-process the output to deal with
+                    # limitations in BIOCHAM's translation service.
+                    sbml = process_biocham_output(response.content, parse_results, extra)
+                    yield(sbml)
                 except IOError as err:
                     yield("error: {0}".format(err))
                 finally:
@@ -114,7 +118,7 @@ def main(path, debug=False, quiet=False, print_parse=False, use_params=False,
 def print_header(text, quiet=False):
     if not quiet:
         print('')
-        print('{:-^78}'.format(text))
+        print(' {:-^78} '.format(text))
         print('')
 
 
