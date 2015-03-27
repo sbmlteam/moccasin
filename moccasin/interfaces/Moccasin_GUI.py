@@ -89,12 +89,12 @@ def saveFile( self, event):
 
 #Checks that output is saved before it's lost
 def checkSaveOutput( self, event ):
-	msg = "MOCCASIN output may be lost. Do you want to save?"
-	dlg = GMD.GenericMessageDialog(self, msg, "Warning",agwStyle=wx.ICON_INFORMATION | wx.YES_NO)
+	msg = "MOCCASIN output may be lost. Do you want to save the file first?"
+        dlg = wx.MessageDialog(self, msg, "Warning", wx.YES_NO | wx.ICON_WARNING)
 	
 	if ( not _IS_OUTPUT_SAVED and not self.convertedTextCtrl.IsEmpty()):
 		if dlg.ShowModal() == wx.ID_YES:
-			saveFile( self, event )	
+			saveFile( self, event )
 	dlg.Destroy()
 	
 
@@ -181,13 +181,14 @@ class MainFrame ( wx.Frame ):
 
 		#Add sizers(3) and elements for matlab and translated text
 		mainSizer = wx.BoxSizer( wx.VERTICAL )
-		mainSizer.SetMinSize( wx.Size( 1,3 ) ) 
+		mainSizer.SetMinSize( wx.Size( 1,5 ) ) 
 		mainSizer.AddSpacer( ( 0, 1), 0, wx.EXPAND|wx.TOP, 5 )
 
 		#Top sizer
 ####
+                labelFont = wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString )
 
-		topPanelSizer = wx.GridSizer( 2, 1, 0, 0 )
+		# topPanelSizer = wx.GridSizer( 2, 1, 0, 0 )
 		
 		fileConvSizer1 = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "File selection" ), wx.VERTICAL )
 		
@@ -195,30 +196,27 @@ class MainFrame ( wx.Frame ):
 		gbSizer1.SetFlexibleDirection( wx.HORIZONTAL )
 		gbSizer1.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_ALL )
 		
-		self.m_staticText6 = wx.StaticText( self, wx.ID_ANY, "Choose a file for conversion", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText6 = wx.StaticText( self, wx.ID_ANY, "Choose a file for conversion:", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText6.Wrap( -1 )
-		self.m_staticText6.SetFont( wx.Font( 9, 74, 90, 92, False, "Arial" ) )
-		
-		gbSizer1.Add( self.m_staticText6, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL|wx.EXPAND, 5 )
+		self.m_staticText6.SetFont( labelFont )
+		gbSizer1.Add( self.m_staticText6, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0 )
 		
 		self.filePicker = wx.FilePickerCtrl( self, wx.ID_ANY, wx.EmptyString, "Select a file", "*.m", wx.DefaultPosition, wx.DefaultSize, wx.FLP_DEFAULT_STYLE )
-		self.filePicker.SetMinSize( wx.Size( 500,-1 ) )
+		self.filePicker.SetMinSize( wx.Size( 495, -1 ) )
+		gbSizer1.Add( self.filePicker, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL|wx.EXPAND|wx.ALIGN_RIGHT, 0 )
 		
-		gbSizer1.Add( self.filePicker, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL|wx.EXPAND|wx.ALIGN_RIGHT, 8 )
+		fileConvSizer1.Add( gbSizer1, 0, wx.ALL|wx.EXPAND, 0 )
 		
-		
-		fileConvSizer1.Add( gbSizer1, 0, wx.ALL|wx.EXPAND, 2 )
-		
-		
-		topPanelSizer.Add( fileConvSizer1, 2, wx.ALL|wx.EXPAND, 1 )
-		
+		# topPanelSizer.Add( fileConvSizer1, 0, wx.ALL|wx.EXPAND, 0 )
+		mainSizer.Add( fileConvSizer1, 0, wx.ALL|wx.EXPAND, 0 )
+
 		sbSizer9 = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "File conversion" ), wx.VERTICAL )
 		
-		optionLayoutSizer = wx.GridSizer( 1, 6, 0, 40 )
+		optionLayoutSizer = wx.GridSizer( 1, 5, 0, 0 )
 		
-		self.staticTextOpt = wx.StaticText( self, wx.ID_ANY, "Variable encoding", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.staticTextOpt = wx.StaticText( self, wx.ID_ANY, "Variable encoding:", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_LEFT )
 		self.staticTextOpt.Wrap( -1 )
-		self.staticTextOpt.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
+		self.staticTextOpt.SetFont( labelFont )
 		
 		optionLayoutSizer.Add( self.staticTextOpt, 0, wx.ALL, 5 )
 		
@@ -229,26 +227,20 @@ class MainFrame ( wx.Frame ):
 		self.varsAsParams = wx.RadioButton( self, wx.ID_ANY, "SBML Parameters", wx.DefaultPosition, wx.DefaultSize, 0 )
 		optionLayoutSizer.Add( self.varsAsParams, 0, wx.ALL, 5 )
 		
-		
-		optionLayoutSizer.AddSpacer( ( 0, 0), 1, wx.ALL|wx.EXPAND, 2 )
-		
-		
 		optionLayoutSizer.AddSpacer( ( 0, 0), 1, wx.ALL|wx.EXPAND, 2 )
 		
 		self.convertButton = wx.Button( self, wx.ID_ANY, "Convert", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.convertButton.Disable()
-		self.convertButton.SetFont( wx.Font( 9, 74, 90, 92, False, "Arial" ) )
 		
-		optionLayoutSizer.Add( self.convertButton, 1, wx.ALIGN_LEFT|wx.ALIGN_RIGHT|wx.ALL, 6 )
-		
+		optionLayoutSizer.Add( self.convertButton, 1, wx.ALIGN_LEFT|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 6 )
 		
 		sbSizer9.Add( optionLayoutSizer, 0, wx.EXPAND, 5 )
+
+		gSizer7 = wx.GridSizer( 0, 5, 0, 0 )
 		
-		gSizer7 = wx.GridSizer( 0, 6, 0, 40 )
-		
-		self.modeType = wx.StaticText( self, wx.ID_ANY, "Output format", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.modeType = wx.StaticText( self, wx.ID_ANY, "Output format:", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.modeType.Wrap( -1 )
-		self.modeType.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
+		self.modeType.SetFont( labelFont )
 		
 		gSizer7.Add( self.modeType, 0, wx.ALL, 5 )
 		
@@ -259,32 +251,35 @@ class MainFrame ( wx.Frame ):
 		self.equationBasedModel = wx.RadioButton( self, wx.ID_ANY, "SBML (equations)", wx.DefaultPosition, wx.DefaultSize, 0 )
 		gSizer7.Add( self.equationBasedModel, 0, wx.ALL, 5 )
 		
-		self.xppModel = wx.RadioButton( self, wx.ID_ANY, "ODE", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.xppModel = wx.RadioButton( self, wx.ID_ANY, "XPPAUT", wx.DefaultPosition, wx.DefaultSize, 0 )
 		gSizer7.Add( self.xppModel, 0, wx.ALL, 5 )
 		
 		
 		sbSizer9.Add( gSizer7, 0, wx.EXPAND, 5 )
 		
 		
-		topPanelSizer.Add( sbSizer9, 2, wx.ALL|wx.EXPAND, 1 )
+		# topPanelSizer.Add( sbSizer9, 2, wx.ALL|wx.EXPAND, 1 )
+                mainSizer.Add( sbSizer9, 2, wx.ALL|wx.EXPAND, 1 )
 		
-		
-		mainSizer.Add( topPanelSizer, 0, wx.ALL|wx.EXPAND, 5 )
+		# mainSizer.Add( topPanelSizer, 0, wx.ALL|wx.EXPAND, 5 )
 		#################
 
 		
 		#Mid sizer
-		midPanelSizer = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "Matlab File" ), wx.VERTICAL )
+                panelTextFont = wx.Font( wx.NORMAL_FONT.GetPointSize() -1, 70, 90, wx.FONTWEIGHT_NORMAL, False, wx.EmptyString )
+
+		midPanelSizer = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "MATLAB File" ), wx.VERTICAL )
 		self.matlabTextCtrl = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,200 ), wx.HSCROLL|wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP|wx.ALWAYS_SHOW_SB|wx.FULL_REPAINT_ON_RESIZE|wx.RAISED_BORDER )
 		self.matlabTextCtrl.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
 		self.matlabTextCtrl.SetToolTipString( "Input file for conversion" )
+		self.matlabTextCtrl.SetFont( panelTextFont )
 		midPanelSizer.Add( self.matlabTextCtrl, 1, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND, 5 )
 		mainSizer.Add( midPanelSizer, 2, wx.EXPAND, 5 )
 	
 		#Bottom sizer
 		bottomPanelSizer = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "Converted File" ), wx.VERTICAL )		
 		self.convertedTextCtrl = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,200 ), wx.HSCROLL|wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP|wx.ALWAYS_SHOW_SB|wx.FULL_REPAINT_ON_RESIZE|wx.RAISED_BORDER )
-		self.convertedTextCtrl.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 90, False, wx.EmptyString ) )
+		self.convertedTextCtrl.SetFont( panelTextFont )
 		self.convertedTextCtrl.SetToolTipString( "Output file after conversion" )
 		bottomPanelSizer.Add( self.convertedTextCtrl, 1, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND, 5 )
 		mainSizer.Add( bottomPanelSizer, 2, wx.EXPAND, 5 )
@@ -323,7 +318,8 @@ class MainFrame ( wx.Frame ):
 			dirname = dlg.GetDirectory()
 			path=os.path.join(dirname, filename)
 			f = open(path, 'r')
-			self.matlabTextCtrl.SetValue(f.read())
+                        self.file_contents = f.read()
+			self.matlabTextCtrl.SetValue(self.file_contents)
 			self.filePicker.SetPath(path)
 			f.close()
 			#Only reset values when file was loaded
@@ -339,12 +335,12 @@ class MainFrame ( wx.Frame ):
 		self.convertFile.Enable(1)
 		path=self.filePicker.GetPath()
 		f = open(path, 'r')
-		self.matlabTextCtrl.SetValue(f.read())		
-		f.close()		
+                self.file_contents = f.read()
+		self.matlabTextCtrl.SetValue(self.file_contents)
+		f.close()
 
 	def onSaveAs( self, event ):
 		saveFile( self, event)
-			
 
 	def onExit( self, event ):
 		self.Close(True)
@@ -373,37 +369,43 @@ class MainFrame ( wx.Frame ):
 		try:
 			
 			parser = MatlabGrammar()
-			parse_results = parser.parse_string(self.matlabTextCtrl.GetValue())
+			parse_results = parser.parse_string(self.file_contents)
 			#output XPP files
 			if self.xppModel.GetValue():
-				output = create_raterule_model(parse_results, self.varsAsSpecies.GetValue(),not self.xppModel.GetValue())
+				output = create_raterule_model(parse_results, self.varsAsSpecies.GetValue(), False)
 				self.convertedTextCtrl.SetValue(output)
-				self.statusBar.SetStatusText("ODE format",2)
+				self.statusBar.SetStatusText("XPP/XPPAUT ODE format",2)
 		
-			#output equation-based SBML					
+			#output equation-based SBML
 			elif self.equationBasedModel.GetValue():
-				output = create_raterule_model(parse_results, self.varsAsSpecies.GetValue(), self.equationBasedModel.GetValue())
+				output = create_raterule_model(parse_results, self.varsAsSpecies.GetValue())
 				self.convertedTextCtrl.SetValue(output)
 				self.statusBar.SetStatusText("SBML format - equations",2)
-			#output equation-based SBML										
+			#output equation-based SBML
 			else:
 				if not network_available():
-					msg = "A network connection is needed for this feature" 
-					dlg = GMD.GenericMessageDialog(self, msg, "Warning!",agwStyle=wx.ICON_EXCLAMATION | wx.OK)               
+					msg = "A network connection is needed for this feature, but the network appears to be unavailable." 
+                                        dlg = wx.MessageDialog(self, msg, "Warning", wx.OK | wx.ICON_WARNING)
 					dlg.ShowModal()
 					dlg.Destroy()
 				else:
-					#Create temp file storing XPP model version				
+					#Create temp file storing XPP model version
 					with NamedTemporaryFile(suffix= ".ode", delete=False) as xpp_file:
-						xpp_file.write(create_raterule_model(parse_results, self.varsAsSpecies.GetValue() , self.reactionBasedModel.GetValue()))
-					files = {'file':open(xpp_file.name)}
+                                            [output, extra] = create_raterule_model(parse_results,
+                                                                                    self.varsAsSpecies.GetValue(),
+                                                                                    False)
+                                            xpp_file.write(output)
+					files = {'file': open(xpp_file.name)}
 					#Access Biocham to curate and convert equations to reactions
 					data = {'exportTo':'sbml', 'curate':'true'}
-					response = requests.post(_BIOCHAM_URL, files=files, data=data, timeout=2)
-					self.convertedTextCtrl.SetValue(response.content)
+					response = requests.post(_BIOCHAM_URL, files=files, data=data)
+                                        # We need to post-process the output to deal with
+                                        # limitations in BIOCHAM's translation service.
+                                        sbml = process_biocham_output(response.content, parse_results, extra)
+					self.convertedTextCtrl.SetValue(sbml)
 					del files
 					os.unlink(xpp_file.name)
-					self.statusBar.SetStatusText("SBML format - reactions",2)
+					self.statusBar.SetStatusText("SBML format - reactions", 2)
 	
 		except IOError as err:
 			report( self, event, "IOError: {0}".format(err))
@@ -429,16 +431,25 @@ class MainFrame ( wx.Frame ):
 		wx.EndBusyCursor()
             
 	def onAbout( self, event ):
-		msg = "MOCCASIN \n\n" + \
-		      "A user-assisted converter that can take MATLAB or Octave ODE-based \n" + \
-                      "models in biology and translate them into SBML format.\n\n" + \
-		      "Please report any bugs or requests of improvements\n" + \
-                      "to us at the following address:\n" + \
-                      "email@sbml.com\n\n"+ \
-		      "Current version:   " + _VERSION + " !!" 
-		dlg = GMD.GenericMessageDialog(self, msg, "About MOCCASIN",agwStyle=wx.ICON_INFORMATION | wx.OK)               
-		dlg.ShowModal()
-		dlg.Destroy()
+		# msg = "MOCCASIN \n\n" + \
+		#       "A user-assisted converter that can take MATLAB or Octave ODE-based \n" + \
+                #       "models in biology and translate them into SBML format.\n\n" + \
+		#       "Please report any bugs or requests of improvements\n" + \
+                #       "to us at the following address:\n" + \
+                #       "email@sbml.com\n\n"+ \
+		#       "Current version:   " + _VERSION + " !!" 
+
+                dlg = wx.AboutDialogInfo()
+                dlg.Name = "MOCCASIN"
+                dlg.Version = "x.y"
+                dlg.License = "GNU Lesser GPL"
+                dlg.Description = "A user-assisted converter that can take MATLAB or Octave ODE-based \n" + \
+                      "models in biology and translate them into SBML format."
+                dlg.WebSite = ("http://github.com/sbmlteam/moccasin", "GitHub repository")
+                dlg.Developers = ["Michael Hucka", "Sarah Keating", "Harold Gomez"]
+
+
+                wx.AboutBox(dlg)
 
 	def onClose( self, event ):
 		checkSaveOutput( self,event )
