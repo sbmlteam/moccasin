@@ -26,6 +26,7 @@ import requests
 import sys
 import wx
 import wx.xrc
+import wx.lib.dialogs
 import wx.lib.agw.genericmessagedialog as GMD
 
 from pkg_resources import get_distribution, DistributionNotFound
@@ -69,12 +70,16 @@ def postSaveEvent( self, event):
 def saveOutput( self, event ):
 	msg = "MOCCASIN output may be lost. Do you want to save?"
 	dlg = GMD.GenericMessageDialog(self, msg, "Warning",agwStyle=wx.ICON_INFORMATION | wx.YES_NO)               
-	if (not _IS_OUTPUT_SAVED and not self.convertedTextCtrl.IsEmpty()):
+	if ( not _IS_OUTPUT_SAVED and not self.convertedTextCtrl.IsEmpty()):
 		if dlg.ShowModal() == wx.ID_YES:			
 			postSaveEvent( self, event)
-		return True
+			
 	dlg.Destroy()
-	return False
+
+#Serves to give feedback to the user in case of failure
+def report( self, event, msg ):
+	dlg = wx.lib.dialogs.ScrolledMessageDialog(self, msg, "Houston, we have a problem!")
+	dlg.ShowModal()
 
 # -----------------------------------------------------------------------------
 # Global configuration constants
@@ -291,6 +296,8 @@ class MainFrame ( wx.Frame ):
 
 	def onSaveAs( self, event ):
 		global _IS_OUTPUT_SAVED
+		global _SAVEAS_ODE
+
 		msg = None
 		fileFormat = None
 		if _SAVEAS_ODE:
@@ -334,25 +341,26 @@ class MainFrame ( wx.Frame ):
 	def onConvert( self, event ):
 		global _IS_OUTPUT_SAVED
 		global _SAVEAS_ODE
+
 		saveOutput( self, event )
 
 		self.statusBar.SetStatusText( "Generating output ..." ,0)
 		try:
+			
 			parser = MatlabGrammar()
 			parse_results = parser.parse_string(self.matlabTextCtrl.GetValue())
-			
 			#output XPP files
 			if self.xppModel.GetValue():
 				output = create_raterule_model(parse_results, self.varsAsSpecies.GetValue(),not self.xppModel.GetValue())
 				self.convertedTextCtrl.SetValue(output)
-				self.statusBar.SetStatusText("ODE format",2)				
-				
-				#output equation-based SBML					
+				self.statusBar.SetStatusText("ODE format",2)
+		
+			#output equation-based SBML					
 			elif self.equationBasedModel.GetValue():
 				output = create_raterule_model(parse_results, self.varsAsSpecies.GetValue(), self.equationBasedModel.GetValue())
 				self.convertedTextCtrl.SetValue(output)
 				self.statusBar.SetStatusText("SBML format - equations",2)
-				#output equation-based SBML										
+			#output equation-based SBML										
 			else:
 				if not network_available():
 					msg = "A network connection is needed for this feature" 
@@ -366,21 +374,21 @@ class MainFrame ( wx.Frame ):
 					files = {'file':open(xpp_file.name)}
 					#Access Biocham to curate and convert equations to reactions
 					data = {'exportTo':'sbml', 'curate':'true'}
-					response = requests.post(_BIOCHAM_URL, files=files, data=data, timeout=1)
+					response = requests.post(_BIOCHAM_URL, files=files, data=data, timeout=2)
 					self.convertedTextCtrl.SetValue(response.content)
 					del files
 					os.unlink(xpp_file.name)
 					self.statusBar.SetStatusText("SBML format - reactions",2)
-			
+	
 		except IOError as err:
-			print("IOError: {0}".format(err))
+			report( self, event, "IOError: {0}".format(err))
 		except Exception as exc:
-			print("Exception: {0}".format(exc))
-		finally:
+			report( self, event, "Exception: {0}".format(exc))
+		else:
 			self.statusBar.SetStatusText( "Done!",0 )
 			_IS_OUTPUT_SAVED = False
-			_SAVEAS_ODE= self.xppModel.GetValue()
-
+			_SAVEAS_ODE = self.xppModel.GetValue()
+			
 	
 	def onCloseAll( self, event ):
 		self.Close(True)
