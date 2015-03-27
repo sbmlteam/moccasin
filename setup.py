@@ -63,7 +63,7 @@ setup(
     install_requires=reqs,
     cmdclass={'test': PyTest},
     author_email='email@sbml.com',
-    description='User-assisted converter that can take MATLAB or Octave ODE-based models in biology and translate them into SBML format',
+    description='MOCCASIN: the Model ODE Converter for Creating Awesome SBML INteroperability, a user-assisted converter that can take MATLAB or Octave ODE-based models in biology and translate them into the SBML format.',
     packages=find_packages(exclude='tests'),
     package_data={'moccasin': ['docs/*.txt','LICENSE.txt', 'requirements.txt']},
     include_package_data=True,
