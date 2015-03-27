@@ -23,6 +23,7 @@
 import os
 import webbrowser
 import requests
+import textwrap
 import sys
 import wx
 import wx.xrc
@@ -440,14 +441,20 @@ class MainFrame ( wx.Frame ):
 		#       "Current version:   " + _VERSION + " !!" 
 
                 dlg = wx.AboutDialogInfo()
-                dlg.Name = "MOCCASIN"
-                dlg.Version = "x.y"
-                dlg.License = "GNU Lesser GPL"
-                dlg.Description = "A user-assisted converter that can take MATLAB or Octave ODE-based \n" + \
-                      "models in biology and translate them into SBML format."
-                dlg.WebSite = ("http://github.com/sbmlteam/moccasin", "GitHub repository")
-                dlg.Developers = ["Michael Hucka", "Sarah Keating", "Harold Gomez"]
-
+                dlg.SetName("MOCCASIN")
+                dlg.SetVersion("1.0.0")
+                dlg.SetLicense("GNU Lesser GPL version 2.1")
+                dlg.SetDescription('\n'.join(textwrap.wrap(
+                        "MOCCASIN is the Model ODE Converter for Creating Awesome "
+                        "SBML INteroperability.  It is a user-assisted converter "
+                        "that can take MATLAB or Octave ODE-based models in "
+                        "biology and translate them into the SBML format.", 81)))
+                dlg.SetWebSite("http://github.com/sbmlteam/moccasin")
+                dlg.SetDevelopers([
+                        "Michael Hucka (California Institute of Technology)",
+                        "Sarah Keating (European Bioinformatics Institute)",
+                        "Harold Gomez (Boston University)"
+                ])
 
                 wx.AboutBox(dlg)
 
