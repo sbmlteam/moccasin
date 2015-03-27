@@ -8,7 +8,7 @@ MOCCASIN
 
 *Copyright*:    Copyright (C) 2014-2015 jointly by the California Institute of Technology (Pasadena, California, USA), the Mount Sinai School of Medicine (New York, New York, USA), and Boston University (Boston, Massachusetts, USA).
 
-*License*:      This code is licensed under the LGPL version 2.1.  Please see the file [../COPYING.txt](https://raw.githubusercontent.com/sbmlteam/moccasin/master/COPYING.txt) for details.
+*License*:      This code is licensed under the LGPL version 2.1.  Please see the file [../LICENSE.txt](https://raw.githubusercontent.com/sbmlteam/moccasin/master/LICENSE.txt) for details.
 
 *Repository*:   [https://github.com/sbmlteam/moccasin](https://github.com/sbmlteam/moccasin)
 
@@ -22,7 +22,8 @@ Background
 
 Computation modeling has become a crucial aspect of biological research, and [SBML](http://sbml.org) (the Systems Biology Markup Language) has become the de facto standard open format for exchanging models between software tools in systems biology. [MATLAB](http://www.mathworks.com) and [Octave](http://www.gnu.org/software/octave/) are popular numerical computing environments used by modelers in biology, but while toolboxes for using SBML exist, many researchers either have legacy models or do not learn about the toolboxes before starting their work and then find it discouragingly difficult to export their MATLAB/Octave models to SBML.
 
-The goal of this project is to develop software that uses a combination of heuristics and user assistance to help researchers export models written as ordinary MATLAB and Octave scripts. MOCCASIN  (*"Model ODE Converter for Creating Awesome SBML INteroperability"*) will help researchers take models written in MATLAB and Octave without SBMLToolbox or any other similar toolboxes, and export them as SBML files.  Although a fully automated and general converter will be probably be impossible, it should be possible to translate at least *some* MATLAB/Octave models using a combination of heuristics and user assistance.  Doing so will enable researchers to exchange and publish their models in a standard format accepted by hundreds of journals and to take advantage of hundreds of software tools that support SBML today.
+The goal of this project is to develop software that uses a combination of heuristics and user assistance to help researchers export models written as ordinary MATLAB and Octave scripts. MOCCASIN (*"Model ODE Converter for Creating Awesome SBML INteroperability"*) helps researchers take models written in MATLAB and Octave and export them as SBML files.  Although its scope is limited to MATLAB written with certain assumptions, and general conversion of MATLAB models is impossible, MOCCASIN nevertheless *can* translate some common forms of models into SBML.
+
 
 Funding
 -------
