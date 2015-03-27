@@ -386,8 +386,7 @@ def make_xpp_raterule(assigned_var, dep_var, name_translations, index, content,
 
 
 def add_info(additional_info, id, formula):
-    parameter = dict({'id': id,
-                      'formula': formula})
+    parameter = {'id': id, 'formula': formula}
     additional_info.append(parameter)
 
 
@@ -868,13 +867,13 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True,
     if isinstance(call_arglist[1], Identifier):
         # Sometimes people use an array for the time parameter.  In that case,
         # it doesn't matter for what happens below.  But if it's a named
-        # variable, we want to skip it.
+        # variable, we want to skip it when we create the remaining vars.
         skip_vars.append(call_arglist[1].name)
     # for i in range(3,len(call_arglist)):
     #     skip_vars.append(call_arglist[i].name)
     create_remaining_vars(working_context, function_context, skip_vars,
                           xpp_variables, name_translations, model,
-                          underscores, produce_sbml)
+                          underscores, produce_sbml, additional_info)
 
     # Deal with final quirks.
     global GLOBALS
@@ -886,14 +885,15 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True,
             create_xpp_parameter(xpp_variables, 't', 0, False)
             add_info(additional_info, 't', '')
 
-    # hack to save additional information for post processing
-    additional = create_additional_xpp_information(additional_info)
-    # Write the Model
+    # Write the SBML.
     if produce_sbml:
         sbml = writeSBMLToString(document)
     else:
         sbml = create_xpp_string(xpp_variables)
-    return [sbml, additional]
+
+    # Finally, return the model, with extra info about things that may need
+    # to be added back in post-processing.
+    return [sbml, additional_info]
 
 
 # FIXME only handles 1-D matrices.
@@ -928,7 +928,7 @@ def munge_reference(array, context, underscores):
 
 def create_remaining_vars(working_context, function_context, skip_vars,
                           xpp_variables, name_translations, model, underscores,
-                          produce_sbml):
+                          produce_sbml, additional_info):
 
     all_vars = dict(itertools.chain(working_context.assignments.items(),
                                     function_context.assignments.items()))
@@ -1007,7 +1007,7 @@ def create_remaining_vars(working_context, function_context, skip_vars,
                 if in_function:
                     formula = MatlabGrammar.make_formula(rhs, atrans=translator)
                     translated = translate_names(formula, name_translations)
-                    create_xpp_assignment(xpp_variables, var, translated)
+                    create_xpp_assignment(xpp_variables, var, translated, additional_info)
                 else:
                     substituted = substitute_vars(rhs, working_context)
                     formula = MatlabGrammar.make_formula(substituted, atrans=translator)
@@ -1099,6 +1099,45 @@ def translate_names(text, translations):
     for oldname, newname in translations.items():
         text = text.replace(oldname, newname)
     return text
+
+
+# -----------------------------------------------------------------------------
+# Post-processing output from BIOCHAM web service.
+# -----------------------------------------------------------------------------
+
+def process_biocham_output(sbml, parse_results, extra_info):
+    if not sbml or not extra_info:
+        return sbml
+    document = SBMLReader().readSBMLFromString(sbml)
+    if not document:
+        return sbml
+    model = document.getModel()
+    if not model:
+        return sbml
+    if parse_results.functions:
+        id = list(parse_results.functions.keys())[0]
+        model.setId(id)
+        model.setName(id + ' translated by MOCCASIN')
+    # Start by converting Biocham's L2v2 model to L3v1.
+    success = document.setLevelAndVersion(3, 1)
+    if not success:
+        return sbml
+    for record in extra_info:
+        # Special case for 't':
+        if record['id'] == "t":
+            create_sbml_assignment_rule(model, "t", parseL3Formula("time"))
+            param = model.getParameter('t')
+            param.setConstant(False)
+            continue
+        # All others: create an assignment rule with a formula.
+        id = record['id']
+        ast = parseL3Formula(record['formula'])
+        if ast:
+            create_sbml_assignment_rule(model, id, ast)
+            # Make sure to change the parameter to non-constant
+            param = model.getParameter(id)
+            param.setConstant(False)
+    return writeSBMLToString(document)
 
 
 # -----------------------------------------------------------------------------
