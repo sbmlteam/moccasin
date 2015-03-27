@@ -26,7 +26,9 @@ import requests
 import sys
 import wx
 import wx.xrc
+import wx.lib.dialogs
 import wx.lib.agw.genericmessagedialog as GMD
+
 from pkg_resources import get_distribution, DistributionNotFound
 
 #Some of these imports will disappear when logic is made into a separate module
@@ -59,6 +61,48 @@ def getPackageVersion():
 		version = '(local)'
 	return version
 
+#Used for saving an file
+def saveFile( self, event):
+	global _IS_OUTPUT_SAVED
+	global _SAVEAS_ODE
+	msg = None
+	fileFormat = None
+	if _SAVEAS_ODE:
+		msg = "Save ODE File"
+		fileFormat = "ODE files (*.ODE)|*.ode"			
+	elif self.convertedTextCtrl.IsEmpty():
+		msg = "Save File As"
+		fileFormat = "All files (*.*)|*.*"	
+	else:
+		msg = "Save SBML File"
+		fileFormat = "SBML files (*.xml)|*.xml"                        
+		
+	dlg = wx.FileDialog(self, msg, "", "", fileFormat, wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+	if dlg.ShowModal() == wx.ID_CANCEL:
+		return
+	else:
+		output = open(dlg.GetPath(), 'w')
+		output.write(self.convertedTextCtrl.GetValue())
+		output.close()
+		_IS_OUTPUT_SAVED = True
+
+
+#Checks that output is saved before it's lost
+def checkSaveOutput( self, event ):
+	msg = "MOCCASIN output may be lost. Do you want to save?"
+	dlg = GMD.GenericMessageDialog(self, msg, "Warning",agwStyle=wx.ICON_INFORMATION | wx.YES_NO)
+	
+	if ( not _IS_OUTPUT_SAVED and not self.convertedTextCtrl.IsEmpty()):
+		if dlg.ShowModal() == wx.ID_YES:
+			saveFile( self, event )	
+	dlg.Destroy()
+	
+
+#Serves to give feedback to the user in case of failure
+def report( self, event, msg ):
+	dlg = wx.lib.dialogs.ScrolledMessageDialog(self, msg, "Houston, we have a problem!")
+	dlg.ShowModal()
+
 # -----------------------------------------------------------------------------
 # Global configuration constants
 # -----------------------------------------------------------------------------
@@ -66,18 +110,17 @@ def getPackageVersion():
 _BIOCHAM_URL = 'http://lifeware.inria.fr/biocham/online/rest/export'
 _HELP_URL = "https://github.com/sbmlteam/moccasin/blob/setupFix_branch/docs/quickstart.md"
 _LICENSE_URL = "https://www.gnu.org/licenses/lgpl.html"
-VERSION= "Version:  "+ getPackageVersion()
-    
+_VERSION = "Version:  "+ getPackageVersion()
+_IS_OUTPUT_SAVED = False
+_SAVEAS_ODE = False #Used to save the right file format
 
 # -----------------------------------------------------------------------------
 # Graphical User Interface (GUI) definition
 # -----------------------------------------------------------------------------
 class MainFrame ( wx.Frame ):
-
 	def __init__( self, parent ):
-		wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = "Welcome to MOCCASIN", pos = wx.DefaultPosition, size = wx.Size( 785,691 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
-		self.SetSizeHintsSz( wx.Size( 721,-1 ), wx.DefaultSize )
-		self.SetExtraStyle( wx.FRAME_EX_METAL )		
+		wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = "Welcome to MOCCASIN", pos = wx.DefaultPosition, size = wx.Size( 718,691 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
+		self.SetSizeHintsSz( wx.Size( 718,-1 ), wx.Size( 718,-1 ) )
 		self.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_BTNFACE ) )
 		
 		#Construct a status bar
@@ -85,7 +128,7 @@ class MainFrame ( wx.Frame ):
 		self.statusBar.SetFieldsCount(5)
 		self.statusBar.SetToolTipString( "Status" )
 		self.statusBar.SetStatusText("Ready",0)
-		self.statusBar.SetStatusText(VERSION ,4)
+		self.statusBar.SetStatusText(_VERSION ,4)
 		
 		#Construct a menu bar
 		self.menuBar = wx.MenuBar( 0 )
@@ -142,66 +185,93 @@ class MainFrame ( wx.Frame ):
 		mainSizer.AddSpacer( ( 0, 1), 0, wx.EXPAND|wx.TOP, 5 )
 
 		#Top sizer
-		topPanelSizer = wx.GridSizer( 1, 2, 0, 0 )
+####
 
-		fileConvSizer = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "File conversion" ), wx.VERTICAL )
-		gSizer3 = wx.GridSizer( 1, 2, 0, 0 )
-		self.staticTextConv = wx.StaticText( self, wx.ID_ANY, "Choose a file for conversion", wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.staticTextConv.Wrap( -1 )
-		self.staticTextConv.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
-		gSizer3.Add( self.staticTextConv, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
-		self.convertButton = wx.Button( self, wx.ID_ANY, "Convert", wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.convertButton.SetFont( wx.Font( 9, 74, 90, 92, False, "Arial" ) )
-		self.convertButton.Disable()
-		gSizer3.Add( self.convertButton, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 5 )
-		fileConvSizer.Add( gSizer3, 2, wx.ALL|wx.EXPAND, 0 )
-		bSizer2 = wx.BoxSizer( wx.VERTICAL )	
-		bSizer2.SetMinSize( wx.Size( 1,1 ) ) 
-		self.filePicker = wx.FilePickerCtrl( self, wx.ID_ANY, wx.EmptyString, "Select a file", u"*.*", wx.DefaultPosition, wx.DefaultSize, wx.FLP_DEFAULT_STYLE )
-		bSizer2.Add( self.filePicker, 0, wx.EXPAND, 2 )	
-		fileConvSizer.Add( bSizer2, 2, wx.ALL|wx.EXPAND, 5 )
-		topPanelSizer.Add( fileConvSizer, 0, wx.ALL|wx.EXPAND, 5 )
+		topPanelSizer = wx.GridSizer( 2, 1, 0, 0 )
 		
-		sbSizer9 = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "Options" ), wx.VERTICAL )
+		fileConvSizer1 = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "File selection" ), wx.VERTICAL )
 		
-		optionLayoutSizer = wx.GridSizer( 4, 3, 0, 0)
+		gbSizer1 = wx.GridBagSizer( 0, 0 )
+		gbSizer1.SetFlexibleDirection( wx.HORIZONTAL )
+		gbSizer1.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_ALL )
+		
+		self.m_staticText6 = wx.StaticText( self, wx.ID_ANY, "Choose a file for conversion", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText6.Wrap( -1 )
+		self.m_staticText6.SetFont( wx.Font( 9, 74, 90, 92, False, "Arial" ) )
+		
+		gbSizer1.Add( self.m_staticText6, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL|wx.EXPAND, 5 )
+		
+		self.filePicker = wx.FilePickerCtrl( self, wx.ID_ANY, wx.EmptyString, "Select a file", "*.m", wx.DefaultPosition, wx.DefaultSize, wx.FLP_DEFAULT_STYLE )
+		self.filePicker.SetMinSize( wx.Size( 500,-1 ) )
+		
+		gbSizer1.Add( self.filePicker, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL|wx.EXPAND|wx.ALIGN_RIGHT, 8 )
+		
+		
+		fileConvSizer1.Add( gbSizer1, 0, wx.ALL|wx.EXPAND, 2 )
+		
+		
+		topPanelSizer.Add( fileConvSizer1, 2, wx.ALL|wx.EXPAND, 1 )
+		
+		sbSizer9 = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "File conversion" ), wx.VERTICAL )
+		
+		optionLayoutSizer = wx.GridSizer( 1, 6, 0, 40 )
+		
 		self.staticTextOpt = wx.StaticText( self, wx.ID_ANY, "Variable encoding", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.staticTextOpt.Wrap( -1 )
 		self.staticTextOpt.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
+		
 		optionLayoutSizer.Add( self.staticTextOpt, 0, wx.ALL, 5 )
+		
 		self.varsAsSpecies = wx.RadioButton( self, wx.ID_ANY, "SBML Species", wx.DefaultPosition, wx.DefaultSize, wx.RB_GROUP )
-		self.varsAsSpecies.SetToolTipString( "Represent model variables as species" )
 		self.varsAsSpecies.SetValue( True ) 
 		optionLayoutSizer.Add( self.varsAsSpecies, 0, wx.ALL, 5 )
 		
 		self.varsAsParams = wx.RadioButton( self, wx.ID_ANY, "SBML Parameters", wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.varsAsParams.SetToolTipString( "Represent model variables as parameters" )
 		optionLayoutSizer.Add( self.varsAsParams, 0, wx.ALL, 5 )
-		optionLayoutSizer.AddSpacer( ( 0, 1), 1, 0, 5 )
-		optionLayoutSizer.AddSpacer( ( 0, 1), 1, 0, 5 )
-		optionLayoutSizer.AddSpacer( ( 0, 1), 1, 0, 5 )
+		
+		
+		optionLayoutSizer.AddSpacer( ( 0, 0), 1, wx.ALL|wx.EXPAND, 2 )
+		
+		
+		optionLayoutSizer.AddSpacer( ( 0, 0), 1, wx.ALL|wx.EXPAND, 2 )
+		
+		self.convertButton = wx.Button( self, wx.ID_ANY, "Convert", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.convertButton.Disable()
+		self.convertButton.SetFont( wx.Font( 9, 74, 90, 92, False, "Arial" ) )
+		
+		optionLayoutSizer.Add( self.convertButton, 1, wx.ALIGN_LEFT|wx.ALIGN_RIGHT|wx.ALL, 6 )
+		
+		
+		sbSizer9.Add( optionLayoutSizer, 0, wx.EXPAND, 5 )
+		
+		gSizer7 = wx.GridSizer( 0, 6, 0, 40 )
+		
 		self.modeType = wx.StaticText( self, wx.ID_ANY, "Output format", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.modeType.Wrap( -1 )
 		self.modeType.SetFont( wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString ) )
-		optionLayoutSizer.Add( self.modeType, 0, wx.ALL, 5 )
+		
+		gSizer7.Add( self.modeType, 0, wx.ALL, 5 )
 		
 		self.reactionBasedModel = wx.RadioButton( self, wx.ID_ANY, "SBML (reactions)", wx.DefaultPosition, wx.DefaultSize, wx.RB_GROUP )
-		self.reactionBasedModel.SetToolTipString( "Convert into SBML (kinetics as reactions)" )
 		self.reactionBasedModel.SetValue( True ) 
-		optionLayoutSizer.Add( self.reactionBasedModel, 0, wx.ALL, 5 )
+		gSizer7.Add( self.reactionBasedModel, 0, wx.ALL, 5 )
+		
+		self.equationBasedModel = wx.RadioButton( self, wx.ID_ANY, "SBML (equations)", wx.DefaultPosition, wx.DefaultSize, 0 )
+		gSizer7.Add( self.equationBasedModel, 0, wx.ALL, 5 )
 		
 		self.xppModel = wx.RadioButton( self, wx.ID_ANY, "ODE", wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.xppModel.SetToolTipString( "Convert into ODE file format (XPP)" )
-		optionLayoutSizer.Add( self.xppModel, 0, wx.ALL, 5 )
-		optionLayoutSizer.AddSpacer( ( 0, 1), 1, wx.EXPAND, 5 )
+		gSizer7.Add( self.xppModel, 0, wx.ALL, 5 )
 		
-		self.equationBasedModel = wx.RadioButton( self, wx.ID_ANY, "SBML(equations)", wx.DefaultPosition, wx.DefaultSize, 0 )
-		self.equationBasedModel.SetToolTipString( "Convert into SBML (kinetics as rate rules)" )
-		optionLayoutSizer.Add( self.equationBasedModel, 0, wx.ALL, 5 )
-		sbSizer9.Add( optionLayoutSizer, 0, wx.EXPAND, 5 )
-		topPanelSizer.Add( sbSizer9, 0, wx.ALL|wx.EXPAND, 5 )
+		
+		sbSizer9.Add( gSizer7, 0, wx.EXPAND, 5 )
+		
+		
+		topPanelSizer.Add( sbSizer9, 2, wx.ALL|wx.EXPAND, 1 )
+		
 		
 		mainSizer.Add( topPanelSizer, 0, wx.ALL|wx.EXPAND, 5 )
+		#################
+
 		
 		#Mid sizer
 		midPanelSizer = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "Matlab File" ), wx.VERTICAL )
@@ -226,7 +296,7 @@ class MainFrame ( wx.Frame ):
 		
 		# Bind GUI elements to specific events
 		self.Bind( wx.EVT_MENU, self.onOpen, id = self.openFile.GetId() )
-		self.Bind( wx.EVT_MENU, self.onSave, id = self.saveFile.GetId() )
+		self.Bind( wx.EVT_MENU, self.onSaveAs, id = self.saveFile.GetId() )
 		self.Bind( wx.EVT_MENU, self.onExit, id = self.exit.GetId() )
 		self.Bind( wx.EVT_MENU, self.onClear, id = self.clear.GetId() )
 		self.Bind( wx.EVT_MENU, self.onConvert, id = self.convertFile.GetId() )
@@ -234,8 +304,9 @@ class MainFrame ( wx.Frame ):
 		self.Bind( wx.EVT_MENU, self.onHelp, id = self.helpItem.GetId() )
 		self.Bind( wx.EVT_MENU, self.onLicense, id = self.license.GetId() )
 		self.Bind( wx.EVT_MENU, self.onAbout, id = self.about.GetId() )
-		self.Bind( wx.EVT_FILEPICKER_CHANGED, self.onFilePicker, id = self.filePicker.GetId())
-		self.Bind( wx.EVT_BUTTON, self.onConvert, id = self.convertButton.GetId())
+		self.Bind( wx.EVT_FILEPICKER_CHANGED, self.onFilePicker, id = self.filePicker.GetId() )
+		self.Bind( wx.EVT_BUTTON, self.onConvert, id = self.convertButton.GetId() )
+		self.Bind( wx.EVT_CLOSE, self.onClose ) 
 
 		def __del__( self ):
 			pass
@@ -244,6 +315,7 @@ class MainFrame ( wx.Frame ):
 # Virtual Event Handlers
 # -----------------------------------------------------------------------------		
 	def onOpen(self, event):
+		global _IS_OUTPUT_SAVED		
 		dirname=""
 		dlg = wx.FileDialog(self, "Choose a file", dirname, "", "*.m", wx.OPEN)
 		if dlg.ShowModal() == wx.ID_OK:
@@ -259,6 +331,7 @@ class MainFrame ( wx.Frame ):
 			self.convertFile.Enable(1)
 			self.convertedTextCtrl.SetValue("")
 		dlg.Destroy()
+		_IS_OUTPUT_SAVED = False
 
 	def onFilePicker(self, event):
 		self.convertedTextCtrl.SetValue("")
@@ -269,32 +342,15 @@ class MainFrame ( wx.Frame ):
 		self.matlabTextCtrl.SetValue(f.read())		
 		f.close()		
 
-	def onSave( self, event ):
-		msg = None
-		fileFormat = None
-		if self.xppModel.GetValue():
-			msg = "Save ODE file"
-			fileFormat = "ODE files (*.ODE)|*.ode"			
-		else:
-			msg = "Save SBML file"
-			fileFormat = "SBML files (*.xml)|*.xml"
-                        
-		if(not self.convertedTextCtrl.IsEmpty()):
-			dlg = wx.FileDialog(self, msg, "", "", fileFormat, wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
-			if dlg.ShowModal() == wx.ID_CANCEL:
-				return
-			output = open(dlg.GetPath(), 'w')
-			output.write(self.convertedTextCtrl.GetValue())
-			output.close()			
-		else:
-			dlg = wx.MessageDialog(self, "Please convert a matlab file before saving", "Warning", wx.OK)
-			dlg.ShowModal()
-			dlg.Destroy()
-	
-	def onExit( self, event ):		
+	def onSaveAs( self, event ):
+		saveFile( self, event)
+			
+
+	def onExit( self, event ):
 		self.Close(True)
 	
 	def onClear( self, event ):
+		global _IS_OUTPUT_SAVED
 		self.matlabTextCtrl.SetValue("")
 		self.convertedTextCtrl.SetValue("")
 		self.filePicker.SetPath("")
@@ -303,57 +359,61 @@ class MainFrame ( wx.Frame ):
 		self.convertButton.Disable()
 		self.convertFile.Enable(0)
 		self.reactionBasedModel.SetValue( True )
-		self.varsAsSpecies.SetValue( True ) 
+		self.varsAsSpecies.SetValue( True )
+		_IS_OUTPUT_SAVED = False
+		
 	
-	def onConvert( self, event ):            
-		if(self.matlabTextCtrl.IsEmpty()):
-			event.Skip()
-		else:
-			self.statusBar.SetStatusText( "Generating output ..." ,0)
-			try:
-				parser = MatlabGrammar()
-				parse_results = parser.parse_string(self.matlabTextCtrl.GetValue())
+	def onConvert( self, event ):
+		global _IS_OUTPUT_SAVED
+		global _SAVEAS_ODE
 
-				#output XPP files
-				if self.xppModel.GetValue():
-					output = create_raterule_model(parse_results, self.varsAsSpecies.GetValue(),not self.xppModel.GetValue())
-					self.convertedTextCtrl.SetValue(output)
-					self.statusBar.SetStatusText("ODE format",2)
+		checkSaveOutput( self, event )
 
-				#output equation-based SBML					
-				elif self.equationBasedModel.GetValue():
-					output = create_raterule_model(parse_results, self.varsAsSpecies.GetValue(), self.equationBasedModel.GetValue())
-					self.convertedTextCtrl.SetValue(output)
-					self.statusBar.SetStatusText("SBML format - equations",2)
-
-				#output equation-based SBML										
+		self.statusBar.SetStatusText( "Generating output ..." ,0)
+		try:
+			
+			parser = MatlabGrammar()
+			parse_results = parser.parse_string(self.matlabTextCtrl.GetValue())
+			#output XPP files
+			if self.xppModel.GetValue():
+				output = create_raterule_model(parse_results, self.varsAsSpecies.GetValue(),not self.xppModel.GetValue())
+				self.convertedTextCtrl.SetValue(output)
+				self.statusBar.SetStatusText("ODE format",2)
+		
+			#output equation-based SBML					
+			elif self.equationBasedModel.GetValue():
+				output = create_raterule_model(parse_results, self.varsAsSpecies.GetValue(), self.equationBasedModel.GetValue())
+				self.convertedTextCtrl.SetValue(output)
+				self.statusBar.SetStatusText("SBML format - equations",2)
+			#output equation-based SBML										
+			else:
+				if not network_available():
+					msg = "A network connection is needed for this feature" 
+					dlg = GMD.GenericMessageDialog(self, msg, "Warning!",agwStyle=wx.ICON_EXCLAMATION | wx.OK)               
+					dlg.ShowModal()
+					dlg.Destroy()
 				else:
-					if not network_available():
-						msg = "A network connection is needed for this feature" 
-						dlg = GMD.GenericMessageDialog(self, msg, "Warning!",agwStyle=wx.ICON_EXCLAMATION | wx.OK)               
-						dlg.ShowModal()
-						dlg.Destroy()
-					else:
-						#Create temp file storing XPP model version				
-						with NamedTemporaryFile(suffix= ".ode", delete=False) as xpp_file:
-							xpp_file.write(create_raterule_model(parse_results, self.varsAsSpecies.GetValue() , self.reactionBasedModel.GetValue()))
-						files = {'file':open(xpp_file.name)}
-						#Access Biocham to curate and convert equations to reactions
-						data = {'exportTo':'sbml', 'curate':'true'}
-						response = requests.post(_BIOCHAM_URL, files=files, data=data)
-						self.convertedTextCtrl.SetValue(response.content)
-						del files
-						os.unlink(xpp_file.name)
-						self.statusBar.SetStatusText("SBML format - reactions",2)
-				
-			except IOError as err:
-				print("error: {0}".format(err))
-			finally:
-				self.statusBar.SetStatusText( "Done!",0 )
-				
-
-	def onOptions( self, event ):
-		event.Skip()
+					#Create temp file storing XPP model version				
+					with NamedTemporaryFile(suffix= ".ode", delete=False) as xpp_file:
+						xpp_file.write(create_raterule_model(parse_results, self.varsAsSpecies.GetValue() , self.reactionBasedModel.GetValue()))
+					files = {'file':open(xpp_file.name)}
+					#Access Biocham to curate and convert equations to reactions
+					data = {'exportTo':'sbml', 'curate':'true'}
+					response = requests.post(_BIOCHAM_URL, files=files, data=data, timeout=2)
+					self.convertedTextCtrl.SetValue(response.content)
+					del files
+					os.unlink(xpp_file.name)
+					self.statusBar.SetStatusText("SBML format - reactions",2)
+	
+		except IOError as err:
+			report( self, event, "IOError: {0}".format(err))
+		except Exception as exc:
+			report( self, event, "Exception: {0}".format(exc))
+		else:
+			self.statusBar.SetStatusText( "Done!",0 )
+			_IS_OUTPUT_SAVED = False
+			_SAVEAS_ODE = self.xppModel.GetValue()
+			
 	
 	def onCloseAll( self, event ):
 		self.Close(True)
@@ -375,10 +435,14 @@ class MainFrame ( wx.Frame ):
 		      "Please report any bugs or requests of improvements\n" + \
                       "to us at the following address:\n" + \
                       "email@sbml.com\n\n"+ \
-		      "Current version:   " + VERSION + " !!" 
+		      "Current version:   " + _VERSION + " !!" 
 		dlg = GMD.GenericMessageDialog(self, msg, "About MOCCASIN",agwStyle=wx.ICON_INFORMATION | wx.OK)               
 		dlg.ShowModal()
 		dlg.Destroy()
+
+	def onClose( self, event ):
+		checkSaveOutput( self,event )
+		self.Destroy()
 
 # -----------------------------------------------------------------------------
 # Driver
