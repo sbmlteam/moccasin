@@ -61,20 +61,42 @@ def getPackageVersion():
 		version = '(local)'
 	return version
 
-#Used for manually posts an event
-def postSaveEvent( self, event):
-	evt = wx.PyCommandEvent(wx.EVT_MENU.typeId,self.saveFile.GetId())
-	wx.PostEvent(self, evt)
+#Used for saving an file
+def saveFile( self, event):
+	global _IS_OUTPUT_SAVED
+	global _SAVEAS_ODE
+	msg = None
+	fileFormat = None
+	if _SAVEAS_ODE:
+		msg = "Save ODE File"
+		fileFormat = "ODE files (*.ODE)|*.ode"			
+	elif self.convertedTextCtrl.IsEmpty():
+		msg = "Save File As"
+		fileFormat = "All files (*.*)|*.*"	
+	else:
+		msg = "Save SBML File"
+		fileFormat = "SBML files (*.xml)|*.xml"                        
+		
+	dlg = wx.FileDialog(self, msg, "", "", fileFormat, wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+	if dlg.ShowModal() == wx.ID_CANCEL:
+		return
+	else:
+		output = open(dlg.GetPath(), 'w')
+		output.write(self.convertedTextCtrl.GetValue())
+		output.close()
+		_IS_OUTPUT_SAVED = True
+
 
 #Checks that output is saved before it's lost
-def saveOutput( self, event ):
+def checkSaveOutput( self, event ):
 	msg = "MOCCASIN output may be lost. Do you want to save?"
-	dlg = GMD.GenericMessageDialog(self, msg, "Warning",agwStyle=wx.ICON_INFORMATION | wx.YES_NO)               
+	dlg = GMD.GenericMessageDialog(self, msg, "Warning",agwStyle=wx.ICON_INFORMATION | wx.YES_NO)
+	
 	if ( not _IS_OUTPUT_SAVED and not self.convertedTextCtrl.IsEmpty()):
-		if dlg.ShowModal() == wx.ID_YES:			
-			postSaveEvent( self, event)
-			
+		if dlg.ShowModal() == wx.ID_YES:
+			saveFile( self, event )	
 	dlg.Destroy()
+	
 
 #Serves to give feedback to the user in case of failure
 def report( self, event, msg ):
@@ -98,8 +120,7 @@ _SAVEAS_ODE = False #Used to save the right file format
 class MainFrame ( wx.Frame ):
 	def __init__( self, parent ):
 		wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = "Welcome to MOCCASIN", pos = wx.DefaultPosition, size = wx.Size( 785,691 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
-		self.SetSizeHintsSz( wx.Size( 721,-1 ), wx.DefaultSize )
-		self.SetExtraStyle( wx.FRAME_EX_METAL )		
+		self.SetSizeHintsSz( wx.Size( 721,-1 ), wx.DefaultSize )	
 		self.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_BTNFACE ) )
 		
 		#Construct a status bar
@@ -295,30 +316,7 @@ class MainFrame ( wx.Frame ):
 		f.close()		
 
 	def onSaveAs( self, event ):
-		global _IS_OUTPUT_SAVED
-		global _SAVEAS_ODE
-
-		msg = None
-		fileFormat = None
-		if _SAVEAS_ODE:
-			msg = "Save ODE File"
-			fileFormat = "ODE files (*.ODE)|*.ode"			
-
-		elif self.convertedTextCtrl.IsEmpty():
-			msg = "Save File As"
-			fileFormat = "All files (*.*)|*.*"	
-		else:
-			msg = "Save SBML File"
-			fileFormat = "SBML files (*.xml)|*.xml"                        
-		
-		dlg = wx.FileDialog(self, msg, "", "", fileFormat, wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
-		if dlg.ShowModal() == wx.ID_CANCEL:
-			return
-		else:
-			output = open(dlg.GetPath(), 'w')
-			output.write(self.convertedTextCtrl.GetValue())
-			output.close()
-			_IS_OUTPUT_SAVED = True
+		saveFile( self, event)
 			
 
 	def onExit( self, event ):
@@ -342,7 +340,7 @@ class MainFrame ( wx.Frame ):
 		global _IS_OUTPUT_SAVED
 		global _SAVEAS_ODE
 
-		saveOutput( self, event )
+		checkSaveOutput( self, event )
 
 		self.statusBar.SetStatusText( "Generating output ..." ,0)
 		try:
@@ -416,7 +414,7 @@ class MainFrame ( wx.Frame ):
 		dlg.Destroy()
 
 	def onClose( self, event ):
-		saveOutput( self,event )
+		checkSaveOutput( self,event )
 		self.Destroy()
 
 # -----------------------------------------------------------------------------
