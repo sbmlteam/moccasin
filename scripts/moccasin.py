@@ -90,7 +90,7 @@ def main(path, debug=False, quiet=False, print_parse=False, use_params=False,
                 try:
                     # Create temp file storing XPP model version
                     with NamedTemporaryFile(suffix=".ode", delete=False) as xpp_file:
-                        output = create_raterule_model(parse_results, not use_params, output_XPP)
+                        [output, extra] = create_raterule_model(parse_results, not use_params, output_XPP)
                         xpp_file.write(output)
                     files = {'file':open(xpp_file.name)}
                     # Access Biocham to curate and convert equations to reactions
