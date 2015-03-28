@@ -23,6 +23,7 @@
 from __future__ import print_function
 from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
+from pkg_resources import require, DistributionNotFound
 from codecs import open
 from os import path
 import re
@@ -31,6 +32,17 @@ import moccasin
 
 here = path.abspath(path.dirname(__file__))
 
+#If libSBML is not installed, notify user and exit installer
+try:
+    require('libsbml')
+    pass
+
+except(DistributionNotFound):
+    print('')
+    print('You do not have libsbml installed')
+    print('Please refer to our quickstart file for instructions on downloading this module')
+    sys.exit()
+    
 with open(path.join(here, 'requirements.txt')) as f:
     reqs = f.read().rstrip().encode("utf-8").splitlines()
 
@@ -64,7 +76,7 @@ setup(
     author_email='email@sbml.com',
     description='User-assisted converter that can take MATLAB or Octave ODE-based models in biology and translate them into SBML format',
     packages=find_packages(exclude='tests'),
-    package_data={'moccasin': ['docs/*.txt','LICENSE.txt', 'requirements.txt']},
+    package_data={'moccasin': ['docs/*.md','LICENSE.txt', 'requirements.txt']},
     include_package_data=True,
     platforms='any',
     test_suite='tests',

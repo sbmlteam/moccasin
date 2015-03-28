@@ -1,4 +1,4 @@
 include README.md
 include LICENSE.txt
 include requirements.txt
-recursive-include docs *.txt
+recursive-include docs *.md
