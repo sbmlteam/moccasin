@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
-# @file    __init__.py
-# @brief   MATLAB moccasin package __init__ file
+# @file    version.py
+# @brief   MOCCASIN version info
 # @author  Michael Hucka
 #
 # <!---------------------------------------------------------------------------
@@ -20,7 +20,4 @@
 # available online at https://github.com/sbmlteam/moccasin/.
 # ------------------------------------------------------------------------- -->
 
-try:
-    from .version import __version__
-except ImportError:
-    pass
+__version__= '1.0.0'

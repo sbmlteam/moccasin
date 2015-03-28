@@ -34,6 +34,7 @@ from libsbml import *
 
 sys.path.append('..')
 from matlab_parser import *
+from version import __version__
 
 
 # -----------------------------------------------------------------------------
@@ -698,7 +699,7 @@ def make_raterule(assigned_var, dep_var, translations, index, content, model, un
 # 2. an XPP format that captures the parameters and odes
 
 def create_raterule_model(parse_results, use_species=True, produce_sbml=True,
-                          use_func_param_for_var_name=True):
+                          use_func_param_for_var_name=True, add_comments=True):
     # This assumes there's only one call to an ode* function in the file.  We
     # start by finding that call (wherever it is -- whether it's at the top
     # level, or inside some other function), then inspecting the call, and
@@ -887,7 +888,11 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True,
 
     # Write the SBML.
     if produce_sbml:
-        sbml = writeSBMLToString(document)
+        writer = SBMLWriter();
+        if add_comments:
+            writer.setProgramName("MOCCASIN")
+            writer.setProgramVersion(__version__)
+        sbml = writer.writeSBMLToString(document);
     else:
         sbml = create_xpp_string(xpp_variables)
 
@@ -1106,7 +1111,7 @@ def translate_names(text, translations):
 # -----------------------------------------------------------------------------
 
 def process_biocham_output(sbml, parse_results, extra_info):
-    if not sbml or not extra_info:
+    if not sbml:
         return sbml
     document = SBMLReader().readSBMLFromString(sbml)
     if not document:
@@ -1212,12 +1217,14 @@ matlab_converters = {
 # -----------------------------------------------------------------------------
 
 def get_filename_and_options(argv):
+    help_msg = 'MOCCASIN version ' + __version__ + '\n' + main.__doc__
     try:
-        options, path = getopt.getopt(argv[1:], "dlopqrx")
+        options, path = getopt.getopt(argv[1:], "cdpqxorvl")
     except:
-        raise SystemExit(main.__doc__)
+        raise SystemExit(help_msg)
     if len(path) != 1 or len(options) > 2:
-        raise SystemExit(main.__doc__)
+        raise SystemExit(help_msg)
+    include_comments  = not any(['-c' in y for y in options])
     debug             = any(['-d' in y for y in options])
     quiet             = any(['-q' in y for y in options])
     print_parse       = any(['-x' in y for y in options])
@@ -1226,23 +1233,24 @@ def get_filename_and_options(argv):
     use_param_as_name = not any(['-l' in y for y in options])
     create_sbml       = not any(['-o' in y for y in options])
     return path[0], debug, quiet, print_parse, print_raw, use_species, \
-        create_sbml, use_param_as_name
+        use_param_as_name, create_sbml, include_comments
 
 
 def main(argv):
     '''Usage: converter.py [options] FILENAME.m
 Available options:
+ -c   Omit comments in the SBML file about program version and other info
  -d   Drop into pdb before starting to parse the MATLAB input
  -h   Print this help message and quit
- -l   Name variables same as ODE function's output variable (default: use parameter)
+ -l   Name variables per ODE function's output variable (default: use its parameters)
  -o   Convert to XPP .ode file format (default: produce SBML)
  -p   Turn variables into SBML parameters (default: make them SBML species)
  -q   Be quiet; just produce the final output, nothing else
  -r   Print the raw MatlabNode output for the output printed with option -x
  -x   Print extra debugging info about the interpreted MATLAB
 '''
-    path, debug, quiet, print_parse, print_raw, use_species, create_sbml, \
-        use_param_as_name = get_filename_and_options(argv)
+    path, debug, quiet, print_parse, print_raw, use_species, use_param_as_name, \
+        create_sbml, include_comments = get_filename_and_options(argv)
 
     file = open(path, 'r')
     file_contents = file.read()
@@ -1261,7 +1269,9 @@ Available options:
     except Exception as err:
         print("error: {0}".format(err))
 
-    [sbml, additional] = create_raterule_model(parse_results, use_species, create_sbml, use_param_as_name)
+    [sbml, additional] = create_raterule_model(parse_results, use_species,
+                                               create_sbml, use_param_as_name,
+                                               include_comments)
 
     if print_parse and not quiet:
         print('')
