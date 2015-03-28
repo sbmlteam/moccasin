@@ -373,16 +373,20 @@ class MainFrame ( wx.Frame ):
 			parse_results = parser.parse_string(self.file_contents)
 			#output XPP files
 			if self.xppModel.GetValue():
-				[output, extra] = create_raterule_model(parse_results, self.varsAsSpecies.GetValue(), False)
+				[output, extra] = create_raterule_model(parse_results,
+                                                                        use_species=self.varsAsSpecies.GetValue(),
+                                                                        produce_sbml=False)
 				self.convertedTextCtrl.SetValue(output)
 				self.statusBar.SetStatusText("XPP/XPPAUT ODE format",2)
 
 			#output equation-based SBML
 			elif self.equationBasedModel.GetValue():
-				[output, extra] = create_raterule_model(parse_results, self.varsAsSpecies.GetValue())
+				[output, extra] = create_raterule_model(parse_results,
+                                                                        use_species=self.varsAsSpecies.GetValue(),
+                                                                        produce_sbml=True)
 				self.convertedTextCtrl.SetValue(output)
 				self.statusBar.SetStatusText("SBML format - equations",2)
-			#output equation-based SBML
+			#output reaction-based SBML
 			else:
 				if not network_available():
 					msg = "A network connection is needed for this feature, but the network appears to be unavailable." 
@@ -392,10 +396,11 @@ class MainFrame ( wx.Frame ):
 				else:
 					#Create temp file storing XPP model version
 					with NamedTemporaryFile(suffix= ".ode", delete=False) as xpp_file:
-                                            [output, extra] = create_raterule_model(parse_results,
-                                                                                    self.varsAsSpecies.GetValue(),
-                                                                                    False)
-                                            xpp_file.write(output)
+                                                [output, extra] = create_raterule_model(parse_results,
+                                                                                        use_species=self.varsAsSpecies.GetValue(),
+                                                                                        produce_sbml=False,
+                                                                                        add_comments=False)
+                                                xpp_file.write(output)
 					files = {'file': open(xpp_file.name)}
 					#Access Biocham to curate and convert equations to reactions
 					data = {'exportTo':'sbml', 'curate':'true'}
