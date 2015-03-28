@@ -52,7 +52,7 @@ def network_available():
 		return True
 	except requests.ConnectionError:
 		return False
-	
+
 def getPackageVersion():
 	project = "MOCCASIN"
 	version = None  # required for initialization of globals
@@ -70,14 +70,14 @@ def saveFile( self, event):
 	fileFormat = None
 	if _SAVEAS_ODE:
 		msg = "Save ODE File"
-		fileFormat = "ODE files (*.ODE)|*.ode"			
+		fileFormat = "ODE files (*.ODE)|*.ode"
 	elif self.convertedTextCtrl.IsEmpty():
 		msg = "Save File As"
-		fileFormat = "All files (*.*)|*.*"	
+		fileFormat = "All files (*.*)|*.*"
 	else:
 		msg = "Save SBML File"
-		fileFormat = "SBML files (*.xml)|*.xml"                        
-		
+		fileFormat = "SBML files (*.xml)|*.xml"
+
 	dlg = wx.FileDialog(self, msg, "", "", fileFormat, wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
 	if dlg.ShowModal() == wx.ID_CANCEL:
 		return
@@ -92,12 +92,12 @@ def saveFile( self, event):
 def checkSaveOutput( self, event ):
 	msg = "MOCCASIN output may be lost. Do you want to save the file first?"
         dlg = wx.MessageDialog(self, msg, "Warning", wx.YES_NO | wx.ICON_WARNING)
-	
+
 	if ( not _IS_OUTPUT_SAVED and not self.convertedTextCtrl.IsEmpty()):
 		if dlg.ShowModal() == wx.ID_YES:
 			saveFile( self, event )
 	dlg.Destroy()
-	
+
 
 #Serves to give feedback to the user in case of failure
 def report( self, event, msg ):
@@ -123,61 +123,61 @@ class MainFrame ( wx.Frame ):
 		wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = "Welcome to MOCCASIN", pos = wx.DefaultPosition, size = wx.Size( 718,691 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
 		self.SetSizeHintsSz( wx.Size( 718,-1 ), wx.Size( 718,-1 ) )
 		self.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_BTNFACE ) )
-		
+
 		#Construct a status bar
 		self.statusBar = self.CreateStatusBar(5, wx.ST_SIZEGRIP|wx.ALWAYS_SHOW_SB|wx.RAISED_BORDER, wx.ID_ANY )
 		self.statusBar.SetFieldsCount(5)
 		self.statusBar.SetToolTipString( "Status" )
 		self.statusBar.SetStatusText("Ready",0)
 		self.statusBar.SetStatusText(_VERSION ,4)
-		
+
 		#Construct a menu bar
 		self.menuBar = wx.MenuBar( 0 )
 
 		self.fileMenu = wx.Menu()
 		self.openFile = wx.MenuItem( self.fileMenu, wx.ID_OPEN, "Open"+ "\t" + "Ctrl+O", wx.EmptyString, wx.ITEM_NORMAL )
-		self.fileMenu.AppendItem( self.openFile )		
+		self.fileMenu.AppendItem( self.openFile )
 		self.saveFile = wx.MenuItem( self.fileMenu, wx.ID_SAVE, "Save"+ "\t" + "Ctrl+S", wx.EmptyString, wx.ITEM_NORMAL )
 		self.fileMenu.AppendItem( self.saveFile )
 		self.fileMenu.AppendSeparator()
 		self.exit = wx.MenuItem( self.fileMenu, wx.ID_EXIT, "Exit"+ "\t" + "Alt+F4", wx.EmptyString, wx.ITEM_NORMAL )
 		self.fileMenu.AppendItem( self.exit )
-		
+
 		self.menuBar.Append( self.fileMenu, "File" ) 
-		
+
 		self.editMenu = wx.Menu()
 		self.clear = wx.MenuItem( self.editMenu, wx.ID_CLEAR, "Clear"+ "\t" + "Ctrl+L", wx.EmptyString, wx.ITEM_NORMAL )
 		self.editMenu.AppendItem( self.clear )
-		
+
 		self.menuBar.Append( self.editMenu, "Edit" ) 
-		
+
 		self.runMenu = wx.Menu()
 		self.convertFile = wx.MenuItem( self.runMenu, wx.ID_ANY, "Convert"+ "\t" + "Ctrl+C", wx.EmptyString, wx.ITEM_NORMAL )
 		self.convertFile.Enable(0)
-		self.runMenu.AppendItem( self.convertFile )		
-		
+		self.runMenu.AppendItem( self.convertFile )
+
 		self.menuBar.Append( self.runMenu, "Run" ) 
-		
+
 		self.windowMenu = wx.Menu()
 		self.close = wx.MenuItem( self.windowMenu, wx.ID_CLOSE, "CloseAll", wx.EmptyString, wx.ITEM_NORMAL )
 		self.windowMenu.AppendItem( self.close )
-		
+
 		self.menuBar.Append( self.windowMenu, "Window" ) 
-		
+
 		self.helpMenu = wx.Menu()
 		self.helpItem = wx.MenuItem( self.helpMenu, wx.ID_HELP, "MOCCASIN Help"+ "\t" + "F1", wx.EmptyString, wx.ITEM_NORMAL )
 		self.helpMenu.AppendItem( self.helpItem )
-		
+
 		self.helpMenu.AppendSeparator()
-		
+
 		self.license = wx.MenuItem( self.helpMenu, wx.ID_ANY, "GNU Lesser General Public License", wx.EmptyString, wx.ITEM_NORMAL )
 		self.helpMenu.AppendItem( self.license )
-		
+
 		self.about = wx.MenuItem( self.helpMenu, wx.ID_ABOUT, "About MOCCASIN", wx.EmptyString, wx.ITEM_NORMAL )
 		self.helpMenu.AppendItem( self.about )
-		
+
 		self.menuBar.Append( self.helpMenu, "Help" ) 
-		
+
 		self.SetMenuBar( self.menuBar )
 
 		#Add sizers(3) and elements for matlab and translated text
@@ -190,82 +190,82 @@ class MainFrame ( wx.Frame ):
                 labelFont = wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString )
 
 		# topPanelSizer = wx.GridSizer( 2, 1, 0, 0 )
-		
+
 		fileConvSizer1 = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "File selection" ), wx.VERTICAL )
-		
+
 		gbSizer1 = wx.GridBagSizer( 0, 0 )
 		gbSizer1.SetFlexibleDirection( wx.HORIZONTAL )
 		gbSizer1.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_ALL )
-		
+
 		self.m_staticText6 = wx.StaticText( self, wx.ID_ANY, "Choose a file for conversion:", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_staticText6.Wrap( -1 )
 		self.m_staticText6.SetFont( labelFont )
 		gbSizer1.Add( self.m_staticText6, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0 )
-		
+
 		self.filePicker = wx.FilePickerCtrl( self, wx.ID_ANY, wx.EmptyString, "Select a file", "*.m", wx.DefaultPosition, wx.DefaultSize, wx.FLP_DEFAULT_STYLE )
 		self.filePicker.SetMinSize( wx.Size( 495, -1 ) )
 		gbSizer1.Add( self.filePicker, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL|wx.EXPAND|wx.ALIGN_RIGHT, 0 )
-		
+
 		fileConvSizer1.Add( gbSizer1, 0, wx.ALL|wx.EXPAND, 0 )
-		
+
 		# topPanelSizer.Add( fileConvSizer1, 0, wx.ALL|wx.EXPAND, 0 )
 		mainSizer.Add( fileConvSizer1, 0, wx.ALL|wx.EXPAND, 0 )
 
 		sbSizer9 = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "File conversion" ), wx.VERTICAL )
-		
+
 		optionLayoutSizer = wx.GridSizer( 1, 5, 0, 0 )
-		
+
 		self.staticTextOpt = wx.StaticText( self, wx.ID_ANY, "Variable encoding:", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_LEFT )
 		self.staticTextOpt.Wrap( -1 )
 		self.staticTextOpt.SetFont( labelFont )
-		
+
 		optionLayoutSizer.Add( self.staticTextOpt, 0, wx.ALL, 5 )
-		
+
 		self.varsAsSpecies = wx.RadioButton( self, wx.ID_ANY, "SBML Species", wx.DefaultPosition, wx.DefaultSize, wx.RB_GROUP )
 		self.varsAsSpecies.SetValue( True ) 
 		optionLayoutSizer.Add( self.varsAsSpecies, 0, wx.ALL, 5 )
-		
+
 		self.varsAsParams = wx.RadioButton( self, wx.ID_ANY, "SBML Parameters", wx.DefaultPosition, wx.DefaultSize, 0 )
 		optionLayoutSizer.Add( self.varsAsParams, 0, wx.ALL, 5 )
-		
+
 		optionLayoutSizer.AddSpacer( ( 0, 0), 1, wx.ALL|wx.EXPAND, 2 )
-		
+
 		self.convertButton = wx.Button( self, wx.ID_ANY, "Convert", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.convertButton.Disable()
-		
+
 		optionLayoutSizer.Add( self.convertButton, 1, wx.ALIGN_LEFT|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 6 )
-		
+
 		sbSizer9.Add( optionLayoutSizer, 0, wx.EXPAND, 5 )
 
 		gSizer7 = wx.GridSizer( 0, 5, 0, 0 )
-		
+
 		self.modeType = wx.StaticText( self, wx.ID_ANY, "Output format:", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.modeType.Wrap( -1 )
 		self.modeType.SetFont( labelFont )
-		
+
 		gSizer7.Add( self.modeType, 0, wx.ALL, 5 )
-		
+
 		self.reactionBasedModel = wx.RadioButton( self, wx.ID_ANY, "SBML (reactions)", wx.DefaultPosition, wx.DefaultSize, wx.RB_GROUP )
 		self.reactionBasedModel.SetValue( True ) 
 		gSizer7.Add( self.reactionBasedModel, 0, wx.ALL, 5 )
-		
+
 		self.equationBasedModel = wx.RadioButton( self, wx.ID_ANY, "SBML (equations)", wx.DefaultPosition, wx.DefaultSize, 0 )
 		gSizer7.Add( self.equationBasedModel, 0, wx.ALL, 5 )
-		
-		self.xppModel = wx.RadioButton( self, wx.ID_ANY, "XPPAUT", wx.DefaultPosition, wx.DefaultSize, 0 )
+
+		self.xppModel = wx.RadioButton( self, wx.ID_ANY, "XPP/XPPAUT", wx.DefaultPosition, wx.DefaultSize, 0 )
 		gSizer7.Add( self.xppModel, 0, wx.ALL, 5 )
-		
-		
+
+
 		sbSizer9.Add( gSizer7, 0, wx.EXPAND, 5 )
-		
-		
+
+
 		# topPanelSizer.Add( sbSizer9, 2, wx.ALL|wx.EXPAND, 1 )
                 mainSizer.Add( sbSizer9, 2, wx.ALL|wx.EXPAND, 1 )
-		
+
 		# mainSizer.Add( topPanelSizer, 0, wx.ALL|wx.EXPAND, 5 )
 		#################
 
-		
+
 		#Mid sizer
                 panelTextFont = wx.Font( wx.NORMAL_FONT.GetPointSize() -1, 70, 90, wx.FONTWEIGHT_NORMAL, False, wx.EmptyString )
 
@@ -276,9 +276,9 @@ class MainFrame ( wx.Frame ):
 		self.matlabTextCtrl.SetFont( panelTextFont )
 		midPanelSizer.Add( self.matlabTextCtrl, 1, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND, 5 )
 		mainSizer.Add( midPanelSizer, 2, wx.EXPAND, 5 )
-	
+
 		#Bottom sizer
-		bottomPanelSizer = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "Converted File" ), wx.VERTICAL )		
+		bottomPanelSizer = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "Converted File" ), wx.VERTICAL )
 		self.convertedTextCtrl = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,200 ), wx.HSCROLL|wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP|wx.ALWAYS_SHOW_SB|wx.FULL_REPAINT_ON_RESIZE|wx.RAISED_BORDER )
 		self.convertedTextCtrl.SetFont( panelTextFont )
 		self.convertedTextCtrl.SetToolTipString( "Output file after conversion" )
@@ -289,7 +289,7 @@ class MainFrame ( wx.Frame ):
 		self.SetSizer( mainSizer )
 		self.Layout()
 		self.Centre( wx.BOTH )
-		
+
 		# Bind GUI elements to specific events
 		self.Bind( wx.EVT_MENU, self.onOpen, id = self.openFile.GetId() )
 		self.Bind( wx.EVT_MENU, self.onSaveAs, id = self.saveFile.GetId() )
@@ -309,9 +309,9 @@ class MainFrame ( wx.Frame ):
 	    
 # -----------------------------------------------------------------------------
 # Virtual Event Handlers
-# -----------------------------------------------------------------------------		
+# -----------------------------------------------------------------------------
 	def onOpen(self, event):
-		global _IS_OUTPUT_SAVED		
+		global _IS_OUTPUT_SAVED
 		dirname=""
 		dlg = wx.FileDialog(self, "Choose a file", dirname, "", "*.m", wx.OPEN)
 		if dlg.ShowModal() == wx.ID_OK:
@@ -345,7 +345,7 @@ class MainFrame ( wx.Frame ):
 
 	def onExit( self, event ):
 		self.Close(True)
-	
+
 	def onClear( self, event ):
 		global _IS_OUTPUT_SAVED
 		self.matlabTextCtrl.SetValue("")
@@ -358,8 +358,8 @@ class MainFrame ( wx.Frame ):
 		self.reactionBasedModel.SetValue( True )
 		self.varsAsSpecies.SetValue( True )
 		_IS_OUTPUT_SAVED = False
-		
-	
+
+
 	def onConvert( self, event ):
 		global _IS_OUTPUT_SAVED
 		global _SAVEAS_ODE
@@ -368,18 +368,18 @@ class MainFrame ( wx.Frame ):
 
 		self.statusBar.SetStatusText( "Generating output ..." ,0)
 		try:
-			
+
 			parser = MatlabGrammar()
 			parse_results = parser.parse_string(self.file_contents)
 			#output XPP files
 			if self.xppModel.GetValue():
-				output = create_raterule_model(parse_results, self.varsAsSpecies.GetValue(), False)
+				[output, extra] = create_raterule_model(parse_results, self.varsAsSpecies.GetValue(), False)
 				self.convertedTextCtrl.SetValue(output)
 				self.statusBar.SetStatusText("XPP/XPPAUT ODE format",2)
-		
+
 			#output equation-based SBML
 			elif self.equationBasedModel.GetValue():
-				output = create_raterule_model(parse_results, self.varsAsSpecies.GetValue())
+				[output, extra] = create_raterule_model(parse_results, self.varsAsSpecies.GetValue())
 				self.convertedTextCtrl.SetValue(output)
 				self.statusBar.SetStatusText("SBML format - equations",2)
 			#output equation-based SBML
@@ -407,7 +407,7 @@ class MainFrame ( wx.Frame ):
 					del files
 					os.unlink(xpp_file.name)
 					self.statusBar.SetStatusText("SBML format - reactions", 2)
-	
+
 		except IOError as err:
 			report( self, event, "IOError: {0}".format(err))
 		except Exception as exc:
@@ -416,8 +416,8 @@ class MainFrame ( wx.Frame ):
 			self.statusBar.SetStatusText( "Done!",0 )
 			_IS_OUTPUT_SAVED = False
 			_SAVEAS_ODE = self.xppModel.GetValue()
-			
-	
+
+
 	def onCloseAll( self, event ):
 		self.Close(True)
 
@@ -425,7 +425,7 @@ class MainFrame ( wx.Frame ):
 		wx.BeginBusyCursor() 
 		webbrowser.open(_HELP_URL) 
 		wx.EndBusyCursor()
-		
+
 	def onLicense( self, event ):
 		wx.BeginBusyCursor() 
 		webbrowser.open(_LICENSE_URL) 
@@ -464,7 +464,7 @@ class MainFrame ( wx.Frame ):
 
 # -----------------------------------------------------------------------------
 # Driver
-# -----------------------------------------------------------------------------	
+# -----------------------------------------------------------------------------
 app = wx.App(False)
 frame = MainFrame(None)
 frame.Show()
