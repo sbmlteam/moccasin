@@ -1,6 +1,8 @@
 language: python
 python:
     - "2.7"
+virtualenv:
+    system_site_packages: true
 before_install:
     - sudo wget http://download.opensuse.org/repositories/home:fbergman:libsbml/xUbuntu_14.04/Release.key
     - sudo apt-key add - < Release.key  

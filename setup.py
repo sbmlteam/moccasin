@@ -33,10 +33,6 @@ from moccasin import __version__
 
 here = path.abspath(path.dirname(__file__))
 
-# This shouldn't be necessary, but Travis CI can't find libsbml after it's
-# installed.  Testing this approach:
-sys.path.append('/home/travis/virtualenv/python2.7.9/lib/python2.7/site-packages')
-
 # If libSBML is not installed, notify user and exit installer
 try:
     import libsbml
