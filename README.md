@@ -5,6 +5,8 @@ MOCCASIN
 
 *MOCCASIN* stands for *"Model ODE Converter for Creating Awesome SBML INteroperability"*.  MOCCASIN is designed to convert certain basic forms of ODE simulation models written in MATLAB or Octave and translate them into [SBML](http://sbml.org) format.  It thereby enables researchers to convert MATLAB models into an open and widely-used format in systems biology.
 
+[![Build Status](https://travis-ci.org/sbmlteam/moccasin.svg?branch=develop)](https://travis-ci.org/sbmlteam/moccasin)
+
 ----
 *Authors*:      [Michael Hucka](http://www.cds.caltech.edu/~mhucka), [Sarah Keating](http://www.ebi.ac.uk/about/people/sarah-keating), and [Harold G&oacute;mez](http://www.bu.edu/computationalimmunology/people/harold-gomez/).
 
@@ -73,12 +75,24 @@ Using MOCCASIN
 
 You can use MOCCASIN either via the command line or via the GUI interface.  To start the MOCCASIN GUI, execute the Python command `moccasin/interfaces/Moccasin_GUI.py` in the source directory.  A screenshot of the GUI in action is shown below.
 
-<img src="https://raw.githubusercontent.com/sbmlteam/moccasin/develop/dev/graphics/logo/MOCCASIN%20basic%20logo%20200%20px%20wide.png"
+<img src="https://raw.githubusercontent.com/sbmlteam/moccasin/develop/docs/project/examples/screenshot-01.jpg"
  alt="MOCCASIN GUI" title="MOCCASIN GUI" align="center" />
 
 
-Funding
--------
+Getting Help
+------------
+
+MOCCASIN is under active development by a distributed team.  If you have any questions, please feel free to post or email on the developer's discussion group  ([https://groups.google.com/forum/#!forum/moccasin-dev](https://groups.google.com/forum/#!forum/moccasin-dev)) or contact the main developers directly.
+
+
+Contributing
+------------
+
+A lot remains to be done on MOCCASIN in many areas, from improving the interpretation of MATLAB to adding support for SED-ML.  We would be happy to receive your help and participation if you are interested.  Please feel free to contact the developers.
+
+
+Funding acknowledgments
+-----------------------
 
 This work is made possible thanks in part to funding from the Mount Sinai School of Medicine in New York City, provided as part of the NIH-funded project *Modeling Immunity for Biodefense* (Principal Investigator: [http://www.mountsinai.org/profiles/stuart-c-sealfon](Stuart Sealfon)).
 
