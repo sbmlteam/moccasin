@@ -5,6 +5,7 @@ import pytest
 import sys
 import glob
 import os
+import pdb
 import codecs
 from string import printable
 sys.path.append('moccasin/')
@@ -48,9 +49,8 @@ def obtain_params():
     elif os.path.isdir('syntax-test-cases'):
         path = ['syntax-test-cases']
     m_path = path + ['valid*.m']
-    txt_path = path + ['valid*.txt']
     matlab_models = glob.glob(os.path.join(*m_path))
-    parsed_models = glob.glob(os.path.join(*txt_path))
+    parsed_models = [x.rsplit('.')[0] + '.txt' for x in matlab_models]
     pairs = list()
     for i in range(len(matlab_models)):
         pairs.append((dict(model = matlab_models[i], parsed = parsed_models[i])))
