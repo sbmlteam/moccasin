@@ -8,8 +8,6 @@ MOCCASIN
 ----
 *Authors*:      [Michael Hucka](http://www.cds.caltech.edu/~mhucka), [Sarah Keating](http://www.ebi.ac.uk/about/people/sarah-keating), and [Harold G&oacute;mez](http://www.bu.edu/computationalimmunology/people/harold-gomez/).
 
-*Copyright*:    Copyright (C) 2014-2015 jointly by the California Institute of Technology (Pasadena, California, USA), the Mount Sinai School of Medicine (New York, New York, USA), and Boston University (Boston, Massachusetts, USA).
-
 *License*:      This code is licensed under the LGPL version 2.1.  Please see the file [../LICENSE.txt](https://raw.githubusercontent.com/sbmlteam/moccasin/master/LICENSE.txt) for details.
 
 *Repository*:   [https://github.com/sbmlteam/moccasin](https://github.com/sbmlteam/moccasin)
