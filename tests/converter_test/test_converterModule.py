@@ -49,9 +49,8 @@ def obtain_params():
     elif os.path.isdir('converter-test-cases'):
         path = ['converter-test-cases']
     m_path = path + ['valid*.m']
-    txt_path = path + ['valid*.xml']
     matlab_models = glob.glob(os.path.join(*m_path))
-    sbml_models = glob.glob(os.path.join(*txt_path))
+    sbml_models = [x.rsplit('.')[0] + '.xml' for x in matlab_models]
     pairs = list()
     for i in range(len(matlab_models)):
         pairs.append((dict(model = matlab_models[i], sbml = sbml_models[i])))
