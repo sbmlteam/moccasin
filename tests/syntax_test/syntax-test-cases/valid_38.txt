@@ -1,0 +1,5 @@
+{function definition: {identifier: "valid_38"} parameters ( none ) output none}
+{while stmt: ( {number: 1} )}
+{assign: {identifier: "x"} = {number: 3}}
+{end}
+{end}

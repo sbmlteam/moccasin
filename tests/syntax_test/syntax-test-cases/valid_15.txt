@@ -1,0 +1,7 @@
+{assign: {identifier: "n"} = {number: 10}}
+{assign: {identifier: "f"} = {identifier: "n"}}
+{while stmt: ( ( {identifier: "n"} {binary op: >} {number: 1} ) )}
+{assign: {identifier: "n"} = ( {identifier: "n"} {binary op: -} {number: 1} )}
+{assign: {identifier: "f"} = ( {identifier: "f"} {binary op: *} {identifier: "n"} )}
+{end}
+( {function {identifier: "disp"} ( {array: [ {row 1: {string: "n! = "}, {function {identifier: "num2str"} ( {identifier: "f"} ) }} ]} ) } )

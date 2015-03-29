@@ -1,0 +1,2 @@
+{assign: {identifier: "x"} = ( {function {identifier: "rand"} ( {number: 1}, {number: 50} ) } {binary op: .*} {number: 100} )}
+{assign: {identifier: "xpart"} = {function/array: {identifier: "x"} ( ( ( {identifier: "x"} {binary op: >} {number: 20} ) {binary op: &} ( {identifier: "x"} {binary op: <} {number: 35} ) ) )}}

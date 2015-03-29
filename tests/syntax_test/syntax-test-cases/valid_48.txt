@@ -1,0 +1,4 @@
+{comment:  Build a list of args, like so:}
+{assign: {identifier: "args"} = {cell array: [ {row 1: {string: "a"}, {number: 1}, {string: "b"}, {number: 2}} ]}}
+{comment:  Then expand this into arguments:}
+{assign: {identifier: "output"} = {function/array: {identifier: "func"} ( {cell array: {identifier: "args"} [ {colon} ]} )}}

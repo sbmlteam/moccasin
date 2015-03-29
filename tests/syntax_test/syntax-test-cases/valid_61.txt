@@ -1,0 +1,7 @@
+( {function {identifier: "plot"} ( {identifier: "r"} ) } )
+{assign: {identifier: "m"} = {function {identifier: "mean"} ( {identifier: "r"} ) }}
+{command: name {identifier: "hold"} args  on}
+( {function {identifier: "plot"} ( {array: [ {row 1: {number: 0}, {identifier: "n"}} ]}, {array: [ {row 1: {identifier: "m"}, {identifier: "m"}} ]} ) } )
+{command: name {identifier: "hold"} args  off}
+( {function {identifier: "title"} ( {string: "Mean of Random Uniform Data"} ) } )
+{command: name {identifier: "print"} args  -dpng magicsquare.png}

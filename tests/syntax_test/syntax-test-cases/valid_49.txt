@@ -1,0 +1,2 @@
+{assign: {identifier: "fcnArray"} = {cell array: [ {row 1: {function @ handle: {identifier: "fcn1"}}, {function @ handle: {identifier: "fcn2"}}} ]}}
+{assign: {identifier: "outargs"} = {function/array: {cell array: {identifier: "fcnArray"} [ {identifier: "number"} ]} ( {identifier: "inargs"} )}}

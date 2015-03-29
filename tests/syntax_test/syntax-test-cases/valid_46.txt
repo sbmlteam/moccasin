@@ -1,0 +1,7 @@
+( {function/array: {identifier: "x"} ( {number: 1} )} )
+{assign: {identifier: "y"} = {transpose: {identifier: "x"} operator ' }}
+( {transpose: {array: [] } operator ' } )
+( {transpose: {number: 1} operator ' } )
+( {transpose: {function/array: {identifier: "x"} ( {number: 1} )} operator ' } )
+{assign: {identifier: "y"} = {transpose: {function/array: {identifier: "x"} ( {number: 1} )} operator ' }}
+{assign: {identifier: "y"} = {transpose: {identifier: "x"} operator ' }}
