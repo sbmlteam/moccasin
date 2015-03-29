@@ -37,7 +37,6 @@ from pyparsing import ParseException, ParseResults
 from tempfile import NamedTemporaryFile
 
 sys.path.append('moccasin')
-sys.path.append('moccasin')
 sys.path.append('../matlab_parser')
 sys.path.append('../converter')
 from converter import *
