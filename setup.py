@@ -35,7 +35,7 @@ here = path.abspath(path.dirname(__file__))
 
 #If libSBML is not installed, notify user and exit installer
 try:
-    require('libsbml')
+    import libsbml
     pass
 
 except(DistributionNotFound):
