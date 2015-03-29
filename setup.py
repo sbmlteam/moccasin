@@ -33,7 +33,11 @@ from moccasin import __version__
 
 here = path.abspath(path.dirname(__file__))
 
-#If libSBML is not installed, notify user and exit installer
+# This shouldn't be necessary, but Travis CI can't find libsbml after it's
+# installed.  Testing this approach:
+sys.path.append('/home/travis/virtualenv/python2.7.9/lib/python2.7/site-packages')
+
+# If libSBML is not installed, notify user and exit installer
 try:
     import libsbml
     pass
@@ -43,12 +47,12 @@ except(DistributionNotFound):
     print('You do not have libsbml installed')
     print('Please refer to our quickstart file for instructions on downloading this module')
     sys.exit()
-    
+
 with open(path.join(here, 'requirements.txt')) as f:
     reqs = f.read().rstrip().encode("utf-8").splitlines()
 
 class PyTest(TestCommand):
-    #user_options = [('pytest-args=', 'vv', "Arguments to pass to py.test")]
+    # user_options = [('pytest-args=', 'vv', "Arguments to pass to py.test")]
 
     def initialize_options(self):
         TestCommand.initialize_options(self)
@@ -60,7 +64,7 @@ class PyTest(TestCommand):
         self.test_suite = True
 
     def run_tests(self):
-        #import here, cause outside the eggs aren't loaded
+        # import here, cause outside the eggs aren't loaded
         import pytest
         errno = pytest.main(self.pytest_args)
         sys.exit(errno)
