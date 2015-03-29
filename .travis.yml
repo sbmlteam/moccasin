@@ -1,3 +1,11 @@
+#
+# @file    .travis.yml
+# @brief   Travis CI configuration file for MOCCASIN
+# @author  Harold Gomez
+#
+# This software is part of MOCCASIN, the Model ODE Converter for Creating
+# Awesome SBML INteroperability. Visit https://github.com/sbmlteam/moccasin/.
+#
 language: python
 python:
     - "2.7"
@@ -13,10 +21,10 @@ before_install:
     - sudo apt-get install -y libbz2-dev
     - sudo apt-get install -y python-libsbml
 install: 
-    - "pip install -r requirements.txt --use-mirrors"
-    - "pip install coverage"
-    - "pip install coveralls"
+    - pip install -r requirements.txt --use-mirrors
+    - pip install coverage
+    - pip install coveralls
 script: 
-    - "coverage run setup.py test"
+    - coverage run setup.py test
 after_success:
     coveralls
