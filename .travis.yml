@@ -1,14 +1,13 @@
 language: python
 python:
     - "2.7"
-before_script:
+before_install:
     - sudo sh -c "echo 'deb http://download.opensuse.org/repositories/home:/fbergman:/libsbml/xUbuntu_14.04/ /' >> /etc/apt/sources.list.d/python-libsbml.list"
     - sudo apt-get update -qq
-before_install:
-    - sudo apt-get install -y python-libsbml
     - sudo apt-get install -y libxml2-dev
     - sudo apt-get install -y libz-dev
     - sudo apt-get install -y libbz2-dev
+    - sudo apt-get install -y python-libsbml
 install: 
     - "pip install -r requirements.txt --use-mirrors"
     - "pip install coverage"
