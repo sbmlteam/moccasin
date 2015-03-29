@@ -31,11 +31,14 @@ MOCCASIN is written in Python and does _not_ require MATLAB to run.  It requires
 How it works
 ------------
 
-MOCCASIN uses an algorithm developed by Fages, Gay and Soliman [_Inferring reaction systems from ordinary differential equations_](http://www.sciencedirect.com/science/article/pii/S0304397514006197).  A free technical report explaining the algorithm is [available from INRIA](https://hal.inria.fr/hal-01103692).  To parse MATLAB and produce input to the reaction-inference algorithm, MOCCASIN uses a custom MATLAB parser written using [PyParsing](https://pyparsing.wikispaces.com) and a variety of post-processing operations to interpret the MATLAB contents.
+MOCCASIN uses an algorithm developed by Fages, Gay and Soliman described in the paper titled [_Inferring reaction systems from ordinary differential equations_](http://www.sciencedirect.com/science/article/pii/S0304397514006197).  A free technical report explaining the algorithm is [available from INRIA](https://hal.inria.fr/hal-01103692).  To parse MATLAB and produce input to the reaction-inference algorithm, MOCCASIN uses a custom MATLAB parser written using [PyParsing](https://pyparsing.wikispaces.com) and a variety of post-processing operations to interpret the MATLAB contents.
 
 Currently, MOCCASIN is limited to MATLAB inputs in which a model is contained in a single file.  The file must set up a system of differential equations as a function defined in the file, and make a call to one of the MATLAB `odeNN` family of solvers (e.g., `ode45`, `ode15s`, etc.).  The following is a simple but complete example:
 
 ```
+# Various parameter settings.  The specifics here are unimportant; this
+# is just an example of a real input file.
+#
 tspan  = [0 300];
 xinit  = [0; 0];
 a      = 0.01 * 60;
@@ -43,8 +46,12 @@ b      = 0.0058 * 60;
 c      = 0.006 * 60;
 d      = 0.000192 * 60;
 
+# A call to a MATLAB ODE solver
+#
 [t, x] = ode45(@f, tspan, xinit);
 
+# A function that defines the ODEs of the model.
+#
 function dx = f(t, x)
   dx = [a - b * x(1); c * x(1) - d * x(2)];
 end
