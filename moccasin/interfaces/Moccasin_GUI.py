@@ -290,6 +290,8 @@ class MainFrame ( wx.Frame ):
 
                 self.pageSetup = wx.MenuItem( self.fileMenu, wx.ID_PAGE_SETUP, "Page Setup"+ "\t" + "F5", wx.EmptyString, wx.ITEM_NORMAL )
                 self.fileMenu.AppendItem( self.pageSetup )
+                self.printOption = wx.MenuItem( self.fileMenu, wx.ID_PRINT, "Print"+ "\t" + "F8", wx.EmptyString, wx.ITEM_NORMAL )
+                self.fileMenu.AppendItem( self.printOption )
                 self.fileMenu.AppendSeparator()
                 initializePrintingDefaults(self)# initialize the print data and set some default values
  
@@ -455,8 +457,9 @@ class MainFrame ( wx.Frame ):
                 self.Bind( wx.EVT_MENU, self.onAbout, id = self.about.GetId() )
                 self.Bind( wx.EVT_FILEPICKER_CHANGED, self.onFilePicker, id = self.filePicker.GetId() )
                 self.Bind( wx.EVT_BUTTON, self.onConvert, id = self.convertButton.GetId() )
-                self.Bind(wx.EVT_MENU, self.OnPageSetup, id= self.pageSetup.GetId())
-                self.Bind(wx.EVT_MENU_RANGE, self.onFileHistory, id=wx.ID_FILE1, id2=wx.ID_FILE9)
+                self.Bind( wx.EVT_MENU, self.OnPageSetup, id= self.pageSetup.GetId() )
+                self.Bind( wx.EVT_MENU, self.OnPrint, id=self.printOption.GetId())
+                self.Bind( wx.EVT_MENU_RANGE, self.onFileHistory, id=wx.ID_FILE1, id2=wx.ID_FILE9)
                 self.Bind( wx.EVT_CLOSE, self.onClose ) 
 
                 def __del__( self ):
@@ -614,6 +617,7 @@ class MainFrame ( wx.Frame ):
                 checkSaveOutput( self,event )
                 self.Destroy()
 
+        # Printing Handlers       
         def OnPageSetup(self, evt):
                 data = wx.PageSetupDialogData()
                 data.SetPrintData(self.pdata)
@@ -629,6 +633,24 @@ class MainFrame ( wx.Frame ):
                         self.margins = (data.GetMarginTopLeft(),
                                         data.GetMarginBottomRight())
                 dlg.Destroy()
+
+        def OnPrint(self, evt):
+                data = wx.PrintDialogData(self.pdata)
+                printer = wx.Printer(data)
+                text = self.convertedTextCtrl.GetValue()
+                printout = TextDocPrintout(text, "Converted_Moccasin", self.margins)
+                useSetupDialog = True
+                if not printer.Print(self, printout, useSetupDialog) \
+                   and printer.GetLastError() == wx.PRINTER_ERROR:
+                        wx.MessageBox(
+                                "There was a problem printing.\n"
+                                "Perhaps your current printer is not set correctly?",
+                                "Printing Error", wx.OK)
+                else:
+                        data = printer.GetPrintDialogData()
+                        self.pdata = wx.PrintData(data.GetPrintData()) # force a copy
+                printout.Destroy()
+        
 
 # -----------------------------------------------------------------------------
 # Driver
