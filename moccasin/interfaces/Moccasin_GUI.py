@@ -105,13 +105,14 @@ def report( self, event, msg ):
         dlg = wx.lib.dialogs.ScrolledMessageDialog(self, msg, "Houston, we have a problem!")
         dlg.ShowModal()
 
+
 #Saves opened files to the recent list menu
 def modifyHistory( self, event, path ):
         self.fileHistory.AddFileToHistory(path)
         self.fileHistory.Save(self.config)
         self.config.Flush() # Only necessary for Linux systems
-        
 
+        
 #Deals with importing matlab files
 def openFile( self, event, path):
         try:
@@ -121,6 +122,7 @@ def openFile( self, event, path):
                 f.close()
         except IOError as err:
                 report( self, event, "IOError: {0}".format(err))
+
 
 #Resets components when opening a new file     
 def resetOnOpen( self, event ):
@@ -374,10 +376,10 @@ class MainFrame ( wx.Frame ):
         def onFileHistory(self, event):
                 fileNum = event.GetId() - wx.ID_FILE1
                 path = self.fileHistory.GetHistoryFile(fileNum)
-                self.fileHistory.AddFileToHistory(path)
+                modifyHistory (self, event, path)
                 self.filePicker.SetPath(path)
                 openFile(self, event, path)
-                resetOnOpen(self, event)
+                resetOnOpen(self, event)                
 
         def onExit( self, event ):
                 self.Close(True)
@@ -473,14 +475,6 @@ class MainFrame ( wx.Frame ):
                 wx.EndBusyCursor()
             
         def onAbout( self, event ):
-                # msg = "MOCCASIN \n\n" + \
-                #       "A user-assisted converter that can take MATLAB or Octave ODE-based \n" + \
-                #       "models in biology and translate them into SBML format.\n\n" + \
-                #       "Please report any bugs or requests of improvements\n" + \
-                #       "to us at the following address:\n" + \
-                #       "email@sbml.com\n\n"+ \
-                #       "Current version:   " + _VERSION + " !!" 
-
                 dlg = wx.AboutDialogInfo()
                 dlg.SetName("MOCCASIN")
                 dlg.SetVersion("1.0.0")
