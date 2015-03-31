@@ -257,7 +257,7 @@ class TextDocPrintout(wx.Printout):
 class MainFrame ( wx.Frame ):
         def __init__( self, parent ):
                 wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = "Welcome to MOCCASIN", pos = wx.DefaultPosition, size = wx.Size( 718,691 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
-                self.SetSizeHintsSz( wx.Size( 718,-1 ), wx.Size( 718,-1 ) )
+                self.SetSizeHintsSz( wx.Size( 700,-1 ))
                 self.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_BTNFACE ) )
 
                 #Construct a status bar
@@ -338,87 +338,58 @@ class MainFrame ( wx.Frame ):
                 #Add sizers(3) and elements for matlab and translated text
                 mainSizer = wx.BoxSizer( wx.VERTICAL )
                 mainSizer.SetMinSize( wx.Size( 1,5 ) ) 
-                mainSizer.AddSpacer( ( 0, 1), 0, wx.EXPAND|wx.TOP, 5 )
+                mainSizer.AddSpacer( ( 0, 1), 0, wx.EXPAND|wx.TOP, 5 ) #Diff
+
 
                 #Top sizer
-####
                 labelFont = wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString )
-
-                # topPanelSizer = wx.GridSizer( 2, 1, 0, 0 )
-
-                fileConvSizer1 = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "File selection" ), wx.VERTICAL )
-
-                gbSizer1 = wx.GridBagSizer( 0, 0 )
-                gbSizer1.SetFlexibleDirection( wx.HORIZONTAL )
-                gbSizer1.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_ALL )
-
+                topPanelSizer = wx.GridSizer( 2, 1, 0, 0 )
+                
+                fileConvSizer1 = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "File selection" ), wx.HORIZONTAL )
                 self.m_staticText6 = wx.StaticText( self, wx.ID_ANY, "Choose a file for conversion:", wx.DefaultPosition, wx.DefaultSize, 0 )
                 self.m_staticText6.Wrap( -1 )
                 self.m_staticText6.SetFont( labelFont )
-                gbSizer1.Add( self.m_staticText6, wx.GBPosition( 0, 0 ), wx.GBSpan( 1, 1 ), wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0 )
-
+                fileConvSizer1.Add( self.m_staticText6, 1, wx.ALL, 10 )
                 self.filePicker = wx.FilePickerCtrl( self, wx.ID_ANY, wx.EmptyString, "Select a file", "*.m", wx.DefaultPosition, wx.DefaultSize, wx.FLP_DEFAULT_STYLE )
-                self.filePicker.SetMinSize( wx.Size( 495, -1 ) )
-                gbSizer1.Add( self.filePicker, wx.GBPosition( 0, 1 ), wx.GBSpan( 1, 1 ), wx.ALL|wx.EXPAND|wx.ALIGN_RIGHT, 0 )
-
-                fileConvSizer1.Add( gbSizer1, 0, wx.ALL|wx.EXPAND, 0 )
-
-                # topPanelSizer.Add( fileConvSizer1, 0, wx.ALL|wx.EXPAND, 0 )
-                mainSizer.Add( fileConvSizer1, 0, wx.ALL|wx.EXPAND, 0 )
-
+                self.filePicker.SetMinSize( wx.Size( 350,-1 ) )
+                fileConvSizer1.Add( self.filePicker, 6, wx.ALL, 7 )
+                topPanelSizer.Add( fileConvSizer1, 1, wx.ALL|wx.EXPAND, 1 )
+                
                 sbSizer9 = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "File conversion" ), wx.VERTICAL )
-
-                optionLayoutSizer = wx.GridSizer( 1, 5, 0, 0 )
-
-                self.staticTextOpt = wx.StaticText( self, wx.ID_ANY, "Variable encoding:", wx.DefaultPosition, wx.DefaultSize, wx.ALIGN_LEFT )
+                optionLayoutSizer = wx.GridSizer( 1, 6, 0, 40 )
+                self.staticTextOpt = wx.StaticText( self, wx.ID_ANY, "Variable encoding: ", wx.DefaultPosition, wx.DefaultSize, 0 )
                 self.staticTextOpt.Wrap( -1 )
-                self.staticTextOpt.SetFont( labelFont )
-
-                optionLayoutSizer.Add( self.staticTextOpt, 0, wx.ALL, 5 )
-
+                self.staticTextOpt.SetFont(labelFont)
+                optionLayoutSizer.Add( self.staticTextOpt, 0, wx.ALL, 8 )
                 self.varsAsSpecies = wx.RadioButton( self, wx.ID_ANY, "SBML Species", wx.DefaultPosition, wx.DefaultSize, wx.RB_GROUP )
                 self.varsAsSpecies.SetValue( True ) 
-                optionLayoutSizer.Add( self.varsAsSpecies, 0, wx.ALL, 5 )
-
+                optionLayoutSizer.Add( self.varsAsSpecies, 0, wx.ALL, 8 )
                 self.varsAsParams = wx.RadioButton( self, wx.ID_ANY, "SBML Parameters", wx.DefaultPosition, wx.DefaultSize, 0 )
-                optionLayoutSizer.Add( self.varsAsParams, 0, wx.ALL, 5 )
-
+                optionLayoutSizer.Add( self.varsAsParams, 0, wx.ALL, 8 ) 
                 optionLayoutSizer.AddSpacer( ( 0, 0), 1, wx.ALL|wx.EXPAND, 2 )
-
+                optionLayoutSizer.AddSpacer( ( 0, 0), 1, wx.ALL|wx.EXPAND, 2 ) 
                 self.convertButton = wx.Button( self, wx.ID_ANY, "Convert", wx.DefaultPosition, wx.DefaultSize, 0 )
-                self.convertButton.Disable()
-
-                optionLayoutSizer.Add( self.convertButton, 1, wx.ALIGN_LEFT|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 6 )
-
+                self.convertButton.SetFont( wx.Font( 9, 70, 90, 90, False, wx.EmptyString ) )
+                self.convertButton.Disable() 
+                optionLayoutSizer.Add( self.convertButton, 1, wx.ALIGN_LEFT|wx.ALIGN_RIGHT|wx.ALL, 5 )  
                 sbSizer9.Add( optionLayoutSizer, 0, wx.EXPAND, 5 )
-
-                gSizer7 = wx.GridSizer( 0, 5, 0, 0 )
-
-                self.modeType = wx.StaticText( self, wx.ID_ANY, "Output format:", wx.DefaultPosition, wx.DefaultSize, 0 )
+                gSizer7 = wx.GridSizer( 0, 6, 0, 40 )
+                
+                self.modeType = wx.StaticText( self, wx.ID_ANY, "Output format: ", wx.DefaultPosition, wx.DefaultSize, 0 )
                 self.modeType.Wrap( -1 )
-                self.modeType.SetFont( labelFont )
-
-                gSizer7.Add( self.modeType, 0, wx.ALL, 5 )
-
+                self.modeType.SetFont(labelFont)
+                gSizer7.Add( self.modeType, 0, wx.ALL, 8 )  
                 self.reactionBasedModel = wx.RadioButton( self, wx.ID_ANY, "SBML (reactions)", wx.DefaultPosition, wx.DefaultSize, wx.RB_GROUP )
                 self.reactionBasedModel.SetValue( True ) 
-                gSizer7.Add( self.reactionBasedModel, 0, wx.ALL, 5 )
-
+                gSizer7.Add( self.reactionBasedModel, 0, wx.ALL, 8 )
                 self.equationBasedModel = wx.RadioButton( self, wx.ID_ANY, "SBML (equations)", wx.DefaultPosition, wx.DefaultSize, 0 )
-                gSizer7.Add( self.equationBasedModel, 0, wx.ALL, 5 )
-
+                gSizer7.Add( self.equationBasedModel, 0, wx.ALL, 8 )
                 self.xppModel = wx.RadioButton( self, wx.ID_ANY, "XPP/XPPAUT", wx.DefaultPosition, wx.DefaultSize, 0 )
-                gSizer7.Add( self.xppModel, 0, wx.ALL, 5 )
-
-
+                gSizer7.Add( self.xppModel, 0, wx.ALL, 8 )                
                 sbSizer9.Add( gSizer7, 0, wx.EXPAND, 5 )
+                topPanelSizer.Add( sbSizer9, 2, wx.ALL|wx.EXPAND, 1 )
 
-
-                # topPanelSizer.Add( sbSizer9, 2, wx.ALL|wx.EXPAND, 1 )
-                mainSizer.Add( sbSizer9, 2, wx.ALL|wx.EXPAND, 1 )
-
-                # mainSizer.Add( topPanelSizer, 0, wx.ALL|wx.EXPAND, 5 )
-                #################
+                mainSizer.Add( topPanelSizer, 1, wx.ALL|wx.EXPAND, 5 )
 
 
                 #Mid sizer
@@ -430,7 +401,7 @@ class MainFrame ( wx.Frame ):
                 self.matlabTextCtrl.SetToolTipString( "Input file for conversion" )
                 self.matlabTextCtrl.SetFont( panelTextFont )
                 midPanelSizer.Add( self.matlabTextCtrl, 1, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND, 5 )
-                mainSizer.Add( midPanelSizer, 2, wx.EXPAND, 5 )
+                mainSizer.Add( midPanelSizer, 2, wx.ALL|wx.EXPAND, 5 )
 
                 #Bottom sizer
                 bottomPanelSizer = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "Converted File" ), wx.VERTICAL )
@@ -438,7 +409,7 @@ class MainFrame ( wx.Frame ):
                 self.convertedTextCtrl.SetFont( panelTextFont )
                 self.convertedTextCtrl.SetToolTipString( "Output file after conversion" )
                 bottomPanelSizer.Add( self.convertedTextCtrl, 1, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND, 5 )
-                mainSizer.Add( bottomPanelSizer, 2, wx.EXPAND, 5 )
+                mainSizer.Add( bottomPanelSizer, 2, wx.ALL|wx.EXPAND, 5 )
 
                 #Set frame sizer
                 self.SetSizer( mainSizer )
