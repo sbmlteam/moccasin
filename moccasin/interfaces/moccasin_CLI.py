@@ -27,10 +27,10 @@ import plac
 import sys
 import os
 import requests
-sys.path.append('moccasin/')
-sys.path.append('../moccasin/')
-sys.path.append('moccasin/converter/')
-sys.path.append('../moccasin/converter/')
+sys.path.append('moccasin')
+sys.path.append('../../')
+sys.path.append('../matlab_parser')
+sys.path.append('../converter')
 from version import __version__
 from matlab_parser import *
 from converter import *
@@ -160,10 +160,9 @@ main.__annotations__ = dict(
 # Entry point
 # -----------------------------------------------------------------------------
 
-if __name__ ==  '__main__':
+def cli_main():
     #The argument parser is inferred - it also deals with too few or too many func args
     for output in plac.call(main):
         print(output)
 
-
-#Export files (equation-based SBML / .ODE / reaction-based SBML)
+cli_main()

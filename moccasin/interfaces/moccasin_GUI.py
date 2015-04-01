@@ -32,11 +32,11 @@ import wx.lib.agw.genericmessagedialog as GMD
 
 from pkg_resources import get_distribution, DistributionNotFound
 
-#Some of these imports will disappear when logic is made into a separate module
 from pyparsing import ParseException, ParseResults
 from tempfile import NamedTemporaryFile
 
 sys.path.append('moccasin')
+sys.path.append('../../')
 sys.path.append('../matlab_parser')
 sys.path.append('../converter')
 from converter import *
@@ -625,9 +625,12 @@ class MainFrame ( wx.Frame ):
         
 
 # -----------------------------------------------------------------------------
-# Driver
+# Entry point
 # -----------------------------------------------------------------------------
-app = wx.App(False)
-frame = MainFrame(None)
-frame.Show()
-app.MainLoop()
+def gui_main():
+        app = wx.App(False)
+        frame = MainFrame(None)
+        frame.Show()
+        app.MainLoop()
+
+gui_main()
