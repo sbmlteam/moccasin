@@ -89,5 +89,12 @@ setup(
         'License :: OSI Approved :: GNU Lesser General Public License',
         'Operating System :: OS Independent'
         ],
-    scripts = ['scripts/moccasin.py'],
+         entry_points={
+        'console_scripts': [
+            'moccasin = moccasin.interfaces.moccasin_CLI:cli_main',
+        ],
+        'gui_scripts': [
+            'moccasin-GUI = moccasin.interfaces.moccasin_GUI',
+        ]
+        }
 )
