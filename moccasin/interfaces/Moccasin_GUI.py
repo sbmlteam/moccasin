@@ -256,8 +256,8 @@ class TextDocPrintout(wx.Printout):
 # -----------------------------------------------------------------------------
 class MainFrame ( wx.Frame ):
         def __init__( self, parent ):
-                wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = "Welcome to MOCCASIN", pos = wx.DefaultPosition, size = wx.Size( 718,691 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
-                self.SetSizeHintsSz( wx.Size( 700,-1 ))
+                wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = "Welcome to MOCCASIN", pos = wx.DefaultPosition, size = wx.Size( 780,691 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
+                self.SetSizeHintsSz( wx.Size( 760,-1 ))
                 self.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_BTNFACE ) )
 
                 #Construct a status bar
@@ -352,6 +352,7 @@ class MainFrame ( wx.Frame ):
                 fileConvSizer1.Add( self.m_staticText6, 1, wx.ALL, 10 )
                 self.filePicker = wx.FilePickerCtrl( self, wx.ID_ANY, wx.EmptyString, "Select a file", "*.m", wx.DefaultPosition, wx.DefaultSize, wx.FLP_DEFAULT_STYLE )
                 self.filePicker.SetMinSize( wx.Size( 350,-1 ) )
+                self.filePicker.SetFont( labelFont )
                 fileConvSizer1.Add( self.filePicker, 6, wx.ALL, 7 )
                 topPanelSizer.Add( fileConvSizer1, 1, wx.ALL|wx.EXPAND, 1 )
                 
@@ -369,7 +370,7 @@ class MainFrame ( wx.Frame ):
                 optionLayoutSizer.AddSpacer( ( 0, 0), 1, wx.ALL|wx.EXPAND, 2 )
                 optionLayoutSizer.AddSpacer( ( 0, 0), 1, wx.ALL|wx.EXPAND, 2 ) 
                 self.convertButton = wx.Button( self, wx.ID_ANY, "Convert", wx.DefaultPosition, wx.DefaultSize, 0 )
-                self.convertButton.SetFont( wx.Font( 9, 70, 90, 90, False, wx.EmptyString ) )
+                self.convertButton.SetFont( labelFont)
                 self.convertButton.Disable() 
                 optionLayoutSizer.Add( self.convertButton, 1, wx.ALIGN_LEFT|wx.ALIGN_RIGHT|wx.ALL, 5 )  
                 sbSizer9.Add( optionLayoutSizer, 0, wx.EXPAND, 5 )
