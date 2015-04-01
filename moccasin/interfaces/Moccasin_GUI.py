@@ -342,7 +342,7 @@ class MainFrame ( wx.Frame ):
 
 
                 #Top sizer
-                labelFont = wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 92, False, wx.EmptyString )
+                labelFont = wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 90, False, wx.EmptyString )
                 topPanelSizer = wx.GridSizer( 2, 1, 0, 0 )
                 
                 fileConvSizer1 = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "File selection" ), wx.HORIZONTAL )
@@ -370,7 +370,7 @@ class MainFrame ( wx.Frame ):
                 optionLayoutSizer.AddSpacer( ( 0, 0), 1, wx.ALL|wx.EXPAND, 2 )
                 optionLayoutSizer.AddSpacer( ( 0, 0), 1, wx.ALL|wx.EXPAND, 2 ) 
                 self.convertButton = wx.Button( self, wx.ID_ANY, "Convert", wx.DefaultPosition, wx.DefaultSize, 0 )
-                self.convertButton.SetFont( labelFont)
+                self.convertButton.SetFont(labelFont)
                 self.convertButton.Disable() 
                 optionLayoutSizer.Add( self.convertButton, 1, wx.ALIGN_LEFT|wx.ALIGN_RIGHT|wx.ALL, 5 )  
                 sbSizer9.Add( optionLayoutSizer, 0, wx.EXPAND, 5 )
