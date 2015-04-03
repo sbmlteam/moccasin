@@ -29,7 +29,6 @@ import wx
 import wx.xrc
 import wx.lib.dialogs
 import wx.lib.agw.genericmessagedialog as GMD
-
 from pkg_resources import get_distribution, DistributionNotFound
 
 from pyparsing import ParseException, ParseResults
@@ -42,6 +41,12 @@ sys.path.append('../converter')
 from converter import *
 from matlab_parser import *
 
+#This custom class allows us to import RTF-formatted text into a RichText widget
+import PyRTFParser
+
+from pygments import highlight
+from pygments.lexers import get_lexer_by_name
+from pygments.formatters import RtfFormatter
 
 # -----------------------------------------------------------------------------
 # Helper functions
@@ -118,18 +123,26 @@ def openFile( self, event, path):
         try:
                 f = open(path, 'r')
                 self.file_contents = f.read()
-                self.matlabTextCtrl.SetValue(self.file_contents)
+                handler = PyRTFParser.PyRichTextRTFHandler()
+                handler.LoadString(self.matlabTextCtrl, convertToRTF(self.file_contents, "matlab"))
                 f.close()
         except IOError as err:
                 report( self, event, "IOError: {0}".format(err))
 
+#Uses Pygments library to tokenize and format into RTF input text by filetype (MATLAB, XML)
+def convertToRTF (text, fileType):
+        lexer = get_lexer_by_name(fileType)
+        formatter = RtfFormatter()
+        return(highlight(text,lexer,formatter))
 
 #Resets components when opening a new file     
 def resetOnOpen( self, event ):
         self.convertButton.Enable()
         self.convertFile.Enable(1)
         self.convertedTextCtrl.SetValue("")
-
+        self.matlabTextCtrl.SetValue("")
+        self.statusBar.SetStatusText( "Ready",0 )
+        
 #Initializes values for printing  
 def initializePrintingDefaults(self):
         self.pdata = wx.PrintData()
@@ -256,7 +269,7 @@ class TextDocPrintout(wx.Printout):
 # -----------------------------------------------------------------------------
 class MainFrame ( wx.Frame ):
         def __init__( self, parent ):
-                wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = "Welcome to MOCCASIN", pos = wx.DefaultPosition, size = wx.Size( 780,691 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
+                wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = "Welcome to MOCCASIN", pos = wx.DefaultPosition, size = wx.Size( 780,790 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
                 self.SetSizeHintsSz( wx.Size( 760,-1 ))
                 self.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_BTNFACE ) )
 
@@ -397,7 +410,7 @@ class MainFrame ( wx.Frame ):
                 panelTextFont = wx.Font( wx.NORMAL_FONT.GetPointSize() -1, 70, 90, wx.FONTWEIGHT_NORMAL, False, wx.EmptyString )
 
                 midPanelSizer = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "MATLAB File" ), wx.VERTICAL )
-                self.matlabTextCtrl = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,200 ), wx.HSCROLL|wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP|wx.ALWAYS_SHOW_SB|wx.FULL_REPAINT_ON_RESIZE|wx.RAISED_BORDER )
+                self.matlabTextCtrl = wx.richtext.RichTextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,200 ), wx.HSCROLL|wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP|wx.ALWAYS_SHOW_SB|wx.FULL_REPAINT_ON_RESIZE|wx.RAISED_BORDER )
                 self.matlabTextCtrl.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
                 self.matlabTextCtrl.SetToolTipString( "Input file for conversion" )
                 self.matlabTextCtrl.SetFont( panelTextFont )
@@ -406,7 +419,7 @@ class MainFrame ( wx.Frame ):
 
                 #Bottom sizer
                 bottomPanelSizer = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "Converted File" ), wx.VERTICAL )
-                self.convertedTextCtrl = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,200 ), wx.HSCROLL|wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP|wx.ALWAYS_SHOW_SB|wx.FULL_REPAINT_ON_RESIZE|wx.RAISED_BORDER )
+                self.convertedTextCtrl = wx.richtext.RichTextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,200 ), wx.HSCROLL|wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP|wx.ALWAYS_SHOW_SB|wx.FULL_REPAINT_ON_RESIZE|wx.RAISED_BORDER )
                 self.convertedTextCtrl.SetFont( panelTextFont )
                 self.convertedTextCtrl.SetToolTipString( "Output file after conversion" )
                 bottomPanelSizer.Add( self.convertedTextCtrl, 1, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND, 5 )
@@ -448,31 +461,32 @@ class MainFrame ( wx.Frame ):
                         filename = dlg.GetFilename()
                         dirname = dlg.GetDirectory()
                         path=os.path.join(dirname, filename)
+                        resetOnOpen(self, event)
                         openFile(self, event, path)
                         self.filePicker.SetPath(path)
-                        #Only reset values when file was loaded
-                        resetOnOpen(self, event)
+                        #Only reset values when file was loaded                        
                         modifyHistory(self, event , path)
+                        _IS_OUTPUT_SAVED = False
                 dlg.Destroy()
-                _IS_OUTPUT_SAVED = False
 
         def onFilePicker(self, event):
                 resetOnOpen(self, event)               
                 path=self.filePicker.GetPath()
                 openFile(self, event, path)
                 modifyHistory(self, event, path)
+                _IS_OUTPUT_SAVED = False                
 
         def onSaveAs( self, event ):
                 saveFile(self, event)
                 
         def onFileHistory(self, event):
+                resetOnOpen(self, event)                
                 fileNum = event.GetId() - wx.ID_FILE1
                 path = self.fileHistory.GetHistoryFile(fileNum)
                 modifyHistory (self, event, path)
                 self.filePicker.SetPath(path)
                 openFile(self, event, path)
-                resetOnOpen(self, event)                
-
+                
         def onExit( self, event ):
                 self.Close(True)
 
@@ -495,6 +509,7 @@ class MainFrame ( wx.Frame ):
                 global _SAVEAS_ODE
 
                 checkSaveOutput( self, event )
+                self.convertedTextCtrl.SetValue("")
 
                 self.statusBar.SetStatusText( "Generating output ..." ,0)
                 try:
@@ -506,7 +521,8 @@ class MainFrame ( wx.Frame ):
                                 [output, extra] = create_raterule_model(parse_results,
                                                                         use_species=self.varsAsSpecies.GetValue(),
                                                                         produce_sbml=False)
-                                self.convertedTextCtrl.SetValue(output)
+                                handler = PyRTFParser.PyRichTextRTFHandler()
+                                handler.LoadString(self.convertedTextCtrl, convertToRTF(output, "matlab"))
                                 self.statusBar.SetStatusText("XPP/XPPAUT ODE format",2)
 
                         #output equation-based SBML
@@ -514,7 +530,8 @@ class MainFrame ( wx.Frame ):
                                 [output, extra] = create_raterule_model(parse_results,
                                                                         use_species=self.varsAsSpecies.GetValue(),
                                                                         produce_sbml=True)
-                                self.convertedTextCtrl.SetValue(output)
+                                handler = PyRTFParser.PyRichTextRTFHandler()
+                                handler.LoadString(self.convertedTextCtrl, convertToRTF(output, "xml"))
                                 self.statusBar.SetStatusText("SBML format - equations",2)
                         #output reaction-based SBML
                         else:
@@ -538,7 +555,9 @@ class MainFrame ( wx.Frame ):
                                         # We need to post-process the output to deal with
                                         # limitations in BIOCHAM's translation service.
                                         sbml = process_biocham_output(response.content, parse_results, extra)
-                                        self.convertedTextCtrl.SetValue(sbml)
+                                        handler = PyRTFParser.PyRichTextRTFHandler()
+                                        handler.LoadString(self.convertedTextCtrl, convertToRTF(sbml, "xml"))
+                                
                                         del files
                                         os.unlink(xpp_file.name)
                                         self.statusBar.SetStatusText("SBML format - reactions", 2)
@@ -610,7 +629,7 @@ class MainFrame ( wx.Frame ):
                 data = wx.PrintDialogData(self.pdata)
                 printer = wx.Printer(data)
                 text = self.convertedTextCtrl.GetValue()
-                printout = TextDocPrintout(text, "Converted_Moccasin", self.margins)
+                printout = TextDocPrintout(text, "Moccasin output", self.margins)
                 useSetupDialog = True
                 if not printer.Print(self, printout, useSetupDialog) \
                    and printer.GetLastError() == wx.PRINTER_ERROR:
