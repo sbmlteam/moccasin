@@ -1125,10 +1125,26 @@ def process_biocham_output(sbml, parse_results, extra_info):
         id = list(parse_results.functions.keys())[0]
         model.setId(id)
         model.setName(id + ' translated by MOCCASIN')
+
     # Start by converting Biocham's L2v2 model to L3v1.
     success = document.setLevelAndVersion(3, 1)
     if not success:
         return sbml
+    # Clear the units that are automatically added by the previous call.
+    document.getModel().unsetTimeUnits()
+    document.getModel().unsetSubstanceUnits()
+    document.getModel().unsetExtentUnits()
+    document.getModel().unsetLengthUnits()
+    document.getModel().unsetVolumeUnits()
+    document.getModel().unsetAreaUnits()
+    for i in range(document.getModel().getNumUnitDefinitions(), 0, -1):
+        document.getModel().removeUnitDefinition(i - 1)
+    for i in range(document.getModel().getNumCompartments(), 0, -1):
+        document.getModel().getCompartment(i - 1).unsetUnits()
+    for i in range(document.getModel().getNumSpecies(), 0, -1):
+        document.getModel().getSpecies(i - 1).unsetSubstanceUnits()
+
+    # Deal with special cases.
     for record in extra_info:
         # Special case for 't':
         if record['id'] == "t":
