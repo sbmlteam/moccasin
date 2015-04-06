@@ -97,6 +97,8 @@ Contributing
 
 A lot remains to be done on MOCCASIN in many areas, from improving the interpretation of MATLAB to adding support for SED-ML.  We would be happy to receive your help and participation if you are interested.  Please feel free to contact the developers.
 
+A quick way to find out what is currently on people's plates and our near-term plans is to look at the  [Pivotal Tracker](https://www.pivotaltracker.com/n/projects/977060) for this project.
+
 
 Funding acknowledgments
 -----------------------
