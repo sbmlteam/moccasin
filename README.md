@@ -101,7 +101,7 @@ A lot remains to be done on MOCCASIN in many areas, from improving the interpret
 Funding acknowledgments
 -----------------------
 
-This work is made possible thanks in part to funding from the Mount Sinai School of Medicine in New York City, provided as part of the NIH-funded project *Modeling Immunity for Biodefense* (Principal Investigator: [http://www.mountsinai.org/profiles/stuart-c-sealfon](Stuart Sealfon)).
+This work is made possible thanks in part to funding from the Mount Sinai School of Medicine in New York City, provided as part of the NIH-funded project *Modeling Immunity for Biodefense* (Principal Investigator: [Stuart Sealfon](http://www.mountsinai.org/profiles/stuart-c-sealfon)).
 
 
 Copyright and license
