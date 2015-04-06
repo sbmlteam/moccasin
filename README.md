@@ -101,13 +101,13 @@ A lot remains to be done on MOCCASIN in many areas, from improving the interpret
 Funding acknowledgments
 -----------------------
 
-This work is made possible thanks in part to funding from the Mount Sinai School of Medicine in New York City, provided as part of the NIH-funded project *Modeling Immunity for Biodefense* (Principal Investigator: [Stuart Sealfon](http://www.mountsinai.org/profiles/stuart-c-sealfon)).
+This work is made possible thanks in part to funding from the Icahn School of Medicine at Mount Sinai, provided as part of the NIH-funded project *Modeling Immunity for Biodefense* (Principal Investigator: [Stuart Sealfon](http://www.mountsinai.org/profiles/stuart-c-sealfon)).
 
 
 Copyright and license
 ---------------------
 
-Copyright (C) 2014-2015 jointly by the California Institute of Technology (Pasadena, California, USA), the Mount Sinai School of Medicine (New York, New York, USA), and Boston University (Boston, Massachusetts, USA).
+Copyright (C) 2014-2015 jointly by the California Institute of Technology (Pasadena, California, USA), the Icahn School of Medicine at Mount Sinai (New York, New York, USA), and Boston University (Boston, Massachusetts, USA).
 
 This library is free software; you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation; either version 2.1 of the License, or any later version.
 
