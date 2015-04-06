@@ -10,7 +10,7 @@
 #
 # Copyright (C) 2014-2015 jointly by the following organizations:
 #     1. California Institute of Technology, Pasadena, CA, USA
-#     2. Mount Sinai School of Medicine, New York, NY, USA
+#     2. Icahn School of Medicine at Mount Sinai, New York, NY, USA
 #     3. Boston University, Boston, MA, USA
 #
 # This is free software; you can redistribute it and/or modify it under the
