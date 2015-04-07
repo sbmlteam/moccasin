@@ -30,58 +30,58 @@ There are numerous `MatlabNode` objects and they are hierarchically organized as
 
 ```
 MatlabNode
-|
-+--Entity
-|  +- Primitive
-|  |  +- Number
-|  |  +- String
-|  |  +- Boolean
-|  |  +- Special
-|  |
-|  +- Array          # A bare array
-|  |
-|  +- Handle
-|  |  +- FunHandle   # A function handle, e.g., "@foo"
-|  |  +- AnonFun     # An anonymous function, e.g., "@(x,y)x+y".
-|  |
-|  +- Reference
-|  |  +- Identifier
-|  |  +- ArrayOrFunCall
-|  |  +- FunCall
-|  |  +- ArrayRef
-|  |  +- StructRef
-|  |
-|  +- Operator
-|     +- UnaryOp
-|     +- BinaryOp
-|     +- TernaryOp
-|     +- Transpose
-|
-+--Expression
-|
-+--Definition
-|  +- Assignment
-|  +- FunDef
-|
-+--FlowControl
-|  +- Try
-|  +- Catch
-|  +- Switch
-|  +- Case
-|  +- Otherwise
-|  +- If
-|  +- Elseif
-|  +- Else
-|  +- While
-|  +- For
-|  +- End
-|  +- Branch
-|
-+--Command
-|  +- ShellCommand
-|  +- MatlabCommand
-|
-+- Comment
+│
+├─Entity
+│  ├─ Primitive
+│  │  ├─ Number
+│  │  ├─ String
+│  │  ├─ Boolean
+│  │  └─ Special
+│  │
+│  ├─ Array          # A bare array
+│  │
+│  ├─ Handle
+│  │  ├─ FunHandle   # A function handle, e.g., "@foo"
+│  │  └─ AnonFun     # An anonymous function, e.g., "@(x,y)x├y".
+│  │
+│  ├─ Reference
+│  │  ├─ Identifier
+│  │  ├─ ArrayOrFunCall
+│  │  ├─ FunCall
+│  │  ├─ ArrayRef
+│  │  └─ StructRef
+│  │
+│  └─ Operator
+│     ├─ UnaryOp
+│     ├─ BinaryOp
+│     ├─ TernaryOp
+│     └─ Transpose
+│
+├──Expression
+│
+├──Definition
+│  ├─ Assignment
+│  └─ FunDef
+│
+├──FlowControl
+│  ├─ Try
+│  ├─ Catch
+│  ├─ Switch
+│  ├─ Case
+│  ├─ Otherwise
+│  ├─ If
+│  ├─ Elseif
+│  ├─ Else
+│  ├─ While
+│  ├─ For
+│  ├─ End
+│  └─ Branch
+│
+├──Command
+│  ├─ ShellCommand
+│  └─ MatlabCommand
+│
+└─ Comment
 ```
 
 Roughly speaking, the scheme of things is as follows:
