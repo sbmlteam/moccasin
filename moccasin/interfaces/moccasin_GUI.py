@@ -41,14 +41,6 @@ from converter import *
 from matlab_parser import *
 from printDialog import *
 
-#Lexer and formatter for syntax highlighting and export to RTF
-from pygments import highlight
-from pygments.lexers import get_lexer_by_name
-from pygments.formatters import RtfFormatter
-
-#For import of RTF-formatted text into RichText widget
-import PyRTFParser
-
 # -----------------------------------------------------------------------------
 # Helper functions
 # -----------------------------------------------------------------------------
@@ -124,17 +116,10 @@ def openFile( self, event, path):
         try:
                 f = open(path, 'r')
                 self.file_contents = f.read()
-                handler = PyRTFParser.PyRichTextRTFHandler()
-                handler.LoadString(self.matlabTextCtrl, convertToRTF(self.file_contents, "matlab"))
+                self.matlabTextCtrl.SetValue(self.file_contents)
                 f.close()
         except IOError as err:
                 report( self, event, "IOError: {0}".format(err))
-
-#Uses Pygments library to tokenize and format into RTF input text by filetype (MATLAB, XML)
-def convertToRTF (text, fileType):
-        lexer = get_lexer_by_name(fileType)
-        formatter = RtfFormatter()
-        return(highlight(text,lexer,formatter))
 
 #Resets components when opening a new file     
 def resetOnOpen( self, event ):
@@ -308,7 +293,7 @@ class MainFrame ( wx.Frame ):
                 panelTextFont = wx.Font( wx.NORMAL_FONT.GetPointSize() -1, 70, 90, wx.FONTWEIGHT_NORMAL, False, wx.EmptyString )
 
                 midPanelSizer = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "MATLAB File" ), wx.VERTICAL )
-                self.matlabTextCtrl = wx.richtext.RichTextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,200 ), wx.HSCROLL|wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP|wx.ALWAYS_SHOW_SB|wx.FULL_REPAINT_ON_RESIZE|wx.RAISED_BORDER )
+                self.matlabTextCtrl = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,200 ), wx.HSCROLL|wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP|wx.ALWAYS_SHOW_SB|wx.FULL_REPAINT_ON_RESIZE|wx.RAISED_BORDER )
                 self.matlabTextCtrl.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
                 self.matlabTextCtrl.SetToolTipString( "Input file for conversion" )
                 self.matlabTextCtrl.SetFont( panelTextFont )
@@ -317,7 +302,7 @@ class MainFrame ( wx.Frame ):
 
                 #Bottom sizer
                 bottomPanelSizer = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "Converted File" ), wx.VERTICAL )
-                self.convertedTextCtrl = wx.richtext.RichTextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,200 ), wx.HSCROLL|wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP|wx.ALWAYS_SHOW_SB|wx.FULL_REPAINT_ON_RESIZE|wx.RAISED_BORDER )
+                self.convertedTextCtrl = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,200 ), wx.HSCROLL|wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP|wx.ALWAYS_SHOW_SB|wx.FULL_REPAINT_ON_RESIZE|wx.RAISED_BORDER )
                 self.convertedTextCtrl.SetFont( panelTextFont )
                 self.convertedTextCtrl.SetToolTipString( "Output file after conversion" )
                 bottomPanelSizer.Add( self.convertedTextCtrl, 1, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND, 5 )
@@ -419,8 +404,7 @@ class MainFrame ( wx.Frame ):
                                 [output, extra] = create_raterule_model(parse_results,
                                                                         use_species=self.varsAsSpecies.GetValue(),
                                                                         produce_sbml=False)
-                                handler = PyRTFParser.PyRichTextRTFHandler()
-                                handler.LoadString(self.convertedTextCtrl, convertToRTF(output, "matlab"))
+                                self.convertedTextCtrl.SetValue(output)
                                 self.statusBar.SetStatusText("XPP/XPPAUT ODE format",2)
 
                         #output equation-based SBML
@@ -428,8 +412,7 @@ class MainFrame ( wx.Frame ):
                                 [output, extra] = create_raterule_model(parse_results,
                                                                         use_species=self.varsAsSpecies.GetValue(),
                                                                         produce_sbml=True)
-                                handler = PyRTFParser.PyRichTextRTFHandler()
-                                handler.LoadString(self.convertedTextCtrl, convertToRTF(output, "xml"))
+                                self.convertedTextCtrl.SetValue(output)
                                 self.statusBar.SetStatusText("SBML format - equations",2)
                         #output reaction-based SBML
                         else:
@@ -453,8 +436,7 @@ class MainFrame ( wx.Frame ):
                                         # We need to post-process the output to deal with
                                         # limitations in BIOCHAM's translation service.
                                         sbml = process_biocham_output(response.content, parse_results, extra)
-                                        handler = PyRTFParser.PyRichTextRTFHandler()
-                                        handler.LoadString(self.convertedTextCtrl, convertToRTF(sbml, "xml"))
+                                        self.convertedTextCtrl.SetValue(sbml)
                                 
                                         del files
                                         os.unlink(xpp_file.name)
