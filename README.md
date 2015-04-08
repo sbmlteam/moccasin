@@ -100,11 +100,12 @@ A lot remains to be done on MOCCASIN in many areas, from improving the interpret
 A quick way to find out what is currently on people's plates and our near-term plans is to look at the  [Pivotal Tracker](https://www.pivotaltracker.com/n/projects/977060) for this project.
 
 
-Funding acknowledgments
+Acknowledgments
 -----------------------
 
-This work is made possible thanks in part to funding from the Icahn School of Medicine at Mount Sinai, provided as part of the NIH-funded project *Modeling Immunity for Biodefense* (Principal Investigator: [Stuart Sealfon](http://www.mountsinai.org/profiles/stuart-c-sealfon)).
+This work is made possible thanks in part to funding from the Icahn School of Medicine at Mount Sinai, provided as part of the NIH-funded project *Modeling Immunity for Biodefense* (contract number HHSN266200500021C)  (Principal Investigator: [Stuart Sealfon](http://www.mountsinai.org/profiles/stuart-c-sealfon)), and in part to funding from the School of Medicine at Boston University, provided as part of the NIH-funded project *Modeling Immunity for Biodefense* (contract number HHSN272201000053C)  (Principal Investigators: [Thomas B. Kepler](http://www.bu.edu/computationalimmunology/people/thomas-b-kepler/) and [Garnett H. Kelsoe](http://immunology.duke.edu/faculty/details/0205291)).
 
+We also acknowledge the contributions made by Dr. Dagmar Iber from the Department of Biosystems Science and Engineering (D-BSSE), and Dr. Bernd Rinn from the Scientific IT Services (SIS) division from ETH Zurich.
 
 Copyright and license
 ---------------------
