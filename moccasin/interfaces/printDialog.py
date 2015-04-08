@@ -35,7 +35,7 @@ _FONTSIZE = 10
 #Does not handle page numbers or titles, and it assumes that no
 #lines are longer than what will fit within the page width
 
-class TextDocPrintout(wx.Printout):
+class PrintDialog(wx.Printout):
       
     def __init__(self, text, title, margins):
         wx.Printout.__init__(self, title)

@@ -21,28 +21,13 @@
 # ------------------------------------------------------------------------- -->
 
 from __future__ import print_function
-from pyparsing import ParseException, ParseResults
-from tempfile import NamedTemporaryFile
 import plac
 import sys
-import os
-import requests
-sys.path.append('moccasin')
-sys.path.append('../../')
-sys.path.append('../matlab_parser')
-sys.path.append('../converter')
-from version import __version__
-from matlab_parser import *
-from converter import *
+sys.path.append('..')
+from controller import Controller
 
 # This prevents exceeding recursion depth in some cases.
 sys.setrecursionlimit(1500)
-
-# -----------------------------------------------------------------------------
-# Global configuration constants
-# -----------------------------------------------------------------------------
-
-_BIOCHAM_URL = 'http://lifeware.inria.fr/biocham/online/rest/export'
 
 # -----------------------------------------------------------------------------
 # Main function - driver
@@ -59,6 +44,9 @@ def main(path, debug=False, quiet=False, use_equations=False, use_params=False,
         sys.exit(1)
 
     try:
+        #Interface with the back-end
+        controller = Controller()
+
         with open(path) as file:
             file_contents = file.read()
             if not quiet:
@@ -68,57 +56,40 @@ def main(path, debug=False, quiet=False, use_equations=False, use_params=False,
             if debug:
                 pdb.set_trace()
 
-            parser = MatlabGrammar()
-            parse_results = parser.parse_string(file_contents)
+            controller.parse_File(file_contents)
 
             if print_parse and not quiet:
                 print_header('Parsed MATLAB output')
-                parser.print_parse_results(parse_results)
+                print(controller.print_parsed_results())
 
             if output_XPP:
                 print_header('XPP output', quiet)
-                [output, extra] = create_raterule_model(parse_results,
-                                                        use_species=(not use_params),
-                                                        produce_sbml=(not output_XPP),
-                                                        use_func_param_for_var_name=True)
+                [output, extra] = controller.build_model(use_species=(not use_params),
+                                                         produce_sbml=(not output_XPP),
+                                                         use_func_param_for_var_name=True,
+                                                         add_comments=True)
                 print(output)
             elif use_equations:
                 print_header('Equation-based SBML output', quiet)
-                [output, extra] = create_raterule_model(parse_results,
-                                                        use_species=(not use_params),
-                                                        produce_sbml=(not output_XPP),
-                                                        use_func_param_for_var_name=True)
+                [output, extra] = controller.build_model(use_species=(not use_params),
+                                                         produce_sbml=(not output_XPP),
+                                                         use_func_param_for_var_name=True,
+                                                         add_comments=True)
                 print(output)
             else:
                 print_header('Reaction-based SBML output', quiet)
-                if not network_available() and not quiet:
+                if not controller.check_network_connection() and not quiet:
                     print('Error: a network connection is needed for this feature.')
                     sys.exit(1)
-                try:
-                    # Create temp file storing XPP model version
-                    with NamedTemporaryFile(suffix=".ode", delete=False) as xpp_file:
-                        [xpp_output, extra] = create_raterule_model(parse_results,
-                                                                    use_species=(not use_params),
-                                                                    produce_sbml=False,
-                                                                    use_func_param_for_var_name=True)
-                        xpp_file.write(xpp_output)
-                    files = {'file': open(xpp_file.name)}
-                    # Access Biocham to curate and convert equations to reactions
-                    data = {'exportTo':'sbml', 'curate':'true'}
-                    response = requests.post(_BIOCHAM_URL, files=files, data=data)
-                    del files
-                    # We need to post-process the output to deal with
-                    # limitations in BIOCHAM's translation service.
-                    sbml = process_biocham_output(response.content,
-                                                  parse_results, extra)
-                    yield(sbml)
-                except IOError as err:
-                    yield("error: {0}".format(err))
-                finally:
-                    os.unlink(xpp_file.name)
+
+                sbml = controller.build_reaction_model(use_species=(not use_params),
+                                                       produce_sbml=False,
+                                                       use_func_param_for_var_name=True,
+                                                       add_comments=True)
+                print(sbml)
 
     except Exception as err:
-        yield("Error: {0}".format(err))
+        print("Error: {0}".format(err))
 
 
 # -----------------------------------------------------------------------------
@@ -130,16 +101,6 @@ def print_header(text, quiet=False):
         print('')
         print('{:-^78}'.format(' ' + text + ' '))
         print('')
-
-
-def network_available():
-    '''Try to connect somewhere to test if a network is available.'''
-    try:
-        _ = requests.get('http://www.google.com', timeout=5)
-        return True
-    except requests.ConnectionError:
-        return False
-
 
 # -----------------------------------------------------------------------------
 # Plac annotations for main function arguments
@@ -162,7 +123,6 @@ main.__annotations__ = dict(
 
 def cli_main():
     #The argument parser is inferred - it also deals with too few or too many func args
-    for output in plac.call(main):
-        print(output)
+    plac.call(main)
 
 cli_main()

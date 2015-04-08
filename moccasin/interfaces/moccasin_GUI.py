@@ -27,30 +27,14 @@ import textwrap
 import sys
 import wx
 import wx.lib.dialogs
+sys.path.append('..')
+from printDialog import PrintDialog
+from controller import Controller
 from pkg_resources import get_distribution, DistributionNotFound
-
-from pyparsing import ParseException, ParseResults
-from tempfile import NamedTemporaryFile
-
-sys.path.append('moccasin')
-sys.path.append('../../')
-sys.path.append('../matlab_parser')
-sys.path.append('../converter')
-
-from converter import *
-from matlab_parser import *
-from printDialog import *
 
 # -----------------------------------------------------------------------------
 # Helper functions
 # -----------------------------------------------------------------------------
-def network_available():
-        '''Try to connect somewhere to test if a network is available.'''
-        try:
-                _ = requests.get('http://www.google.com', timeout=5)
-                return True
-        except requests.ConnectionError:
-                return False
 
 def getPackageVersion():
         project = "MOCCASIN"
@@ -61,8 +45,9 @@ def getPackageVersion():
                 version = '(local)'
         return version
 
-#Used for saving an file
+
 def saveFile( self, event):
+        '''Saves converted output to file'''
         global _IS_OUTPUT_SAVED
         global _SAVEAS_ODE
         msg = None
@@ -87,8 +72,9 @@ def saveFile( self, event):
                 _IS_OUTPUT_SAVED = True
 
 
-#Checks that output is saved before it's lost
+
 def checkSaveOutput( self, event ):
+        '''Checks that converted output is saved'''
         msg = "MOCCASIN output may be lost. Do you want to save the file first?"
         dlg = wx.MessageDialog(self, msg, "Warning", wx.YES_NO | wx.ICON_WARNING)
 
@@ -98,21 +84,21 @@ def checkSaveOutput( self, event ):
         dlg.Destroy()
 
 
-#Serves to give feedback to the user in case of failure
 def report( self, event, msg ):
+        '''Serves to give feedback to the user in case of failure'''
         dlg = wx.lib.dialogs.ScrolledMessageDialog(self, msg, "Houston, we have a problem!")
         dlg.ShowModal()
 
 
-#Saves opened files to the recent list menu
 def modifyHistory( self, event, path ):
+        '''Saves opened files to the recent list menu'''
         self.fileHistory.AddFileToHistory(path)
         self.fileHistory.Save(self.config)
         self.config.Flush() # Only necessary for Linux systems
 
         
-#Deals with importing matlab files
 def openFile( self, event, path):
+        '''Deals with importing matlab files'''
         try:
                 f = open(path, 'r')
                 self.file_contents = f.read()
@@ -120,17 +106,19 @@ def openFile( self, event, path):
                 f.close()
         except IOError as err:
                 report( self, event, "IOError: {0}".format(err))
+   
 
-#Resets components when opening a new file     
 def resetOnOpen( self, event ):
+        '''Resets graphical components when opening a new file '''
         self.convertButton.Enable()
         self.convertFile.Enable(1)
         self.convertedTextCtrl.SetValue("")
         self.matlabTextCtrl.SetValue("")
         self.statusBar.SetStatusText( "Ready",0 )
-        
-#Initializes values for printing  
+
+          
 def initializePrintingDefaults(self):
+        '''Initializes printing parameters for printing'''
         self.pdata = wx.PrintData()
         self.pdata.SetPaperId(wx.PAPER_LETTER)
         self.pdata.SetOrientation(wx.PORTRAIT)
@@ -140,7 +128,6 @@ def initializePrintingDefaults(self):
 # Global configuration constants
 # -----------------------------------------------------------------------------
 
-_BIOCHAM_URL = 'http://lifeware.inria.fr/biocham/online/rest/export'
 _HELP_URL = "https://github.com/sbmlteam/moccasin/blob/master/README.md"
 _LICENSE_URL = "https://www.gnu.org/licenses/lgpl.html"
 _VERSION = "Version:  "+ getPackageVersion()
@@ -156,6 +143,9 @@ class MainFrame ( wx.Frame ):
                 self.SetSizeHintsSz( wx.Size( 760,-1 ))
                 self.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_BTNFACE ) )
 
+                #Interface with the back-end
+                self.controller = Controller()
+                
                 #Construct a status bar
                 self.statusBar = self.CreateStatusBar(5, wx.ST_SIZEGRIP|wx.ALWAYS_SHOW_SB|wx.RAISED_BORDER, wx.ID_ANY )
                 self.statusBar.SetFieldsCount(5)
@@ -397,49 +387,39 @@ class MainFrame ( wx.Frame ):
                 self.statusBar.SetStatusText( "Generating output ..." ,0)
                 try:
 
-                        parser = MatlabGrammar()
-                        parse_results = parser.parse_string(self.file_contents)
+                        self.controller.parse_File(self.file_contents)
                         #output XPP files
                         if self.xppModel.GetValue():
-                                [output, extra] = create_raterule_model(parse_results,
-                                                                        use_species=self.varsAsSpecies.GetValue(),
-                                                                        produce_sbml=False)
+                                [output, extra] = self.controller.build_model(use_species=self.varsAsSpecies.GetValue(),
+                                                                              produce_sbml=False,
+                                                                              use_func_param_for_var_name=True,
+                                                                              add_comments=False)
+                                
                                 self.convertedTextCtrl.SetValue(output)
                                 self.statusBar.SetStatusText("XPP/XPPAUT ODE format",2)
 
                         #output equation-based SBML
                         elif self.equationBasedModel.GetValue():
-                                [output, extra] = create_raterule_model(parse_results,
-                                                                        use_species=self.varsAsSpecies.GetValue(),
-                                                                        produce_sbml=True)
-                                self.convertedTextCtrl.SetValue(output)
-                                self.statusBar.SetStatusText("SBML format - equations",2)
+                                 [output, extra] = self.controller.build_model(use_species=self.varsAsSpecies.GetValue(),
+                                                                               produce_sbml=True,
+                                                                               use_func_param_for_var_name=True,
+                                                                               add_comments=False)
+                                 self.convertedTextCtrl.SetValue(output)
+                                 self.statusBar.SetStatusText("SBML format - equations",2)
                         #output reaction-based SBML
                         else:
-                                if not network_available():
+                                if not self.controller.check_network_connection():
                                         msg = "A network connection is needed for this feature, but the network appears to be unavailable." 
                                         dlg = wx.MessageDialog(self, msg, "Warning", wx.OK | wx.ICON_WARNING)
                                         dlg.ShowModal()
                                         dlg.Destroy()
                                 else:
-                                        #Create temp file storing XPP model version
-                                        with NamedTemporaryFile(suffix= ".ode", delete=False) as xpp_file:
-                                                [output, extra] = create_raterule_model(parse_results,
-                                                                                        use_species=self.varsAsSpecies.GetValue(),
-                                                                                        produce_sbml=False,
-                                                                                        add_comments=False)
-                                                xpp_file.write(output)
-                                        files = {'file': open(xpp_file.name)}
-                                        #Access Biocham to curate and convert equations to reactions
-                                        data = {'exportTo':'sbml', 'curate':'true'}
-                                        response = requests.post(_BIOCHAM_URL, files=files, data=data)
-                                        # We need to post-process the output to deal with
-                                        # limitations in BIOCHAM's translation service.
-                                        sbml = process_biocham_output(response.content, parse_results, extra)
+                                        sbml = self.controller.build_reaction_model(use_species=self.varsAsSpecies.GetValue(),
+                                                                               produce_sbml=False,
+                                                                               use_func_param_for_var_name=True,
+                                                                               add_comments=False)
+               
                                         self.convertedTextCtrl.SetValue(sbml)
-                                
-                                        del files
-                                        os.unlink(xpp_file.name)
                                         self.statusBar.SetStatusText("SBML format - reactions", 2)
 
                 except IOError as err:
@@ -509,7 +489,7 @@ class MainFrame ( wx.Frame ):
                 data = wx.PrintDialogData(self.pdata)
                 printer = wx.Printer(data)
                 text = self.convertedTextCtrl.GetValue()
-                printout = TextDocPrintout(text, "Moccasin output", self.margins)
+                printout = PrintDialog(text, "Moccasin output", self.margins)
                 useSetupDialog = True
                 if not printer.Print(self, printout, useSetupDialog) \
                    and printer.GetLastError() == wx.PRINTER_ERROR:
