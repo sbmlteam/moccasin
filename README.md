@@ -105,7 +105,8 @@ Acknowledgments
 
 This work is made possible thanks in part to funding from the Icahn School of Medicine at Mount Sinai, provided as part of the NIH-funded project *Modeling Immunity for Biodefense* (contract number HHSN266200500021C)  (Principal Investigator: [Stuart Sealfon](http://www.mountsinai.org/profiles/stuart-c-sealfon)), and in part to funding from the School of Medicine at Boston University, provided as part of the NIH-funded project *Modeling Immunity for Biodefense* (contract number HHSN272201000053C)  (Principal Investigators: [Thomas B. Kepler](http://www.bu.edu/computationalimmunology/people/thomas-b-kepler/) and [Garnett H. Kelsoe](http://immunology.duke.edu/faculty/details/0205291)).
 
-We also acknowledge the contributions made by Dr. Dagmar Iber from the Department of Biosystems Science and Engineering (D-BSSE), and Dr. Bernd Rinn from the Scientific IT Services (SIS) division from ETH Zurich.
+We also acknowledge the contributions made by Dr. [Dagmar Iber](http://www.silva.bsse.ethz.ch/cobi/people/iberd) from the Department of Biosystems Science and Engineering (D-BSSE), and Dr. [Bernd Rinn](https://www1.ethz.ch/id/about/sections/sis/index_EN) from the Scientific IT Services (SIS) division from ETH Zurich.
+
 
 Copyright and license
 ---------------------
