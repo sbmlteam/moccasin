@@ -515,7 +515,7 @@ class MainFrame ( wx.Frame ):
         def OnPrint(self, evt):
                 data = wx.PrintDialogData(self.pdata)
                 printer = wx.Printer(data)
-                text = self.convertedWebView.GetPageText().replace("\n","")
+                text = self.convertedWebView.GetPageText()
                 printout = PrintDialog(text, "Moccasin output", self.margins)
                 useSetupDialog = True
                 if not printer.Print(self, printout, useSetupDialog) \
