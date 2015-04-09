@@ -26,6 +26,7 @@ import requests
 import textwrap
 import sys
 import wx
+import re
 
 #Imports for tokenizing, formatting and displaying .m or .xml files
 import wx.html2 
@@ -53,16 +54,25 @@ def getPackageVersion():
         return version
 
 
+#Cleans up the converted text stored in convertedWebView and checks if empty
+def isOuputEmpty( self ):
+        outputText=(re.sub(r"\s+", "", self.convertedWebView.GetPageSource(), flags=re.UNICODE)).encode('utf8')
+        initText=(re.sub(r"\s+", "", _EMPTY_PAGE))
+        if outputText == initText:
+               return True
+        return False
+
 def saveFile( self, event):
         '''Saves converted output to file'''
         global _IS_OUTPUT_SAVED
         global _SAVEAS_ODE
         msg = None
         fileFormat = None
+                
         if _SAVEAS_ODE:
                 msg = "Save ODE File"
                 fileFormat = "ODE files (*.ODE)|*.ode"
-        elif self.convertedWebView.GetPageText() is None:
+        elif isOuputEmpty (self):
                 msg = "Save File As"
                 fileFormat = "All files (*.*)|*.*"
         else:
@@ -74,10 +84,9 @@ def saveFile( self, event):
                 return
         else:
                 output = open(dlg.GetPath(), 'w')
-                output.write(self.convertedWebView.GetValue())
+                output.write(self.convertedWebView.GetPageText().replace("\n",""))
                 output.close()
                 _IS_OUTPUT_SAVED = True
-
 
 
 def checkSaveOutput( self, event ):
@@ -85,7 +94,7 @@ def checkSaveOutput( self, event ):
         msg = "MOCCASIN output may be lost. Do you want to save the file first?"
         dlg = wx.MessageDialog(self, msg, "Warning", wx.YES_NO | wx.ICON_WARNING)
 
-        if ( not _IS_OUTPUT_SAVED and self.convertedWebView.GetPageText() is not None):
+        if ( not _IS_OUTPUT_SAVED and not isOuputEmpty (self)):
                 if dlg.ShowModal() == wx.ID_YES:
                         saveFile( self, event )
         dlg.Destroy()
@@ -145,12 +154,8 @@ _LICENSE_URL = "https://www.gnu.org/licenses/lgpl.html"
 _VERSION = "Version:  "+ getPackageVersion()
 _IS_OUTPUT_SAVED = False
 _SAVEAS_ODE = False #Used to save the right file format
-_EMPTY_PAGE='''<!DOCTYPE html>
-                <html lang="en">
-                  <body>
-                    <!-- page content -->
-                  </body>
-                </html> ''' #Used as empty value to clear the empty WebView text field
+_EMPTY_PAGE='''<HTML lang=en><HEAD></HEAD>
+                <BODY><!-- empty page --></BODY> </HTML> ''' #Used as empty value to clear the empty WebView text field
 
 # -----------------------------------------------------------------------------
 # Graphical User Interface (GUI) definition
@@ -305,14 +310,17 @@ class MainFrame ( wx.Frame ):
                 self.matlabWebView.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
                 self.matlabWebView.SetToolTipString( "Input file for conversion" )
                 self.matlabWebView.SetFont( panelTextFont )
+                self.matlabWebView.SetPage(_EMPTY_PAGE, "")
                 midPanelSizer.Add( self.matlabWebView, 1, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND, 5 )
                 mainSizer.Add( midPanelSizer, 2, wx.ALL|wx.EXPAND, 5 )
 
                 #Bottom sizer
                 bottomPanelSizer = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "Converted File" ), wx.VERTICAL )
                 self.convertedWebView = wx.html2.WebView.New( self, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND )
+                self.convertedWebView.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
                 self.convertedWebView.SetFont( panelTextFont )
                 self.convertedWebView.SetToolTipString( "Output file after conversion" )
+                self.convertedWebView.SetPage(_EMPTY_PAGE, "")
                 bottomPanelSizer.Add( self.convertedWebView, 1, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND, 5 )
                 mainSizer.Add( bottomPanelSizer, 2, wx.ALL|wx.EXPAND, 5 )
                 
@@ -507,7 +515,7 @@ class MainFrame ( wx.Frame ):
         def OnPrint(self, evt):
                 data = wx.PrintDialogData(self.pdata)
                 printer = wx.Printer(data)
-                text = self.convertedWebView.GetPageText()
+                text = self.convertedWebView.GetPageText().replace("\n","")
                 printout = PrintDialog(text, "Moccasin output", self.margins)
                 useSetupDialog = True
                 if not printer.Print(self, printout, useSetupDialog) \
