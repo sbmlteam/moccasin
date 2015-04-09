@@ -80,7 +80,7 @@ python setup.py
 Using MOCCASIN
 --------------
 
-You can use MOCCASIN either via the command line or via the GUI interface.  To start the MOCCASIN GUI, execute the Python command `moccasin/interfaces/Moccasin_GUI.py` in the source directory.  A screenshot of the GUI in action is shown below.
+You can use MOCCASIN either via the command line or via the GUI interface. To start the MOCCASIN GUI, execute the Python command `moccasin/interfaces/moccasin_GUI.py` in the source directory, or the command `moccasin-GUI` in a shell/terminal. A screenshot of the GUI in action is shown below.
 
 <img src="https://raw.githubusercontent.com/sbmlteam/moccasin/develop/docs/project/examples/screenshot-01.jpg"
  alt="MOCCASIN GUI" title="MOCCASIN GUI" align="center" />

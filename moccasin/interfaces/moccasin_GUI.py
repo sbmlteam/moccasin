@@ -26,33 +26,15 @@ import requests
 import textwrap
 import sys
 import wx
-import wx.xrc
 import wx.lib.dialogs
-import wx.lib.agw.genericmessagedialog as GMD
-
+sys.path.append('..')
+from printDialog import PrintDialog
+from controller import Controller
 from pkg_resources import get_distribution, DistributionNotFound
-
-#Some of these imports will disappear when logic is made into a separate module
-from pyparsing import ParseException, ParseResults
-from tempfile import NamedTemporaryFile
-
-sys.path.append('moccasin')
-sys.path.append('../matlab_parser')
-sys.path.append('../converter')
-from converter import *
-from matlab_parser import *
-
 
 # -----------------------------------------------------------------------------
 # Helper functions
 # -----------------------------------------------------------------------------
-def network_available():
-        '''Try to connect somewhere to test if a network is available.'''
-        try:
-                _ = requests.get('http://www.google.com', timeout=5)
-                return True
-        except requests.ConnectionError:
-                return False
 
 def getPackageVersion():
         project = "MOCCASIN"
@@ -63,8 +45,9 @@ def getPackageVersion():
                 version = '(local)'
         return version
 
-#Used for saving an file
+
 def saveFile( self, event):
+        '''Saves converted output to file'''
         global _IS_OUTPUT_SAVED
         global _SAVEAS_ODE
         msg = None
@@ -89,8 +72,9 @@ def saveFile( self, event):
                 _IS_OUTPUT_SAVED = True
 
 
-#Checks that output is saved before it's lost
+
 def checkSaveOutput( self, event ):
+        '''Checks that converted output is saved'''
         msg = "MOCCASIN output may be lost. Do you want to save the file first?"
         dlg = wx.MessageDialog(self, msg, "Warning", wx.YES_NO | wx.ICON_WARNING)
 
@@ -100,21 +84,21 @@ def checkSaveOutput( self, event ):
         dlg.Destroy()
 
 
-#Serves to give feedback to the user in case of failure
 def report( self, event, msg ):
+        '''Serves to give feedback to the user in case of failure'''
         dlg = wx.lib.dialogs.ScrolledMessageDialog(self, msg, "Houston, we have a problem!")
         dlg.ShowModal()
 
 
-#Saves opened files to the recent list menu
 def modifyHistory( self, event, path ):
+        '''Saves opened files to the recent list menu'''
         self.fileHistory.AddFileToHistory(path)
         self.fileHistory.Save(self.config)
         self.config.Flush() # Only necessary for Linux systems
 
         
-#Deals with importing matlab files
 def openFile( self, event, path):
+        '''Deals with importing matlab files'''
         try:
                 f = open(path, 'r')
                 self.file_contents = f.read()
@@ -122,16 +106,19 @@ def openFile( self, event, path):
                 f.close()
         except IOError as err:
                 report( self, event, "IOError: {0}".format(err))
+   
 
-
-#Resets components when opening a new file     
 def resetOnOpen( self, event ):
+        '''Resets graphical components when opening a new file '''
         self.convertButton.Enable()
         self.convertFile.Enable(1)
         self.convertedTextCtrl.SetValue("")
+        self.matlabTextCtrl.SetValue("")
+        self.statusBar.SetStatusText( "Ready",0 )
 
-#Initializes values for printing  
+          
 def initializePrintingDefaults(self):
+        '''Initializes printing parameters for printing'''
         self.pdata = wx.PrintData()
         self.pdata.SetPaperId(wx.PAPER_LETTER)
         self.pdata.SetOrientation(wx.PORTRAIT)
@@ -141,125 +128,24 @@ def initializePrintingDefaults(self):
 # Global configuration constants
 # -----------------------------------------------------------------------------
 
-_BIOCHAM_URL = 'http://lifeware.inria.fr/biocham/online/rest/export'
-_HELP_URL = "https://github.com/sbmlteam/moccasin/blob/setupFix_branch/docs/quickstart.md"
+_HELP_URL = "https://github.com/sbmlteam/moccasin/blob/master/README.md"
 _LICENSE_URL = "https://www.gnu.org/licenses/lgpl.html"
 _VERSION = "Version:  "+ getPackageVersion()
 _IS_OUTPUT_SAVED = False
 _SAVEAS_ODE = False #Used to save the right file format
-_FONTSIZE = 10
-
-# -----------------------------------------------------------------------------
-# Printout class definition
-# -----------------------------------------------------------------------------
-
-#A printout class that is able to print simple text documents.
-#Does not handle page numbers or titles, and it assumes that no
-#lines are longer than what will fit within the page width
-
-class TextDocPrintout(wx.Printout):
-      
-    def __init__(self, text, title, margins):
-        wx.Printout.__init__(self, title)
-        self.lines = text.split('\n')
-        self.margins = margins
-
-
-    def HasPage(self, page):
-        return page <= self.numPages
-
-
-    def GetPageInfo(self):
-        return (1, self.numPages, 1, self.numPages)
-
-
-    def CalculateScale(self, dc):
-        # Scale the DC such that the printout is roughly the same as
-        # the screen scaling.
-        ppiPrinterX, ppiPrinterY = self.GetPPIPrinter()
-        ppiScreenX, ppiScreenY = self.GetPPIScreen()
-        logScale = float(ppiPrinterX)/float(ppiScreenX)
-
-        # Now adjust if the real page size is reduced (such as when
-        # drawing on a scaled wx.MemoryDC in the Print Preview.)  If
-        # page width == DC width then nothing changes, otherwise we
-        # scale down for the DC.
-        pw, ph = self.GetPageSizePixels()
-        dw, dh = dc.GetSize()
-        scale = logScale * float(dw)/float(pw)
-
-        # Set the DC's scale.
-        dc.SetUserScale(scale, scale)
-
-        # Find the logical units per millimeter (for calculating the
-        # margins)
-        self.logUnitsMM = float(ppiPrinterX)/(logScale*25.4)
-
-
-    def CalculateLayout(self, dc):
-        # Determine the position of the margins and the
-        # page/line height
-        topLeft, bottomRight = self.margins
-        dw, dh = dc.GetSize()
-        self.x1 = topLeft.x * self.logUnitsMM
-        self.y1 = topLeft.y * self.logUnitsMM
-        self.x2 = dc.DeviceToLogicalXRel(dw) - bottomRight.x * self.logUnitsMM 
-        self.y2 = dc.DeviceToLogicalYRel(dh) - bottomRight.y * self.logUnitsMM 
-
-        # use a 1mm buffer around the inside of the box, and a few
-        # pixels between each line
-        self.pageHeight = self.y2 - self.y1 - 2*self.logUnitsMM
-        font = wx.Font(_FONTSIZE, wx.TELETYPE, wx.NORMAL, wx.NORMAL)
-        dc.SetFont(font)
-        self.lineHeight = dc.GetCharHeight() 
-        self.linesPerPage = int(self.pageHeight/self.lineHeight)
-
-
-    def OnPreparePrinting(self):
-        # calculate the number of pages
-        dc = self.GetDC()
-        self.CalculateScale(dc)
-        self.CalculateLayout(dc)
-        self.numPages = len(self.lines) / self.linesPerPage
-        if len(self.lines) % self.linesPerPage != 0:
-            self.numPages += 1
-
-
-    def OnPrintPage(self, page):
-        dc = self.GetDC()
-        self.CalculateScale(dc)
-        self.CalculateLayout(dc)
-
-        # draw a page outline at the margin points
-        dc.SetPen(wx.Pen("black", 0))
-        dc.SetBrush(wx.TRANSPARENT_BRUSH)
-        r = wx.RectPP((self.x1, self.y1),
-                      (self.x2, self.y2))
-        dc.DrawRectangleRect(r)
-        dc.SetClippingRect(r)
-
-        # Draw the text lines for this page
-        line = (page-1) * self.linesPerPage
-        x = self.x1 + self.logUnitsMM
-        y = self.y1 + self.logUnitsMM
-        while line < (page * self.linesPerPage):
-            dc.DrawText(self.lines[line], x, y)
-            y += self.lineHeight
-            line += 1
-            if line >= len(self.lines):
-                break
-        return True
-
 
 # -----------------------------------------------------------------------------
 # Graphical User Interface (GUI) definition
 # -----------------------------------------------------------------------------
 class MainFrame ( wx.Frame ):
         def __init__( self, parent ):
-                wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = "Welcome to MOCCASIN", pos = wx.DefaultPosition, size = wx.Size( 780,691 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
+                wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = "Welcome to MOCCASIN", pos = wx.DefaultPosition, size = wx.Size( 780,790 ), style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
                 self.SetSizeHintsSz( wx.Size( 760,-1 ))
                 self.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_BTNFACE ) )
 
+                #Interface with the back-end
+                self.controller = Controller()
+                
                 #Construct a status bar
                 self.statusBar = self.CreateStatusBar(5, wx.ST_SIZEGRIP|wx.ALWAYS_SHOW_SB|wx.RAISED_BORDER, wx.ID_ANY )
                 self.statusBar.SetFieldsCount(5)
@@ -448,31 +334,32 @@ class MainFrame ( wx.Frame ):
                         filename = dlg.GetFilename()
                         dirname = dlg.GetDirectory()
                         path=os.path.join(dirname, filename)
+                        resetOnOpen(self, event)
                         openFile(self, event, path)
                         self.filePicker.SetPath(path)
-                        #Only reset values when file was loaded
-                        resetOnOpen(self, event)
+                        #Only reset values when file was loaded                        
                         modifyHistory(self, event , path)
+                        _IS_OUTPUT_SAVED = False
                 dlg.Destroy()
-                _IS_OUTPUT_SAVED = False
 
         def onFilePicker(self, event):
                 resetOnOpen(self, event)               
                 path=self.filePicker.GetPath()
                 openFile(self, event, path)
                 modifyHistory(self, event, path)
+                _IS_OUTPUT_SAVED = False                
 
         def onSaveAs( self, event ):
                 saveFile(self, event)
                 
         def onFileHistory(self, event):
+                resetOnOpen(self, event)                
                 fileNum = event.GetId() - wx.ID_FILE1
                 path = self.fileHistory.GetHistoryFile(fileNum)
                 modifyHistory (self, event, path)
                 self.filePicker.SetPath(path)
                 openFile(self, event, path)
-                resetOnOpen(self, event)                
-
+                
         def onExit( self, event ):
                 self.Close(True)
 
@@ -495,52 +382,44 @@ class MainFrame ( wx.Frame ):
                 global _SAVEAS_ODE
 
                 checkSaveOutput( self, event )
+                self.convertedTextCtrl.SetValue("")
 
                 self.statusBar.SetStatusText( "Generating output ..." ,0)
                 try:
 
-                        parser = MatlabGrammar()
-                        parse_results = parser.parse_string(self.file_contents)
+                        self.controller.parse_File(self.file_contents)
                         #output XPP files
                         if self.xppModel.GetValue():
-                                [output, extra] = create_raterule_model(parse_results,
-                                                                        use_species=self.varsAsSpecies.GetValue(),
-                                                                        produce_sbml=False)
+                                [output, extra] = self.controller.build_model(use_species=self.varsAsSpecies.GetValue(),
+                                                                              produce_sbml=False,
+                                                                              use_func_param_for_var_name=True,
+                                                                              add_comments=False)
+                                
                                 self.convertedTextCtrl.SetValue(output)
                                 self.statusBar.SetStatusText("XPP/XPPAUT ODE format",2)
 
                         #output equation-based SBML
                         elif self.equationBasedModel.GetValue():
-                                [output, extra] = create_raterule_model(parse_results,
-                                                                        use_species=self.varsAsSpecies.GetValue(),
-                                                                        produce_sbml=True)
-                                self.convertedTextCtrl.SetValue(output)
-                                self.statusBar.SetStatusText("SBML format - equations",2)
+                                 [output, extra] = self.controller.build_model(use_species=self.varsAsSpecies.GetValue(),
+                                                                               produce_sbml=True,
+                                                                               use_func_param_for_var_name=True,
+                                                                               add_comments=False)
+                                 self.convertedTextCtrl.SetValue(output)
+                                 self.statusBar.SetStatusText("SBML format - equations",2)
                         #output reaction-based SBML
                         else:
-                                if not network_available():
+                                if not self.controller.check_network_connection():
                                         msg = "A network connection is needed for this feature, but the network appears to be unavailable." 
                                         dlg = wx.MessageDialog(self, msg, "Warning", wx.OK | wx.ICON_WARNING)
                                         dlg.ShowModal()
                                         dlg.Destroy()
                                 else:
-                                        #Create temp file storing XPP model version
-                                        with NamedTemporaryFile(suffix= ".ode", delete=False) as xpp_file:
-                                                [output, extra] = create_raterule_model(parse_results,
-                                                                                        use_species=self.varsAsSpecies.GetValue(),
-                                                                                        produce_sbml=False,
-                                                                                        add_comments=False)
-                                                xpp_file.write(output)
-                                        files = {'file': open(xpp_file.name)}
-                                        #Access Biocham to curate and convert equations to reactions
-                                        data = {'exportTo':'sbml', 'curate':'true'}
-                                        response = requests.post(_BIOCHAM_URL, files=files, data=data)
-                                        # We need to post-process the output to deal with
-                                        # limitations in BIOCHAM's translation service.
-                                        sbml = process_biocham_output(response.content, parse_results, extra)
+                                        sbml = self.controller.build_reaction_model(use_species=self.varsAsSpecies.GetValue(),
+                                                                               produce_sbml=False,
+                                                                               use_func_param_for_var_name=True,
+                                                                               add_comments=False)
+               
                                         self.convertedTextCtrl.SetValue(sbml)
-                                        del files
-                                        os.unlink(xpp_file.name)
                                         self.statusBar.SetStatusText("SBML format - reactions", 2)
 
                 except IOError as err:
@@ -610,7 +489,7 @@ class MainFrame ( wx.Frame ):
                 data = wx.PrintDialogData(self.pdata)
                 printer = wx.Printer(data)
                 text = self.convertedTextCtrl.GetValue()
-                printout = TextDocPrintout(text, "Converted_Moccasin", self.margins)
+                printout = PrintDialog(text, "Moccasin output", self.margins)
                 useSetupDialog = True
                 if not printer.Print(self, printout, useSetupDialog) \
                    and printer.GetLastError() == wx.PRINTER_ERROR:
@@ -625,9 +504,12 @@ class MainFrame ( wx.Frame ):
         
 
 # -----------------------------------------------------------------------------
-# Driver
+# Entry point
 # -----------------------------------------------------------------------------
-app = wx.App(False)
-frame = MainFrame(None)
-frame.Show()
-app.MainLoop()
+def gui_main():
+        app = wx.App(False)
+        frame = MainFrame(None)
+        frame.Show()
+        app.MainLoop()
+
+gui_main()
