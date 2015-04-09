@@ -1,7 +1,7 @@
 Testing in MOCCASIN
 =======================
 
-MOCCASIN defines acceptance test suites for each of its modules (`matlab_parsing` and `converter`). We have chosen _py.test_ as the Python automated testing ecosystem because it provides support for setuptools, support for "normal" assert statements, and has less boilerplate.
+MOCCASIN defines acceptance test suites for each of its modules (`matlab_parsing` and `converter`). We have chosen **py.test** as the Python automated testing ecosystem because it provides support for setuptools, support for "normal" assert statements, and has less boilerplate.
 
 ### File structure
 
@@ -28,14 +28,14 @@ Then, you can use either:
 
 * `coverage report`, which will print the report or,
 
-* `coverage html`, which will create a new folder (htmlcov) folder containing a detailed navigable report (`index.html`) of uncovered code statements per python file.
+* `coverage html`, which will create a new folder (`htmlcov`) folder containing a detailed navigable report (`index.html`) of uncovered code statements per Python file.
 
 Testing in different Python environments
 ---------------------------
 
 Acceptance tests can be run in either Python 2.7 or Python 3.3. To ensure compliance, MOCCASIN uses **Tox**. Tox is a very simple idea implemented extremely well. When we type the command `tox` from the top directory, a source distribution of MOCCASIN is created and installed on different isolated virtual environments for testing. 
 
-Tox automatically prints a coverage report on the command line and generates the htmlcov folder for the whole project.
+Tox automatically prints a coverage report on the command line and generates the `htmlcov` folder for the whole project.
 
 Contributing to MOCCASIN
 ---------------------------
