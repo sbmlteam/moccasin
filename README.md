@@ -1,7 +1,5 @@
 MOCCASIN
 ========
-<img src="https://raw.githubusercontent.com/sbmlteam/moccasin/develop/dev/graphics/logo/MOCCASIN%20basic%20logo%20200%20px%20wide.png"
- alt="MOCCASIN logo" title="MOCCASIN" align="right" />
 
 *MOCCASIN* stands for *"Model ODE Converter for Creating Awesome SBML INteroperability"*.  MOCCASIN is designed to convert certain basic forms of ODE simulation models written in MATLAB or Octave and translate them into [SBML](http://sbml.org) format.  It thereby enables researchers to convert MATLAB models into an open and widely-used format in systems biology.
 
