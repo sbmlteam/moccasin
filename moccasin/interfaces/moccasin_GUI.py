@@ -118,15 +118,15 @@ def openFile( self, event, path):
         try:
                 f = open(path, 'r')
                 self.file_contents = f.read()     
-                self.matlabWebView.SetPage(tokenize(self.file_contents, "matlab"),"") 
+                self.matlabWebView.SetPage(tokenize(self.file_contents, "matlab", "igor"),"") 
                 f.close()
         except IOError as err:
                 report( self, event, "IOError: {0}".format(err))
 
 #Uses the pygments package to tokenize and format text for display 
-def tokenize( input_file, file_format ):
+def tokenize( input_file, file_format, text_style ):
         lexer = get_lexer_by_name(file_format, stripall=True)
-        formatter = HtmlFormatter(noclasses=True,nobackground= True)
+        formatter = HtmlFormatter(noclasses=True,nobackground= True,style=text_style)
         return (highlight(input_file,lexer,formatter))
 
 def resetOnOpen( self, event ):
@@ -421,7 +421,7 @@ class MainFrame ( wx.Frame ):
                                                                               use_func_param_for_var_name=True,
                                                                               add_comments=False)
                                 
-                                self.convertedWebView.SetPage(tokenize(output, "matlab"),"") 
+                                self.convertedWebView.SetPage(tokenize(output, "matlab", "borland"),"") 
                                 self.statusBar.SetStatusText("XPP/XPPAUT ODE format",2)
 
                         #output equation-based SBML
@@ -431,7 +431,7 @@ class MainFrame ( wx.Frame ):
                                                                                use_func_param_for_var_name=True,
                                                                                add_comments=False)
 
-                                 self.convertedWebView.SetPage(tokenize(output, "xml"),"")
+                                 self.convertedWebView.SetPage(tokenize(output, "xml", "borland"),"")
                                  self.statusBar.SetStatusText("SBML format - equations",2)
                         #output reaction-based SBML
                         else:
@@ -446,7 +446,7 @@ class MainFrame ( wx.Frame ):
                                                                                use_func_param_for_var_name=True,
                                                                                add_comments=False)
                
-                                        self.convertedWebView.SetPage(tokenize(sbml, "xml"),"")
+                                        self.convertedWebView.SetPage(tokenize(sbml, "xml", "borland"),"")
                                         self.statusBar.SetStatusText("SBML format - reactions", 2)
 
                 except IOError as err:
