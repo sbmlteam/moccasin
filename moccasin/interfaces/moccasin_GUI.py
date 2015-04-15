@@ -26,6 +26,14 @@ import requests
 import textwrap
 import sys
 import wx
+import re
+
+#Imports for tokenizing, formatting and displaying .m or .xml files
+import wx.html2 
+from pygments import highlight
+from pygments.lexers import get_lexer_by_name
+from pygments.formatters import HtmlFormatter
+
 import wx.lib.dialogs
 sys.path.append('..')
 from printDialog import PrintDialog
@@ -46,16 +54,25 @@ def getPackageVersion():
         return version
 
 
+#Cleans up the converted text stored in convertedWebView and checks if empty
+def isOuputEmpty( self ):
+        outputText=(re.sub(r"\s+", "", self.convertedWebView.GetPageSource(), flags=re.UNICODE)).encode('utf8')
+        initText=(re.sub(r"\s+", "", _EMPTY_PAGE))
+        if outputText == initText:
+               return True
+        return False
+
 def saveFile( self, event):
         '''Saves converted output to file'''
         global _IS_OUTPUT_SAVED
         global _SAVEAS_ODE
         msg = None
         fileFormat = None
+                
         if _SAVEAS_ODE:
                 msg = "Save ODE File"
                 fileFormat = "ODE files (*.ODE)|*.ode"
-        elif self.convertedTextCtrl.IsEmpty():
+        elif isOuputEmpty (self):
                 msg = "Save File As"
                 fileFormat = "All files (*.*)|*.*"
         else:
@@ -67,10 +84,9 @@ def saveFile( self, event):
                 return
         else:
                 output = open(dlg.GetPath(), 'w')
-                output.write(self.convertedTextCtrl.GetValue())
+                output.write(self.convertedWebView.GetPageText().replace("\n",""))
                 output.close()
                 _IS_OUTPUT_SAVED = True
-
 
 
 def checkSaveOutput( self, event ):
@@ -78,7 +94,7 @@ def checkSaveOutput( self, event ):
         msg = "MOCCASIN output may be lost. Do you want to save the file first?"
         dlg = wx.MessageDialog(self, msg, "Warning", wx.YES_NO | wx.ICON_WARNING)
 
-        if ( not _IS_OUTPUT_SAVED and not self.convertedTextCtrl.IsEmpty()):
+        if ( not _IS_OUTPUT_SAVED and not isOuputEmpty (self)):
                 if dlg.ShowModal() == wx.ID_YES:
                         saveFile( self, event )
         dlg.Destroy()
@@ -101,19 +117,24 @@ def openFile( self, event, path):
         '''Deals with importing matlab files'''
         try:
                 f = open(path, 'r')
-                self.file_contents = f.read()
-                self.matlabTextCtrl.SetValue(self.file_contents)
+                self.file_contents = f.read()     
+                self.matlabWebView.SetPage(tokenize(self.file_contents, "matlab", "igor"),"") 
                 f.close()
         except IOError as err:
                 report( self, event, "IOError: {0}".format(err))
-   
+
+#Uses the pygments package to tokenize and format text for display 
+def tokenize( input_file, file_format, text_style ):
+        lexer = get_lexer_by_name(file_format, stripall=True)
+        formatter = HtmlFormatter(noclasses=True,nobackground= True,style=text_style)
+        return (highlight(input_file,lexer,formatter))
 
 def resetOnOpen( self, event ):
         '''Resets graphical components when opening a new file '''
         self.convertButton.Enable()
         self.convertFile.Enable(1)
-        self.convertedTextCtrl.SetValue("")
-        self.matlabTextCtrl.SetValue("")
+        self.convertedWebView.SetPage(_EMPTY_PAGE, "")
+        self.matlabWebView.SetPage(_EMPTY_PAGE,"")
         self.statusBar.SetStatusText( "Ready",0 )
 
           
@@ -133,6 +154,8 @@ _LICENSE_URL = "https://www.gnu.org/licenses/lgpl.html"
 _VERSION = "Version:  "+ getPackageVersion()
 _IS_OUTPUT_SAVED = False
 _SAVEAS_ODE = False #Used to save the right file format
+_EMPTY_PAGE='''<HTML lang=en><HEAD></HEAD>
+                <BODY><!-- empty page --></BODY> </HTML> ''' #Used as empty value to clear the empty WebView text field
 
 # -----------------------------------------------------------------------------
 # Graphical User Interface (GUI) definition
@@ -283,21 +306,24 @@ class MainFrame ( wx.Frame ):
                 panelTextFont = wx.Font( wx.NORMAL_FONT.GetPointSize() -1, 70, 90, wx.FONTWEIGHT_NORMAL, False, wx.EmptyString )
 
                 midPanelSizer = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "MATLAB File" ), wx.VERTICAL )
-                self.matlabTextCtrl = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,200 ), wx.HSCROLL|wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP|wx.ALWAYS_SHOW_SB|wx.FULL_REPAINT_ON_RESIZE|wx.RAISED_BORDER )
-                self.matlabTextCtrl.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
-                self.matlabTextCtrl.SetToolTipString( "Input file for conversion" )
-                self.matlabTextCtrl.SetFont( panelTextFont )
-                midPanelSizer.Add( self.matlabTextCtrl, 1, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND, 5 )
+                self.matlabWebView = wx.html2.WebView.New( self, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND  )
+                self.matlabWebView.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
+                self.matlabWebView.SetToolTipString( "Input file for conversion" )
+                self.matlabWebView.SetFont( panelTextFont )
+                self.matlabWebView.SetPage(_EMPTY_PAGE, "")
+                midPanelSizer.Add( self.matlabWebView, 1, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND, 5 )
                 mainSizer.Add( midPanelSizer, 2, wx.ALL|wx.EXPAND, 5 )
 
                 #Bottom sizer
                 bottomPanelSizer = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "Converted File" ), wx.VERTICAL )
-                self.convertedTextCtrl = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size( 500,200 ), wx.HSCROLL|wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_WORDWRAP|wx.ALWAYS_SHOW_SB|wx.FULL_REPAINT_ON_RESIZE|wx.RAISED_BORDER )
-                self.convertedTextCtrl.SetFont( panelTextFont )
-                self.convertedTextCtrl.SetToolTipString( "Output file after conversion" )
-                bottomPanelSizer.Add( self.convertedTextCtrl, 1, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND, 5 )
+                self.convertedWebView = wx.html2.WebView.New( self, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND )
+                self.convertedWebView.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
+                self.convertedWebView.SetFont( panelTextFont )
+                self.convertedWebView.SetToolTipString( "Output file after conversion" )
+                self.convertedWebView.SetPage(_EMPTY_PAGE, "")
+                bottomPanelSizer.Add( self.convertedWebView, 1, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND, 5 )
                 mainSizer.Add( bottomPanelSizer, 2, wx.ALL|wx.EXPAND, 5 )
-
+                
                 #Set frame sizer
                 self.SetSizer( mainSizer )
                 self.Layout()
@@ -365,8 +391,8 @@ class MainFrame ( wx.Frame ):
 
         def onClear( self, event ):
                 global _IS_OUTPUT_SAVED
-                self.matlabTextCtrl.SetValue("")
-                self.convertedTextCtrl.SetValue("")
+                self.matlabWebView.SetPage(_EMPTY_PAGE,"")
+                self.convertedWebView.SetPage(_EMPTY_PAGE, "")
                 self.filePicker.SetPath("")
                 self.statusBar.SetStatusText( "Ready",0 )
                 self.statusBar.SetStatusText( "",2 )
@@ -382,7 +408,7 @@ class MainFrame ( wx.Frame ):
                 global _SAVEAS_ODE
 
                 checkSaveOutput( self, event )
-                self.convertedTextCtrl.SetValue("")
+                self.convertedWebView.SetPage(_EMPTY_PAGE, "")
 
                 self.statusBar.SetStatusText( "Generating output ..." ,0)
                 try:
@@ -395,7 +421,7 @@ class MainFrame ( wx.Frame ):
                                                                               use_func_param_for_var_name=True,
                                                                               add_comments=False)
                                 
-                                self.convertedTextCtrl.SetValue(output)
+                                self.convertedWebView.SetPage(tokenize(output, "matlab", "borland"),"") 
                                 self.statusBar.SetStatusText("XPP/XPPAUT ODE format",2)
 
                         #output equation-based SBML
@@ -404,7 +430,8 @@ class MainFrame ( wx.Frame ):
                                                                                produce_sbml=True,
                                                                                use_func_param_for_var_name=True,
                                                                                add_comments=False)
-                                 self.convertedTextCtrl.SetValue(output)
+
+                                 self.convertedWebView.SetPage(tokenize(output, "xml", "borland"),"")
                                  self.statusBar.SetStatusText("SBML format - equations",2)
                         #output reaction-based SBML
                         else:
@@ -419,7 +446,7 @@ class MainFrame ( wx.Frame ):
                                                                                use_func_param_for_var_name=True,
                                                                                add_comments=False)
                
-                                        self.convertedTextCtrl.SetValue(sbml)
+                                        self.convertedWebView.SetPage(tokenize(sbml, "xml", "borland"),"")
                                         self.statusBar.SetStatusText("SBML format - reactions", 2)
 
                 except IOError as err:
@@ -488,7 +515,7 @@ class MainFrame ( wx.Frame ):
         def OnPrint(self, evt):
                 data = wx.PrintDialogData(self.pdata)
                 printer = wx.Printer(data)
-                text = self.convertedTextCtrl.GetValue()
+                text = self.convertedWebView.GetPageText()
                 printout = PrintDialog(text, "Moccasin output", self.margins)
                 useSetupDialog = True
                 if not printer.Print(self, printout, useSetupDialog) \
