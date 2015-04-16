@@ -1191,7 +1191,6 @@ class MatlabRewriter(MatlabNodeVisitor):
 
 def rewrite_recognized_matlab(context):
     rewriter = MatlabRewriter()
-    context.nodes = rewriter.visit(context.nodes)
     for lhs, rhs in context.assignments.items():
         context.assignments[lhs] = rewriter.visit(rhs)
     for name, args in context.calls.items():
@@ -1240,7 +1239,7 @@ def get_filename_and_options(argv):
         options, path = getopt.getopt(argv[1:], "cdpqxorvl")
     except:
         raise SystemExit(help_msg)
-    if len(path) != 1 or len(options) > 2:
+    if len(path) != 1 or len(options) > 8:
         raise SystemExit(help_msg)
     include_comments  = not any(['-c' in y for y in options])
     debug             = any(['-d' in y for y in options])

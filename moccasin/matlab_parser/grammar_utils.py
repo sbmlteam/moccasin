@@ -31,18 +31,38 @@ from pyparsing import ParseResults
 # Parsing helpers.
 # .............................................................................
 
+# Visitor class for ParseResults.
+
+class ParseResultsVisitor(object):
+    def visit(self, pr):
+        if len(pr) > 1 and not nonempty_dict(pr):
+            # It's a list of items.  Return a list.
+            return [self.visit(item) for item in pr]
+        if not nonempty_dict(pr):
+            # It's an expression.
+            return self.visit_expression(pr)
+        # Not an expression, but an individual, single parse result.
+        # We dispatch to the appropriate transformer by building the name.
+        key = first_key(pr)
+        methname = 'visit_' + '_'.join(key.split())
+        meth = getattr(self, methname, None)
+        if meth is None:
+            meth = self.default_visit
+        return meth(pr)
+
+    def default_visit(self, pr):
+        return pr
+
+
+# makeLRlike -- function used in the definition of our grammar in grammar.py
+
 def makeLRlike(numterms):
     '''Parse action that will take flat lists of tokens and nest them
     as if parsed left-recursively.  Originally written by Paul McGuire as
     a StackOverflow answer here: http://stackoverflow.com/a/4589920/743730
     '''
-    if numterms is None:
-        # None operator can only be a binary op.
-        initlen = 2
-        incr = 1
-    else:
-        initlen = {0: 1, 1: 2, 2: 3, 3: 5}[numterms]
-        incr = {0: 1, 1: 1, 2: 2, 3: 4}[numterms]
+    initlen = {0: 1, 1: 2, 2: 3, 3: 5}[numterms]
+    incr = {0: 1, 1: 1, 2: 2, 3: 4}[numterms]
 
     # Create a closure.  This defines a parse action for this number of
     # terms, to convert flat list of tokens into nested list.

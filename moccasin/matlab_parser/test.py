@@ -67,6 +67,9 @@ Arguments:
         parser.print_parse_results(results)
 
     if debug:
+        print('-'*60)
+        print('Debug reminder: parsed results are in variable `results`')
+        print('-'*60)
         pdb.set_trace()
 
 

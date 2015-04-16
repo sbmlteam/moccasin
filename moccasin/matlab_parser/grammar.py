@@ -292,20 +292,456 @@ if LooseVersion(pyparsing.__version__) < LooseVersion('2.0.3'):
 
 ParserElement.enablePackrat()
 
+
+# Helper classes
+# .............................................................................
 
+# ParseResultsTransformer
+#
+# Helper class to transform ParseResults to MatlabNode-based output format.
+#
+# This takes our heavily-annotated output from PyParsing and converts it
+# to a tree-based representation consisting of lists of MatlabNode objects.
+#
+# In what follows, the visit_* functions are visitors named after the names
+# of our grammar objects (in the PyParsing grammar definition later below).
+# They are named such that the visit() function from the ParseResultsVisitor
+# parent class can dispatch on the name we assign to PyParsing objects.  For
+# instance, to format what we label an "assignment" in the PyParsing grammar
+# above, there's a function called visit_assignment() below.  Class
+# ParseResultsVisitor is defined in grammar_utils.py.
+#
+# I would implement this using an annotation-based approach like the
+# @dispatch.on and @visit.when annotations that are floating around on the
+# net, but can't: the objects we're processing are always ParseResults (a
+# single class), so the class-based @visit.when dispatching won't work here.
+
+class ParseResultsTransformer(ParseResultsVisitor):
+    def visit_identifier(self, pr):
+        return Identifier(name=pr['identifier'])
+
+
+    def visit_number(self, pr):
+        return Number(value=pr['number'])
+
+
+    def visit_boolean(self, pr):
+        return Boolean(value=pr['boolean'])
+
+
+    def visit_string(self, pr):
+        return String(value=pr['string'])
+
+
+    def visit_tilde(self, pr):
+        return Special(value='~')
+
+
+    def visit_end(self, pr):
+        return Special(value='end')
+
+
+    def visit_end_statement(self, pr):
+        return End()
+
+
+    def visit_colon(self, pr):
+        return Special(value=':')
+
+
+    def visit_colon_operator(self, pr):
+        return TernaryOp(op=':')
+
+
+    def visit_unary_operator(self, pr):
+        op_key = first_key(pr)
+        return UnaryOp(op=pr[op_key])
+
+
+    def visit_binary_operator(self, pr):
+        op_key = first_key(pr)
+        return BinaryOp(op=pr[op_key])
+
+
+    def visit_transpose(self, pr):
+        content = pr['transpose']
+        the_op = content['operator']
+        the_operand = self.visit(content['operand'])
+        return Transpose(op=the_op, operand=the_operand)
+
+
+    def visit_expression(self, pr):
+        return Expression(content=[self.visit(thing) for thing in pr])
+
+
+    def visit_assignment(self, pr):
+        content = pr['assignment']
+        lvalue = self.visit(content['lhs'])
+        rvalue = self.visit(content['rhs'])
+        node = Assignment(lhs=lvalue, rhs=rvalue)
+        return node
+
+
+    def visit_array(self, pr):
+        content = pr['array']
+        # Two kinds of array situations: a bare array, and one where we
+        # managed to determine it's an array access (and not the more
+        # ambiguous function call or array access).  If we have a name, it's
+        # the latter; if we have a row list, it's the former.
+        if 'name' in content:
+            # Array reference.
+            the_name = self.visit(content['name'])
+            the_subscripts = self._convert_list(content['subscript list'])
+            return ArrayRef(name=the_name, args=the_subscripts, is_cell=False)
+        elif 'row list' in content:
+            # Bare array.
+            return Array(rows=self._convert_rows(content['row list']), is_cell=False)
+        else:
+            # No row list or subscript list => empty array.
+            return Array(rows=[], is_cell=False)
+
+
+    def visit_cell_array(self, pr):
+        content = pr['cell array']
+        # This is basically like regular arrays.  Again, two kinds of
+        # situations: a bare cell array, and one where we managed to
+        # determine it's an array access.  If we have a name, it's the
+        # latter; if we have a row list, it's the former.
+        if 'name' in content:
+            # Array reference.
+            the_name = self.visit(content['name'])
+            the_subscripts = self._convert_list(content['subscript list'])
+            return ArrayRef(name=the_name, args=the_subscripts, is_cell=True)
+        elif 'row list' in content:
+            # Bare array.
+            return Array(rows=self._convert_rows(content['row list']), is_cell=True)
+        else:
+            # No row list or subscript list => empty array.
+            return Array(rows=[], is_cell=True)
+
+
+    def visit_array_or_function(self, pr):
+        content = pr['array or function']
+        the_name = self.visit(content['name'])
+        the_args = self._convert_list(content['argument list'])
+        return ArrayOrFunCall(name=the_name, args=the_args)
+
+
+    def visit_function_handle(self, pr):
+        content = pr['function handle']
+        if 'name' in content:
+            return FunHandle(name=self.visit(content['name']))
+        else:
+            the_args = self._convert_list(content['argument list'])
+            the_body = self.visit(content['function definition'])
+            return AnonFun(args=the_args, body=the_body)
+
+
+    def visit_function_definition(self, pr):
+        content = pr['function definition']
+        the_name = self.visit(content['name'])
+        if 'parameter list' in content:
+            the_params = self._convert_list(content['parameter list'])
+        else:
+            the_params = None
+        if 'output list' in content:
+            the_output = self._convert_list(content['output list'])
+        else:
+            the_output = None
+        # FIXME should get the body somehow
+        the_body = None
+        return FunDef(name=the_name, parameters=the_params,
+                      output=the_output, body=the_body)
+
+
+    def visit_struct(self, pr):
+        content = pr['struct']
+        the_base = self.visit(content['struct base'])
+        the_field = self.visit(content['field'])
+        return StructRef(name=the_base, field=the_field)
+
+
+    def visit_shell_command(self, pr):
+        content = pr['shell command']
+        the_command = self.visit(content['command'][0])
+        return ShellCommand(command=the_command)
+
+
+    def visit_command_statement(self, pr):
+        content = pr['command statement']
+        the_name = self.visit(content['name'])
+        the_args = content['arguments'][0]
+        return MatlabCommand(command=the_name, args=the_args)
+
+
+    def visit_comment(self, pr):
+        return Comment(content=pr['comment'][0])
+
+
+    def visit_control_statement(self, pr):
+        content = pr['control statement']
+        return self.visit(content)
+
+
+    def visit_while_statement(self, pr):
+        content = pr['while statement']
+        the_cond = self.visit(content['condition'])
+        return While(cond=the_cond)
+
+
+    def visit_if_statement(self, pr):
+        content = pr['if statement']
+        the_cond = self.visit(content['condition'])
+        return If(cond=the_cond)
+
+
+    def visit_elseif_statement(self, pr):
+        content = pr['elseif statement']
+        the_cond = self.visit(content['condition'])
+        return Elseif(cond=the_cond)
+
+
+    def visit_else_statement(self, pr):
+        return Else()
+
+
+    def visit_switch_statement(self, pr):
+        content = pr['switch statement']
+        the_cond = self.visit(content['expression'])
+        return Switch(cond=the_cond)
+
+
+    def visit_case_statement(self, pr):
+        content = pr['case statement']
+        the_cond = self.visit(content['expression'])
+        return Case(cond=the_cond)
+
+
+    def visit_otherwise_statement(self, pr):
+        return Otherwise()
+
+
+    def visit_for_statement(self, pr):
+        content = pr['for statement']
+        the_var = self.visit(content['loop variable'])
+        the_expr = self.visit(content['expression'])
+        return For(var=the_var, expr=the_expr)
+
+
+    def visit_try_statement(self, pr):
+        return Try()
+
+
+    def visit_catch_statement(self, pr):
+        content = pr['catch statement']
+        the_var = self.visit(content['catch variable'])
+        return Catch(var=the_var)
+
+
+    def visit_end_statement(self, pr):
+        return End()
+
+
+    def visit_break(self, pr):
+        return Branch(kind='break')
+
+
+    def visit_return(self, pr):
+        return Branch(kind='return')
+
+
+    def visit_continue(self, pr):
+        return Branch(kind='continue')
+
+
+    def visit_shell_command(self, pr):
+        return ShellCommand(command=pr['shell command'][1][0])
+
+
+    def _convert_list(self, list):
+        return [self.visit(thing) for thing in list]
+
+
+    def _convert_rows(self, rowlist):
+        return [self._convert_list(row['subscript list']) for row in rowlist]
+
+
+# KindAnalyzer
+#
+# Helper class that walks down a MatlabNode tree and simultaneously performs
+# several jobs:
+#
+#  1) Tries to infer the whether each object it encounters is a variable or
+#     a function.
+#
+#  2) Saves kind information about identifiers it encounters.
+#
+#  3) Converts certain classes from one type to another. This is used to do
+#     things like convert ambiguous cases, like something that could be
+#     either a function call or an array reference, to more specific classes
+#     of objects if we have figured out what those objects should be.
+
+class NodeTransformer(MatlabNodeVisitor):
+    def __init__(self, parser):
+        self._parser = parser
+
+
+    def visit_list(self, node):
+        if len(node) == 2 and isinstance(node[0], UnaryOp) and isinstance(node[1], Number):
+            # Replace [UnaryOp(op='-'), Number(value='x')] with Number(value='-x')
+            return Number(value='-' + node[1].value)
+        else:
+            return [self.visit(item) for item in node]
+
+
+    def visit_FunDef(self, node):
+        # Since we know this to be a function, we record its type as such.
+        # Make sure to record it in the parent's context -- that's why this
+        # is done before a context is pushed in the next step below.
+        self._parser._save_type(node.name, 'function')
+
+        # Push a new function context.
+        self._parser._push_context(self._parser._save_function_definition(node))
+
+        # Record inferred type info about the input and output parameters.
+        # The type info applies *inside* the function.
+        if node.output:
+            for var in node.output:
+                # The output parameter names are variables inside the
+                # context of the function definition.
+                if isinstance(var, Identifier):
+                    self._parser._save_type(var.name, 'variable')
+        if node.parameters:
+            for param in node.parameters:
+                # FIXME this labels parameters as variables, but the
+                # parameter could be a function name or handle when it's
+                # called.  Need to correlate what's done here with the
+                # arguments used in the call to the function.
+                if isinstance(param, Identifier):
+                    self._parser._save_type(param.name, 'variable')
+        return node
+
+
+    def visit_End(self, node):
+        if not self._parser._context.topmost:
+            self._parser._pop_context()
+        return node
+
+
+    def visit_Assignment(self, node):
+        # Record inferred type info about the input and output parameters.
+        lhs = node.lhs
+        rhs = node.rhs
+        if isinstance(lhs, Identifier):
+            if isinstance(rhs, Array) or isinstance(rhs, Number) or \
+               isinstance(rhs, Boolean) or isinstance(rhs, String):
+                self._parser._save_type(lhs.name, 'variable')
+        elif isinstance(lhs, ArrayRef):
+            # A function call can't appear on the LHS of an assignment, so
+            # we know that what we have here is a variable, not a function.
+            self._parser._save_type(lhs.name, 'variable')
+        elif isinstance(lhs, Array):
+            # If the LHS of an assignment is a bare array, and if there
+            # are bare identifiers inside the array, then they must be
+            # variables and not functions (else, syntax error).
+            row = lhs.rows[0]  # Can only have one row when arrays is on lhs.
+            for item in row:
+                if isinstance(item, Identifier):
+                    self._parser._save_type(item.name, 'variable')
+        return node
+
+
+    def visit_ArrayOrFunCall(self, node):
+        if not isinstance(node.name, Identifier):
+            # FIXME: it is potentially the case that a function call is
+            # nested, using the result of another reference.  In that case,
+            # the name won't be an Identifier.  Currently, the code below
+            # doesn't handle that case.
+            return node
+        the_name = node.name.name
+        parent_context = self._parser._context
+        if (matlab_function_or_command(the_name) or
+            self._parser._get_type(the_name, parent_context, True) == 'function'):
+            # This is a known function or command.  We can convert this
+            # to a FunCall.  At this time, we also process the arguments.
+            the_args = self.visit(node.args)
+            node = FunCall(name=node.name, args=the_args)
+        elif self._parser._get_type(the_name, parent_context, True) == 'variable':
+            # We have seen this name before, and it's not a function.  We
+            # can convert this ArrayOrFunCall to an ArrayRef.  We can
+            # also convert the arguments/subscripts.
+
+            # Also, if it was previously unknown whether this name is a
+            # function or array, it might have been put in the list of
+            # function calls.  Remove it if so.
+            if the_name in parent_context.calls:
+                parent_context.calls.pop(the_name)
+
+            the_args = self.visit(node.args)
+            node = ArrayRef(name=node.name, args=the_args, is_cell=False)
+        else:
+            # Although we didn't change the type of this ArrayOrFunCall,
+            # we may still be able to change some of its arguments.
+            node.args = self.visit(node.args)
+        return node
+
+
+# EntitySaver
+#
+# Helper class to save some types of objects into the context structure.
+# This is designed to be called starting from the top of the input file.
+
+class EntitySaver(MatlabNodeVisitor):
+    def __init__(self, parser):
+        self._parser = parser
+
+
+    def visit_FunDef(self, node):
+        # Push a new function context, so that the other methods in this
+        # class work with the right context.
+        self._parser._push_context(self._parser._get_function_definition(node))
+        return node
+
+
+    def visit_End(self, node):
+        # Pop the current function context.
+        if not self._parser._context.topmost:
+            self._parser._pop_context()
+        return node
+
+
+    def visit_Assignment(self, node):
+        self._parser._save_assignment(node)
+        return node
+
+
+    def visit_ArrayOrFunCall(self, node):
+        if not isinstance(node.name, Identifier):
+            return node
+        name = node.name.name
+        found_type = self._parser._get_type(name, self._parser._context, False)
+        if found_type != 'variable':
+            self._parser._save_function_call(node)
+        return node
+
+
+    def visit_FunCall(self, node):
+        self._parser._save_function_call(node)
+        return node
+
+
 # MatlabGrammar.
 # .............................................................................
+# The definition of our MATLAB grammar, in PyParsing.
+#
+# Note: the grammar is written in reverse order, from smallest elements to
+# the highest level parsing object, simply because Python interprets the file
+# in this order and needs each item defined before it encounters it later.
+# However, for readabily, it's probably easiest to start at the last
+# definition (which is _matlab_syntax) and read up.
 
 class MatlabGrammar:
 
-    # Start of grammar definition.
-    #
-    # Note: this is written in reverse order, from smallest elements to the
-    # highest level parsing object, simply because Python interprets the file
-    # in this order and needs each item defined before it encounters it
-    # later.  However, for readabily, it's probably easiest to start at the
-    # last definition (which is _matlab_syntax) and read up.
-    #
     # First, the lowest-level terminal tokens.
     # .........................................................................
 
@@ -751,469 +1187,29 @@ class MatlabGrammar:
 
     def _generate_nodes_and_contexts(self, pr):
         # 1st pass: visit ParseResults items and translate them to MatlabNodes.
-        nodes = [self._transform_pr(item) for item in pr]
+        transformer = ParseResultsTransformer()
+        nodes = [transformer.visit(item) for item in pr]
+
         # 2nd pass: create contexts, save variable assignments and function
-        # calls, and try to convert references if we can.  Since we may need
-        # to replace nodes, we create a new list of nodes here.
-        self._push_context(MatlabContext('(outermost context)'))
-        self._context.nodes = [self._process_node(node) for node in nodes]
+        # calls, and try to convert references if we can.  Note: we need to
+        # do explicit context management after every traversal of the node
+        # tree because in Matlab, the 'end' statement for the end of a
+        # function definition is optional, and so our node visitors may leave
+        # the context inside a function definition they reach the end of a
+        # file and there's no closing 'end' statement.
+        self._push_context(MatlabContext(topmost=True))
+
+        postprocessor = NodeTransformer(self)
+        nodes = [postprocessor.visit(node) for node in nodes]
+        self._reset_context()
+
+        # Make sure to save assignments *after* doing other transformations.
+        saver = EntitySaver(self)
+        nodes = [saver.visit(node) for node in nodes]
+        self._reset_context()
+
+        self._context.nodes = nodes
         return self._context
-
-
-    def _process_node(self, node):
-        if not isinstance(node, MatlabNode):
-            return node
-        if isinstance(node, FunDef):
-            self._push_context(self._save_function_definition(node))
-        elif isinstance(node, End):
-            # FIXME while/for/etc. loops will have end statements too!
-            self._pop_context()
-        self._save_inferred_type(node)
-        self._save_calls(node)
-        processed = self._convert_types(node)
-        if isinstance(processed, Assignment):
-            self._save_assignment(processed)
-        return processed
-
-
-    # This function modifies the current context.
-    def _save_inferred_type(self, node):
-        if not isinstance(node, MatlabNode):
-            return
-        if isinstance(node, Assignment):
-            lhs = node.lhs
-            rhs = node.rhs
-            if isinstance(lhs, Identifier):
-                if isinstance(rhs, Array) or isinstance(rhs, Number) or \
-                   isinstance(rhs, Boolean) or isinstance(rhs, String):
-                    self._save_type(lhs.name, 'variable')
-            elif isinstance(lhs, ArrayRef):
-                # A function call can't appear on the LHS of an assignment, so
-                # we know that what we have here is a variable, not a function.
-                self._save_type(lhs.name, 'variable')
-            elif isinstance(lhs, Array):
-                # If the LHS of an assignment is a bare array, and if there
-                # are bare identifiers inside the array, then they must be
-                # variables and not functions (else, syntax error).
-                row = lhs.rows[0]  # Can only have one row when arrays is on lhs.
-                for item in row:
-                    if isinstance(item, Identifier):
-                        self._save_type(item.name, 'variable')
-        elif isinstance(node, FunDef):
-            if node.output:
-                for var in node.output:
-                    # The output parameter names are variables inside the
-                    # context of the function definition.
-                    if isinstance(var, Identifier):
-                        self._save_type(var.name, 'variable')
-            if node.parameters:
-                for param in node.parameters:
-                    # FIXME this labels parameters as variables, but the
-                    # parameter could be a function name or handle when it's
-                    # called.  Need to correlate what's done here with the
-                    # arguments used in the call to the function.
-                    if isinstance(param, Identifier):
-                        self._save_type(param.name, 'variable')
-
-
-    def _save_calls(self, node):
-        if isinstance(node, ArrayOrFunCall):
-            if not isinstance(node.name, Identifier):
-                return
-            name = node.name.name
-            found_type = self._get_type(name, self._context, False)
-            if found_type != 'variable':
-                self._save_function_call(node)
-        elif isinstance(node, Assignment):
-            self._save_calls(node.rhs)
-        elif isinstance(node, FunCall):
-            self._save_function_call(node)
-        elif isinstance(node, ArrayRef):
-            for arg in node.args:
-                self._save_calls(arg)
-        elif isinstance(node, Array):
-            for row in node.rows:
-                self._save_calls(row)
-        elif isinstance(node, AnonFun):
-            self._save_calls(node.body)
-        elif isinstance(node, Expression):
-            for thing in node.content:
-                self._save_calls(thing)
-        elif isinstance(node, list):
-            for thing in node:
-                self._save_calls(thing)
-
-
-    # This function assumes that it is being executed in the context for
-    # which it makes sense to do the conversion.  Currently this means it
-    # assumes it's being executed by _process_node().
-    def _convert_types(self, node):
-        # For now, this is pretty limited.
-        if isinstance(node, list):
-            # We should do more simplifications if we can.  This is
-            # just one simple one for now.
-            if len(node) == 2 and isinstance(node[0], UnaryOp) and isinstance(node[1], Number):
-                # Replace [UnaryOp(op='-'), Number(value='x')] with Number(value='-x')
-                return Number(value='-' + node[1].value)
-            else:
-                return [self._convert_types(item) for item in node]
-        elif isinstance(node, ArrayOrFunCall):
-            if not isinstance(node.name, Identifier):
-                # FIXME: it is potentially the case that a function call is
-                # nested, using the result of another reference.  In that
-                # case, the name won't be an Identifier.  Currently, the code
-                # below doesn't handle that case.
-                return node
-            the_name = node.name.name
-            if (matlab_function_or_command(the_name) or
-                self._get_type(the_name, self._context, True) == 'function'):
-                # This is a known function or command.  We can convert this
-                # to a FunCall.  At this time, we also process the arguments.
-                the_args = self._convert_types(node.args)
-                node = FunCall(name=node.name, args=the_args)
-                # Update the stored record of the call.
-                self._save_function_call(node)
-            elif self._get_type(the_name, self._context, True) == 'variable':
-                # We have seen this name before, and it's not a function.  We
-                # can convert this ArrayOrFunCall to an ArrayRef.  We can
-                # also convert the arguments/subscripts.
-
-                # Also, if it was previously unknown whether this name is a
-                # function or array, it might have been put in the list of
-                # function calls.  Remove it if so.
-                if the_name in self._context.calls:
-                    self._context.calls.pop(the_name)
-
-                the_args = self._convert_types(node.args)
-                node = ArrayRef(name=node.name, args=the_args, is_cell=False)
-            else:
-                # Although we didn't change the type of this ArrayOrFunCall,
-                # we may still be able to change some of its arguments.
-                node.args = self._convert_types(node.args)
-
-        elif isinstance(node, FunCall):
-            # Convert the arguments or subscripts.
-            node.args = self._convert_types(node.args)
-            # Now update the stored record of the call.
-            self._save_function_call(node)
-
-        elif isinstance(node, ArrayRef):
-            # Convert the arguments or subscripts.
-            node.args = self._convert_types(node.args)
-
-        elif isinstance(node, Array):
-            node.rows = [self._convert_types(row) for row in node.rows]
-
-        elif isinstance(node, StructRef):
-            # A structure reference may have a complicated "name" part.
-            node.name = self._convert_types(node.name)
-
-        elif isinstance(node, AnonFun):
-            node.args = self._convert_types(node.args)
-            node.body = self._convert_types(node.body)
-
-        elif isinstance(node, Expression):
-            node.content = self._convert_types(node.content)
-
-        elif isinstance(node, Assignment):
-            node.lhs = self._convert_types(node.lhs)
-            node.rhs = self._convert_types(node.rhs)
-
-        elif isinstance(node, Switch) or isinstance(node, Case) \
-             or isinstance(node, If) or isinstance(node, Elseif) \
-             or isinstance(node, While):
-            node.cond = self._convert_types(node.cond)
-
-        elif isinstance(node, For):
-            node.expr = self._convert_types(node.expr)
-
-        elif isinstance(node, Transpose):
-            node.operand = self._convert_types(node.operand)
-
-        # Make sure this is the final statement!
-        return node
-
-
-    # Transform ParseResults to MatlabNode-based output format.
-    #
-    # This takes our heavily-annotated output from PyParsing and converts it
-    # to a tree-based representation consisting of lists of MatlabNode objects.
-    # It's called from _generate_nodes_and_contexts().
-    #
-    # In what follows, the _transform_* functions are visitors named after
-    # the names of our grammar objects (in the PyParsing grammar definition
-    # above).  They are named such that the function _transform_pr() can
-    # dispatch on the name we assign to PyParsing objects.  For instance, to
-    # format what we label an "assignment" in the PyParsing grammar above,
-    # there's a function called _transform_assignment() below.
-    # .........................................................................
-
-    def _transform_pr(self, pr):
-        if len(pr) > 1 and not nonempty_dict(pr):
-            # It's a list of items.  Return a list.
-            return [self._transform_pr(item) for item in pr]
-        if not nonempty_dict(pr):
-            # It's an expression.
-            return self._transform_expression(pr)
-        # Not an expression, but an individual, single parse result.
-        # We dispatch to the appropriate transformer by building the name.
-        key = first_key(pr)
-        func_name = '_transform_' + '_'.join(key.split())
-        if func_name in MatlabGrammar.__dict__:
-            return MatlabGrammar.__dict__[func_name](self, pr)
-        else:
-            self._warn('Internal error: no transformer for ' + str(key))
-
-
-    def _transform_identifier(self, pr):
-        return Identifier(name=pr['identifier'])
-
-
-    def _transform_number(self, pr):
-        return Number(value=pr['number'])
-
-
-    def _transform_boolean(self, pr):
-        return Boolean(value=pr['boolean'])
-
-
-    def _transform_string(self, pr):
-        return String(value=pr['string'])
-
-
-    def _transform_tilde(self, pr):
-        return Special(value='~')
-
-
-    def _transform_end(self, pr):
-        return Special(value='end')
-
-
-    def _transform_end_statement(self, pr):
-        return End()
-
-
-    def _transform_colon(self, pr):
-        return Special(value=':')
-
-
-    def _transform_colon_operator(self, pr):
-        return TernaryOp(op=':')
-
-
-    def _transform_unary_operator(self, pr):
-        op_key = first_key(pr)
-        return UnaryOp(op=pr[op_key])
-
-
-    def _transform_binary_operator(self, pr):
-        op_key = first_key(pr)
-        return BinaryOp(op=pr[op_key])
-
-
-    def _transform_transpose(self, pr):
-        content = pr['transpose']
-        the_op = content['operator']
-        the_operand = self._transform_pr(content['operand'])
-        return Transpose(op=the_op, operand=the_operand)
-
-
-    def _transform_expression(self, pr):
-        return Expression(content=[self._transform_pr(thing) for thing in pr])
-
-
-    def _transform_assignment(self, pr):
-        content = pr['assignment']
-        lvalue = self._transform_pr(content['lhs'])
-        rvalue = self._transform_pr(content['rhs'])
-        node = Assignment(lhs=lvalue, rhs=rvalue)
-        return node
-
-
-    def _transform_array(self, pr):
-        content = pr['array']
-        # Two kinds of array situations: a bare array, and one where we
-        # managed to determine it's an array access (and not the more
-        # ambiguous function call or array access).  If we have a name, it's
-        # the latter; if we have a row list, it's the former.
-        if 'name' in content:
-            # Array reference.
-            the_name = self._transform_pr(content['name'])
-            the_subscripts = self._convert_list(content['subscript list'])
-            return ArrayRef(name=the_name, args=the_subscripts, is_cell=False)
-        elif 'row list' in content:
-            # Bare array.
-            return Array(rows=self._convert_rows(content['row list']), is_cell=False)
-        else:
-            # No row list or subscript list => empty array.
-            return Array(rows=[], is_cell=False)
-
-
-    def _transform_cell_array(self, pr):
-        content = pr['cell array']
-        # This is basically like regular arrays.  Again, two kinds of
-        # situations: a bare cell array, and one where we managed to
-        # determine it's an array access.  If we have a name, it's the
-        # latter; if we have a row list, it's the former.
-        if 'name' in content:
-            # Array reference.
-            the_name = self._transform_pr(content['name'])
-            the_subscripts = self._convert_list(content['subscript list'])
-            return ArrayRef(name=the_name, args=the_subscripts, is_cell=True)
-        elif 'row list' in content:
-            # Bare array.
-            return Array(rows=self._convert_rows(content['row list']), is_cell=True)
-        else:
-            # No row list or subscript list => empty array.
-            return Array(rows=[], is_cell=True)
-
-
-    def _transform_array_or_function(self, pr):
-        content = pr['array or function']
-        the_name = self._transform_pr(content['name'])
-        the_args = self._convert_list(content['argument list'])
-        return ArrayOrFunCall(name=the_name, args=the_args)
-
-
-    def _transform_function_handle(self, pr):
-        content = pr['function handle']
-        if 'name' in content:
-            return FunHandle(name=self._transform_pr(content['name']))
-        else:
-            the_args = self._convert_list(content['argument list'])
-            the_body = self._transform_pr(content['function definition'])
-            return AnonFun(args=the_args, body=the_body)
-
-
-    def _transform_function_definition(self, pr):
-        content = pr['function definition']
-        the_name = self._transform_pr(content['name'])
-        if 'parameter list' in content:
-            the_params = self._convert_list(content['parameter list'])
-        else:
-            the_params = None
-        if 'output list' in content:
-            the_output = self._convert_list(content['output list'])
-        else:
-            the_output = None
-        # FIXME should get the body somehow
-        the_body = None
-        # Since we know this to be a function, we record its type as such.
-        self._save_type(the_name, 'function')
-        return FunDef(name=the_name, parameters=the_params,
-                      output=the_output, body=the_body)
-
-
-    def _transform_struct(self, pr):
-        content = pr['struct']
-        the_base = self._transform_pr(content['struct base'])
-        the_field = self._transform_pr(content['field'])
-        return StructRef(name=the_base, field=the_field)
-
-
-    def _transform_shell_command(self, pr):
-        content = pr['shell command']
-        the_command = self._transform_pr(content['command'][0])
-        return ShellCommand(command=the_command)
-
-
-    def _transform_command_statement(self, pr):
-        content = pr['command statement']
-        the_name = self._transform_pr(content['name'])
-        the_args = content['arguments'][0]
-        return MatlabCommand(command=the_name, args=the_args)
-
-
-    def _transform_comment(self, pr):
-        return Comment(content=pr['comment'][0])
-
-
-    def _transform_control_statement(self, pr):
-        content = pr['control statement']
-        return self._transform_pr(content)
-
-
-    def _transform_while_statement(self, pr):
-        content = pr['while statement']
-        the_cond = self._transform_pr(content['condition'])
-        return While(cond=the_cond)
-
-
-    def _transform_if_statement(self, pr):
-        content = pr['if statement']
-        the_cond = self._transform_pr(content['condition'])
-        return If(cond=the_cond)
-
-
-    def _transform_elseif_statement(self, pr):
-        content = pr['elseif statement']
-        the_cond = self._transform_pr(content['condition'])
-        return Elseif(cond=the_cond)
-
-
-    def _transform_else_statement(self, pr):
-        return Else()
-
-
-    def _transform_switch_statement(self, pr):
-        content = pr['switch statement']
-        the_cond = self._transform_pr(content['expression'])
-        return Switch(cond=the_cond)
-
-
-    def _transform_case_statement(self, pr):
-        content = pr['case statement']
-        the_cond = self._transform_pr(content['expression'])
-        return Case(cond=the_cond)
-
-
-    def _transform_otherwise_statement(self, pr):
-        return Otherwise()
-
-
-    def _transform_for_statement(self, pr):
-        content = pr['for statement']
-        the_var = self._transform_pr(content['loop variable'])
-        the_expr = self._transform_pr(content['expression'])
-        return For(var=the_var, expr=the_expr)
-
-
-    def _transform_try_statement(self, pr):
-        return Try()
-
-
-    def _transform_catch_statement(self, pr):
-        content = pr['catch statement']
-        the_var = self._transform_pr(content['catch variable'])
-        return Catch(var=the_var)
-
-
-    def _transform_end_statement(self, pr):
-        return End()
-
-
-    def _transform_break(self, pr):
-        return Branch(kind='break')
-
-
-    def _transform_return(self, pr):
-        return Branch(kind='return')
-
-
-    def _transform_continue(self, pr):
-        return Branch(kind='continue')
-
-
-    def _transform_shell_command(self, pr):
-        return ShellCommand(command=pr['shell command'][1][0])
-
-
-    def _convert_list(self, list):
-        return [self._transform_pr(thing) for thing in list]
-
-
-    def _convert_rows(self, rowlist):
-        return [self._convert_list(row['subscript list']) for row in rowlist]
 
 
     # Context and scope management.
@@ -1255,23 +1251,32 @@ class MatlabGrammar:
             self._context = self._context.parent
 
 
-    def _duplicate_context(self, dest):
-        if not dest.context:
-            dest.context = copy.copy(self._context)
+    def _reset_context(self):
+        # Reset the context to the top-most one
+        top = self._context
+        while top.parent and top.parent.parent:
+            top = top.parent
+        self._context = top
 
 
     def _save_function_definition(self, node):
         # FIXME function "names" might be more than identifiers, such as a
         # cell array or structure reference.  This doesn't handle that.
-        if isinstance(node.name, Identifier):
-            the_name = node.name.name
-        else:
-            the_name = node.name
+        the_name = node.name.name       # Node.name is an Identifier.
         newcontext = MatlabContext(name=the_name, parent=self._context,
                                    parameters=node.parameters,
-                                   returns=node.output, pr=None)
+                                   returns=node.output, pr=None, topmost=False)
         self._context.functions[the_name] = newcontext
         return newcontext
+
+
+    def _get_function_definition(self, node):
+        # Returns the context for an existing function
+        the_name = node.name.name       # Node.name is an Identifier.
+        if the_name in self._context.functions:
+            return self._context.functions[the_name]
+        else:
+            return None
 
 
     def _save_assignment(self, node):
@@ -1367,365 +1372,6 @@ class MatlabGrammar:
             obj.setDebug(True)
 
 
-    # Printers for debugging the ParseResults-based intermediate structure.
-    #
-    # This was the first approach to parsing and printing debugging output,
-    # before the introduction of the MatlabNode-based output representation.
-    # The code in the section below has been replaced by the methods that
-    # work on the MatlabNode-based representation.  Nevertheless, the code is
-    # left here because it might be useful for some debugging situations.
-    # .........................................................................
-
-    def _format(self, thing):
-        return '\n'.join([self._format_pr(pr) for pr in thing])
-
-
-    def _format_pr(self, pr):
-        if isinstance(pr, str):
-            return pr
-        if not nonempty_dict(pr):
-            # It's an expression.
-            return self._format_expression(pr)
-        key = first_key(pr)
-        # Construct the function name dynamically.
-        func_name = '_format_' + '_'.join(key.split())
-        if func_name in MatlabGrammar.__dict__:
-            return MatlabGrammar.__dict__[func_name](self, pr)
-        else:
-            self._warn('Internal error: no formatter for ' + str(key))
-
-
-    def _format_identifier(self, pr):
-        if not self._verified_pr(pr, 'identifier'):
-            return
-        content = pr['identifier']
-        return '{{identifier: "{}"}}'.format(content)
-
-
-    def _format_number(self, pr):
-        if not self._verified_pr(pr, 'number'):
-            return
-        content = pr['number']
-        return '{{number: {}}}'.format(content)
-
-
-    def _format_boolean(self, pr):
-        if not self._verified_pr(pr, 'boolean'):
-            return
-        content = pr['boolean']
-        return '{{boolean: {}}}'.format(content)
-
-
-    def _format_unary_operator(self, pr):
-        op = 'unary op'
-        op_key = first_key(pr)
-        text = '{{{}: {}}}'.format(op, pr[op_key])
-        return text
-
-
-    def _format_binary_operator(self, pr):
-        op = 'binary op'
-        op_key = first_key(pr)
-        text = '{{{}: {}}}'.format(op, pr[op_key])
-        return text
-
-
-    def _format_colon_operator(self, pr):
-        return '{colon}'
-
-
-    def _format_string(self, pr):
-        if not self._verified_pr(pr, 'string'):
-            return
-        content = pr['string']
-        return '{{string: "{}"}}'.format(content)
-
-
-    def _format_assignment(self, pr):
-        if not self._verified_pr(pr, 'assignment'):
-            return
-        content = pr['assignment']
-        lhs = content['lhs']
-        rhs = content['rhs']
-        return '{{assign: {} = {}}}'.format(self._format_pr(lhs),
-                                            self._format_pr(rhs))
-
-
-    def _format_array_or_function(self, pr):
-        if not self._verified_pr(pr, 'array or function'):
-            return
-        content = pr['array or function']
-        name = content['name']
-        args = self._help_format_simple_list(content['argument list'])
-        return '{{function/array: {} ( {} )}}'.format(self._format_pr(name), args)
-
-
-    def _format_array(self, pr):
-        if not self._verified_pr(pr, 'array'):
-            return
-        content = pr['array']
-        # Two kinds of array situations: a bare array, and one where we
-        # managed to determine it's an array access (and not the more
-        # ambiguous function call or array access).  If we have a row list,
-        # it's the former; if we have an subscript list, it's the latter.
-        if 'row list' in content:
-            rows = self._help_format_rowlist(content['row list'])
-            return '{{array: [ {} ]}}'.format(rows)
-        elif 'subscript list' in content:
-            name = self._format_pr(content['name'])
-            subscripts = self._help_format_subscripts(content['subscript list'])
-            return '{{array {}: [ {} ]}}'.format(name, subscripts)
-        else:
-            # No row list or subscript list => empty array.
-            return '{array: [] }'
-
-
-    def _format_cell_array(self, pr):
-        if not self._verified_pr(pr, 'cell array'):
-            return
-        content = pr['cell array']
-        rows = self._help_format_rowlist(content['row list'])
-        if 'name' in content:
-            name = content['name']
-            return '{{cell array: {} [ {} ]}}'.format(self._format_pr(name), rows)
-        else:
-            return '{{cell array: [ {} ]}}'.format(rows)
-
-
-    def _format_function_definition(self, pr):
-        if not self._verified_pr(pr, 'function definition'):
-            return
-        content = pr['function definition']
-        name = self._format_pr(content['name'])
-        if 'output list' in content:
-            output = self._help_format_simple_list(content['output list'])
-            if len(content['output list']) > 1:
-                output = '[ ' + output + ' ]'
-        else:
-            output = 'none'
-        if 'parameter list' in content:
-            param = self._help_format_simple_list(content['parameter list'])
-        else:
-            param = 'none'
-        return '{{function definition: {} parameters ( {} ) output {}}}' \
-            .format(name, param, output)
-
-
-    def _format_function_handle(self, pr):
-        if not self._verified_pr(pr, 'function handle'):
-            return
-        content = pr['function handle']
-        if 'name' in content:
-            name = content['name']
-            return '{{function @ handle: {}}}'.format(self._format_pr(name))
-        else:
-            # No name => anonymous function
-            arg_list = self._help_format_simple_list(content['argument list'])
-            body = self._format_pr(content['function definition'])
-            return '{{anon @ handle: args ( {} ) body {} }}'.format(arg_list, body)
-
-
-    def _format_struct(self, pr):
-        if not self._verified_pr(pr, 'struct'):
-            return
-        content = pr['struct']
-        base = self._format_pr(content['struct base'])
-        field = self._format_pr(content['field'])
-        return '{{struct: {}.{} }}'.format(base, field)
-
-
-    def _format_colon(self, pr):
-        if not self._verified_pr(pr, 'colon'):
-            return
-        return '{colon}'
-
-
-    def _format_transpose(self, pr):
-        if not self._verified_pr(pr, 'transpose'):
-            return
-        content = pr['transpose']
-        operand = self._format_pr(content['operand'])
-        return '{{transpose: {} operator {} }}'.format(operand, content['operator'])
-
-
-    def _format_shell_command(self, pr):
-        if not self._verified_pr(pr, 'shell command'):
-            return
-        content = pr['shell command']
-        body = content['command'][0]
-        return '{{shell command: {}}}'.format(body)
-
-
-    def _format_command_statement(self, pr):
-        if not self._verified_pr(pr, 'command statement'):
-            return
-        content = pr['command statement']
-        name = self._format_pr(content['name'])
-        args = content['arguments'][0]
-        return '{{command: name {} args {}}}'.format(name, args)
-
-
-    def _format_comment(self, pr):
-        if not self._verified_pr(pr, 'comment'):
-            return
-        content = pr['comment']
-        return '{{comment: {}}}'.format(content[0])
-
-
-    def _format_control_statement(self, pr):
-        if not self._verified_pr(pr, 'control statement'):
-            return
-        content = pr['control statement']
-        return self._format_pr(content)
-
-
-    def _format_while_statement(self, pr):
-        if not self._verified_pr(pr, 'while statement'):
-            return
-        content = pr['while statement']
-        cond = self._format_pr(content['condition'])
-        return '{{while stmt: {}}}'.format(cond)
-
-
-    def _format_if_statement(self, pr):
-        if not self._verified_pr(pr, 'if statement'):
-            return
-        content = pr['if statement']
-        cond = self._format_pr(content['condition'])
-        return '{{if stmt: {}}}'.format(cond)
-
-
-    def _format_elseif_statement(self, pr):
-        if not self._verified_pr(pr, 'elseif statement'):
-            return
-        content = pr['elseif statement']
-        cond = self._format_pr(content['condition'])
-        return '{{elseif stmt: {}}}'.format(cond)
-
-
-    def _format_else_statement(self, pr):
-        if not self._verified_pr(pr, 'else statement'):
-            return
-        return '{else}'
-
-
-    def _format_switch_statement(self, pr):
-        if not self._verified_pr(pr, 'switch statement'):
-            return
-        content = pr['switch statement']
-        expr = self._format_pr(content['expression'])
-        return '{{switch stmt: {}}}'.format(expr)
-
-
-    def _format_case_statement(self, pr):
-        if not self._verified_pr(pr, 'case statement'):
-            return
-        content = pr['case statement']
-        expr = self._format_pr(content['expression'])
-        return '{{case: {}}}'.format(expr)
-
-
-    def _format_otherwise_statement(self, pr):
-        if not self._verified_pr(pr, 'otherwise statement'):
-            return
-        return '{otherwise}'
-
-
-    def _format_for_statement(self, pr):
-        if not self._verified_pr(pr, 'for statement'):
-            return
-        content = pr['for statement']
-        var = self._format_pr(content['loop variable'])
-        exp = self._format_pr(content['expression'])
-        return '{{for stmt: var {} in {}}}'.format(var, exp)
-
-
-    def _format_try_statement(self, pr):
-        if not self._verified_pr(pr, 'try statement'):
-            return
-        return '{try}'
-
-
-    def _format_catch_statement(self, pr):
-        if not self._verified_pr(pr, 'catch statement'):
-            return
-        content = pr['catch statement']
-        var = self._format_pr(content['catch variable'])
-        return '{{catch: var {}}}'.format(var)
-
-
-    def _format_continue_statement(self, pr):
-        if not self._verified_pr(pr, 'continue statement'):
-            return
-        return '{continue}'
-
-
-    def _format_break_statement(self, pr):
-        if not self._verified_pr(pr, 'break statement'):
-            return
-        return '{break}'
-
-
-    def _format_return_statement(self, pr):
-        if not self._verified_pr(pr, 'return statement'):
-            return
-        return '{return}'
-
-
-    def _format_end_statement(self, pr):
-        if not self._verified_pr(pr, 'end statement'):
-            return
-        return '{end}'
-
-
-    def _format_tilde(self, pr):
-        if not self._verified_pr(pr, 'tilde'):
-            return
-        return '{tilde}'
-
-
-    def _format_expression(self, thing):
-        return '( ' + ' '.join([self._format_pr(pr) for pr in thing]) + ' )'
-
-
-    def _help_format_simple_list(self, pr):
-        return ', '.join([self._format_pr(thing) for thing in pr])
-
-
-    def _help_format_subscripts(self, subscripts):
-        return ', '.join([self._format_pr(thing) for thing in subscripts])
-
-
-    def _help_format_rowlist(self, arglist):
-        last = len(arglist) - 1
-        i = 1
-        text = ''
-        for row in arglist:
-            if 'subscript list' not in row:
-                self._warn('did not find "subscript list" key in ParseResults')
-                return 'ERROR'
-            subscripts = row['subscript list']
-            text += '{{row {}: {}}}'.format(i, self._help_format_subscripts(subscripts))
-            if i <= last:
-                text += '; '
-            i += 1
-        return text
-
-
-    def _warn(self, *args):
-        print('WARNING: {}'.format(' '.join(args)))
-
-
-    def _verified_pr(self, pr, type):
-        if len(pr) > 1:
-            self._warn('expected 1 ParseResults, but got {}'.format(len(pr)))
-            return False
-        if type not in pr:
-            self._warn('ParseResults not of type {}'.format(type))
-            return False
-        return True
-
-
     # Instance initialization.
     # .........................................................................
 
@@ -1738,7 +1384,7 @@ class MatlabGrammar:
 
     def _reset(self):
         self._context = None
-        self._push_context(MatlabContext('(outermost context)'))
+        self._push_context(MatlabContext(topmost=True))
 
 
     # External interfaces.
