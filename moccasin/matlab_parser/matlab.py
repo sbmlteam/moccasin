@@ -598,9 +598,7 @@ class Comment(MatlabNode):
 
 class MatlabNodeVisitor(object):
     def visit(self, node):
-        if not node:
-            return node
-        elif isinstance(node, list):
+        if isinstance(node, list):
             meth = getattr(self, 'visit_list', None)
             if meth is None:
                 meth = self.default_visit_list
