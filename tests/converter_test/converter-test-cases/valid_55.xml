@@ -23,6 +23,7 @@
       <parameter id="k__10" value="56.8583" constant="true"/>
       <parameter id="k__11" value="0.0111" constant="true"/>
       <parameter id="k__12" value="0.0014" constant="true"/>
+      <parameter id="t" value="0" constant="false"/>
     </listOfParameters>
     <listOfRules>
       <rateRule variable="SimData__1">
@@ -152,7 +153,11 @@
           </apply>
         </math>
       </rateRule>
+      <assignmentRule variable="t">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <csymbol encoding="text" definitionURL="http://www.sbml.org/sbml/symbols/time"> time </csymbol>
+        </math>
+      </assignmentRule>
     </listOfRules>
   </model>
 </sbml>
-
