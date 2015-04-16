@@ -131,8 +131,12 @@ class MatlabContext(object):
     '''
 
     def __init__(self, name='', parent=None, nodes=None, parameters=[],
-                 returns=[], pr=None, file=None):
-        self.name           = name      # Name of this context.
+                 returns=[], pr=None, file=None, topmost=False):
+        self.topmost        = topmost   # Whether this is the top context.
+        if topmost:
+            self.name       = '(topmost context)'
+        else:
+            self.name       = name      # Name of this context.
         if isinstance(parameters, ParseResults):
             self.parameters = parameters.asList()
         else:
