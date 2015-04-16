@@ -55,9 +55,6 @@ class ContextDict(collections.MutableMapping, dict):
     def __contains__(self, x):
         return dict.__contains__(self, x)
 
-    def clear(self):
-        dict.clear()
-
 
 class MatlabContext(object):
     '''Class for tracking our interpretation of MATLAB parsing results.  Most
@@ -131,16 +128,14 @@ class MatlabContext(object):
     '''
 
     def __init__(self, name='', parent=None, nodes=None, parameters=[],
-                 returns=[], pr=None, file=None):
-        self.name           = name      # Name of this context.
-        if isinstance(parameters, ParseResults):
-            self.parameters = parameters.asList()
+                 returns=[], pr=None, file=None, topmost=False):
+        self.topmost        = topmost   # Whether this is the top context.
+        if topmost:
+            self.name       = '(topmost context)'
         else:
-            self.parameters = parameters  # If this is a function, its arg list.
-        if isinstance(returns, ParseResults):
-            self.returns    = returns.asList()
-        else:
-            self.returns    = returns  # If this is a function, return values.
+            self.name       = name      # Name of this context.
+        self.parameters     = parameters  # If this is a function, its arg list.
+        self.returns        = returns  # If this is a function, return values.
         self.comments       = []       # Comments ahead of this function.
         self.parent         = parent   # Parent context containing this one.
         self.nodes          = nodes    # The list of MatlabNode objects.
@@ -159,21 +154,6 @@ class MatlabContext(object):
         s = '<context "{0}": {1} func defs, {2} assignments, {3} calls, parent = "{4}", file = "{5}">'
         return s.format(self.name, len(self._functions), len(self._assignments),
                         len(self._calls), parent_name, self.file)
-
-
-    def clear_context(self):
-        self.name          = ''
-        self.parameters    = []
-        self.returns       = []
-        self.comments      = []
-        self.parent        = None
-        self.nodes         = None
-        self.parse_results = None
-        self.file          = None
-        self._functions    = ContextDict()
-        self._assignments  = ContextDict()
-        self._calls        = ContextDict()
-        self._types        = ContextDict()
 
 
     @property
