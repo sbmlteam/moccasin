@@ -1240,7 +1240,7 @@ def get_filename_and_options(argv):
         options, path = getopt.getopt(argv[1:], "cdpqxorvl")
     except:
         raise SystemExit(help_msg)
-    if len(path) != 1 or len(options) > 2:
+    if len(path) != 1 or len(options) > 8:
         raise SystemExit(help_msg)
     include_comments  = not any(['-c' in y for y in options])
     debug             = any(['-d' in y for y in options])
