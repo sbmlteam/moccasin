@@ -1191,7 +1191,6 @@ class MatlabRewriter(MatlabNodeVisitor):
 
 def rewrite_recognized_matlab(context):
     rewriter = MatlabRewriter()
-    context.nodes = rewriter.visit(context.nodes)
     for lhs, rhs in context.assignments.items():
         context.assignments[lhs] = rewriter.visit(rhs)
     for name, args in context.calls.items():
