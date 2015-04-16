@@ -61,13 +61,8 @@ def makeLRlike(numterms):
     as if parsed left-recursively.  Originally written by Paul McGuire as
     a StackOverflow answer here: http://stackoverflow.com/a/4589920/743730
     '''
-    if numterms is None:
-        # None operator can only be a binary op.
-        initlen = 2
-        incr = 1
-    else:
-        initlen = {0: 1, 1: 2, 2: 3, 3: 5}[numterms]
-        incr = {0: 1, 1: 1, 2: 2, 3: 4}[numterms]
+    initlen = {0: 1, 1: 2, 2: 3, 3: 5}[numterms]
+    incr = {0: 1, 1: 1, 2: 2, 3: 4}[numterms]
 
     # Create a closure.  This defines a parse action for this number of
     # terms, to convert flat list of tokens into nested list.
