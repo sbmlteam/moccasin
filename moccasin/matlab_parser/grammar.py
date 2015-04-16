@@ -1259,18 +1259,10 @@ class MatlabGrammar:
         self._context = top
 
 
-    def _duplicate_context(self, dest):
-        if not dest.context:
-            dest.context = copy.copy(self._context)
-
-
     def _save_function_definition(self, node):
         # FIXME function "names" might be more than identifiers, such as a
         # cell array or structure reference.  This doesn't handle that.
-        if isinstance(node.name, Identifier):
-            the_name = node.name.name
-        else:
-            the_name = node.name
+        the_name = node.name.name       # Node.name is an Identifier.
         newcontext = MatlabContext(name=the_name, parent=self._context,
                                    parameters=node.parameters,
                                    returns=node.output, pr=None, topmost=False)
@@ -1280,10 +1272,7 @@ class MatlabGrammar:
 
     def _get_function_definition(self, node):
         # Returns the context for an existing function
-        if isinstance(node.name, Identifier):
-            the_name = node.name.name
-        else:
-            the_name = node.name
+        the_name = node.name.name       # Node.name is an Identifier.
         if the_name in self._context.functions:
             return self._context.functions[the_name]
         else:
