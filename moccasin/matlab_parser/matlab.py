@@ -370,7 +370,6 @@ class Assignment(Definition):
     _visitable_attr = ['lhs', 'rhs']
 
     def __repr__(self):
-        # return _repr_format('Assignment(lhs={}, rhs={})', self.lhs, self.rhs)
         return 'Assignment(lhs={}, rhs={})'.format(repr(self.lhs), repr(self.rhs))
 
     def __str__(self):
@@ -664,7 +663,3 @@ def _str_format_rowlist(rows):
             text += '; '
         i += 1
     return text
-
-
-def _repr_format(*args):
-    return args[0].format(*[repr(a) for a in args[1:]])
