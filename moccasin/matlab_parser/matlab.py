@@ -31,6 +31,7 @@ import collections
 
 class MatlabNode(object):
     _attr_names = None                 # Default set of node attributes.
+    _visitable_attr = []               # Default list of visitable attributes.
     _location   = (0, 0)               # Location in file (tuple: line, col).
 
     # The following is based on code in Section 8.11 of the Python Cookbook,
@@ -61,38 +62,6 @@ class MatlabNode(object):
 
     def __str__(self):
         return '{MatlabNode}'
-
-
-    def children(self):
-        '''A sequence of all children that are MatlabNodes.'''
-        # This is the default implementation.  Subclasses should specialize it.
-        nodelist=[]
-        return nodelist
-
-
-    # Idea for the following were drawn from the code at
-    # https://github.com/eliben/pycparser/blob/master/pycparser/c_ast.py
-    def show(self, buf=sys.stdout, offset=0, show_location=False):
-        """Pretty print the Node and all its attributes and children
-        recursively to a buffer.
-
-        buf:
-            Open IO buffer into which the Node is printed.
-
-        offset:
-            Initial offset (amount of leading spaces)
-
-        show_location:
-            True if you want the location in the input to be printed too.
-        """
-
-        lead = ' ' * offset
-        buf.write(lead + str(self))
-        if show_location:
-            buf.write(' <line %s, column %s>'.format(self.location))
-        for child in self.children():
-            child.show(buf, offset=offset + 1, show_location=show_location)
-        buf.write('\n')
 
 
 # Entity -- parent class of things that show up in expressions.
@@ -166,6 +135,7 @@ class Special(Primitive):
 class Array(Entity):
     '''The field `is_cell` is True if this is a cell array.'''
     _attr_names = ['is_cell', 'rows']
+    _visitable_attr = ['rows']
 
     def __repr__(self):
         return 'Array(is_cell={}, rows={})'.format(self.is_cell, self.rows)
@@ -200,6 +170,7 @@ class Handle(Entity):
 
 class FunHandle(Handle):
     _attr_names = ['name']
+    _visitable_attr = ['name']
 
     def __repr__(self):
         return 'FunHandle(name={})'.format(repr(self.name))
@@ -210,6 +181,7 @@ class FunHandle(Handle):
 
 class AnonFun(Handle):
     _attr_names = ['args', 'body']
+    _visitable_attr = ['args', 'body']
 
     def __repr__(self):
         return 'AnonFun(args={}, body={})'.format(repr(self.args), repr(self.body))
@@ -251,6 +223,7 @@ class ArrayOrFunCall(Reference):
     '''Syntactically looks like either an array reference or a function call.'''
 
     _attr_names = ['name', 'args']
+    _visitable_attr = ['name', 'args']
 
     def __repr__(self):
         return 'ArrayOrFunCall(name={}, args={})'.format(repr(self.name),
@@ -265,6 +238,7 @@ class FunCall(Reference):
     '''Objects that are determined to be function calls.'''
 
     _attr_names = ['name', 'args']
+    _visitable_attr = ['name', 'args']
 
     def __repr__(self):
         return 'FunCall(name={}, args={})'.format(repr(self.name),
@@ -280,6 +254,7 @@ class ArrayRef(Reference):
     The field `is_cell` is True if this is a cell array.'''
 
     _attr_names = ['name', 'args', 'is_cell']
+    _visitable_attr = ['name', 'args']
 
     def __repr__(self):
         return 'ArrayRef(is_cell={}, name={}, args={})'.format(self.is_cell,
@@ -306,6 +281,7 @@ class StructRef(Reference):
     Warning: `name` may be an expression, not just an identifier.'''
 
     _attr_names = ['name', 'field']
+    _visitable_attr = ['name']
 
     def __repr__(self):
         return 'StructRef(name={}, field={})'.format(repr(self.name), repr(self.field))
@@ -352,6 +328,7 @@ class TernaryOp(Operator):
 
 class Transpose(Operator):
     _attr_names = ['op', 'operand']
+    _visitable_attr = ['operand']
 
     def __repr__(self):
         return 'Transpose(op=\'{}\', operand={})'.format(self.op, repr(self.operand))
@@ -371,6 +348,7 @@ class Transpose(Operator):
 class Expression(MatlabNode):
     '''The `content` field stores a list of Expression or Entity nodes.'''
     _attr_names = ['content']
+    _visitable_attr = ['content']
 
     def __repr__(self):
         return 'Expression({})'.format(self.content)
@@ -389,6 +367,7 @@ class Definition(MatlabNode):
 
 class Assignment(Definition):
     _attr_names = ['lhs', 'rhs']
+    _visitable_attr = ['lhs', 'rhs']
 
     def __repr__(self):
         # return _repr_format('Assignment(lhs={}, rhs={})', self.lhs, self.rhs)
@@ -401,6 +380,7 @@ class Assignment(Definition):
 
 class FunDef(Definition):
     _attr_names = ['name', 'parameters', 'output', 'body']
+    _visitable_attr = ['name', 'parameters', 'output', 'body']
 
     def __repr__(self):
         return 'FunDef(name={}, parameters={}, output={}, body={})'.format(
@@ -450,6 +430,7 @@ class Try(FlowControl):
 
 class Catch(FlowControl):
     _attr_names = ['var']
+    _visitable_attr = ['var']
 
     def __repr__(self):
         return 'Catch(var={})'.format(repr(self.var))
@@ -460,6 +441,7 @@ class Catch(FlowControl):
 
 class Switch(FlowControl):
     _attr_names = ['cond']
+    _visitable_attr = ['cond']
 
     def __repr__(self):
         return 'Switch(cond={})'.format(repr(self.cond))
@@ -470,6 +452,7 @@ class Switch(FlowControl):
 
 class Case(FlowControl):
     _attr_names = ['cond']
+    _visitable_attr = ['cond']
 
     def __repr__(self):
         return 'Case(cond={})'.format(repr(self.cond))
@@ -488,6 +471,7 @@ class Otherwise(FlowControl):
 
 class If(FlowControl):
     _attr_names = ['cond']
+    _visitable_attr = ['cond']
 
     def __repr__(self):
         return 'While(cond={})'.format(repr(self.cond))
@@ -498,6 +482,7 @@ class If(FlowControl):
 
 class Elseif(FlowControl):
     _attr_names = ['cond']
+    _visitable_attr = ['cond']
 
     def __repr__(self):
         return 'Elseif(cond={})'.format(repr(self.cond))
@@ -516,6 +501,7 @@ class Else(FlowControl):
 
 class While(FlowControl):
     _attr_names = ['cond']
+    _visitable_attr = ['cond']
 
     def __repr__(self):
         return 'While(cond={})'.format(repr(self.cond))
@@ -526,6 +512,7 @@ class While(FlowControl):
 
 class For(FlowControl):
     _attr_names = ['var', 'expr']
+    _visitable_attr = ['var', 'expr']
 
     def __repr__(self):
         return 'For(var={}, expr={})'.format(repr(self.var), repr(self.expr))
@@ -600,20 +587,48 @@ class Comment(MatlabNode):
 
 # Visitor.
 # .........................................................................
+# This is a mostly standard Python-style Visitor Pattern, except that it
+# designed to work with both individual MatlabNode objects and lists of
+# MatlabNodes.
+#
+# This automatically visits the subcomponents of nodes such as the arguments
+# to function calls, so the caller does not have to include that logic.  It
+# assumes callers return a node if a node is to be transformed (such as
+# changed from one node class to another).  This does depth-first traversal.
 
 class MatlabNodeVisitor(object):
     def visit(self, node):
-        if isinstance(node, list):
-            return [self.visit(item) for item in node]
+        if not node:
+            return node
+        elif isinstance(node, list):
+            meth = getattr(self, 'visit_list', None)
+            if meth is None:
+                meth = self.default_visit_list
+            return meth(node)
         else:
+            # Call ourselves on the node attributes that are indicated as
+            # being ones that should be visited recursively.
+            for a in type(node)._visitable_attr:
+                value = getattr(node, a, None)
+                if value:
+                    setattr(node, a, self.visit(value))
+
+            # Now call user's visitor methods and return the final result.
             methname = 'visit_' + type(node).__name__
             meth = getattr(self, methname, None)
             if meth is None:
                 meth = self.default_visit
             return meth(node)
 
+
     def default_visit(self, node):
+        '''Default visitor.  Users can redefine this if desired.'''
         return node
+
+
+    def default_visit_list(self, node):
+        '''Default visitor for lists.  Users can redefine this if desired.'''
+        return [self.visit(item) for item in node]
 
 
 # General helpers.
