@@ -55,9 +55,6 @@ class ContextDict(collections.MutableMapping, dict):
     def __contains__(self, x):
         return dict.__contains__(self, x)
 
-    def clear(self):
-        dict.clear()
-
 
 class MatlabContext(object):
     '''Class for tracking our interpretation of MATLAB parsing results.  Most
