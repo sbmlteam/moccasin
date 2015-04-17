@@ -25,7 +25,8 @@
 omit =
     .eggs/*
     setup.py
-    */site-packages/*    
+    */site-packages/*
+    */site_packages/*
 
 [report]
 exclude_lines =
