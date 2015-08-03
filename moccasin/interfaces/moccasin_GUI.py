@@ -28,8 +28,13 @@ import sys
 import wx
 import re
 
-#Imports for tokenizing, formatting and displaying .m or .xml files
-import wx.html2 
+# We need wx.html2, which was introduced in wxPython 2.9.
+from distutils.version import LooseVersion
+if LooseVersion(wx.__version__) < LooseVersion('2.9'):
+    raise Exception('The MOCCASIN GUI requires wxPython version 2.9 or higher')
+
+# Imports for tokenizing, formatting and displaying .m or .xml files
+import wx.html2
 from pygments import highlight
 from pygments.lexers import get_lexer_by_name
 from pygments.formatters import HtmlFormatter
