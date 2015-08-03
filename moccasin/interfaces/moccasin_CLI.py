@@ -23,7 +23,8 @@
 from __future__ import print_function
 import plac
 import sys
-sys.path.append('..')
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from controller import Controller
 
 # This prevents exceeding recursion depth in some cases.

@@ -35,7 +35,7 @@ from pygments.lexers import get_lexer_by_name
 from pygments.formatters import HtmlFormatter
 
 import wx.lib.dialogs
-sys.path.append('..')
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from printDialog import PrintDialog
 from controller import Controller
 from pkg_resources import get_distribution, DistributionNotFound
