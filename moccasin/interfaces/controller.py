@@ -26,11 +26,9 @@ from tempfile import NamedTemporaryFile
 import os
 import sys
 import requests
+import pdb
 
-sys.path.append('moccasin')
-sys.path.append('../../')
-sys.path.append('../matlab_parser')
-sys.path.append('../converter')
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from matlab_parser import *
 from converter import *
 
