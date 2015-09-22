@@ -1,7 +1,7 @@
 MOCCASIN modules
 ----------------
 
-MOCCASIN features a modular architecture comprised of the following: (1) a module that parses MATLAB input files; (2) a module that extracts the ODE-based model and produces a model with explicit differential equations in either SBML form or XPP/XPPAUT form; (3) a module that uses The Biochemical Abstract Machine (BIOCHAM) to infer the biochemical reactions implied by the ODEs and then post-processes the result to produce an SBML version with biochemical reactions for kinetics; (4) a command line interface; and (5) a graphical user interface.
+MOCCASIN features a modular architecture comprised of the following: (1) a module that parses MATLAB input files; (2) a module that extracts the ODE-based model and produces a model with explicit differential equations in either SBML form or XPP/XPPAUT form; (3) a module that uses The [Biochemical Abstract Machine (BIOCHAM)](https://lifeware.inria.fr/biocham/) to infer the biochemical reactions implied by the ODEs and then post-processes the result to produce an SBML version with biochemical reactions for kinetics; (4) a command line interface; and (5) a graphical user interface.
 
 The following is a summary of the subdirectories of this directory that contain the various modules and interfaces comprising MOCCASIN.
 
@@ -15,8 +15,8 @@ This subdirectory contains the converter that produces [SBML](http://sbml.org) a
 
 ### interfaces
 
-This subdirectory contains different interfaces for MOCCASIN, modularized to make MOCCASIN flexible enough so that Python developers can use as few or as many modules as they desire.
+This subdirectory contains an interface to [Biochemical Abstract Machine (BIOCHAM)](https://lifeware.inria.fr/biocham/) as well as command-line and graphical user interfaces for MOCCASIN.
 
-MOCCASIN provides a cross-platform, user-friendly command-line interface (CLI) as well as a graphical-user interface (GUI). Command-line runs may be customized via flags which, for instance, allow the display of debugging information or enable the encoding of model variables as SBML *parameters* instead of SBML *species*. 
+In order to export SBML models with fully resolved reaction networks, the MOCCASIN [Biochemical Abstract Machine (BIOCHAM)](https://lifeware.inria.fr/biocham/) module sends the XPP output from the converter module to BIOCHAM’s web service, and post-processes the result to produce SBML with reaction definitions. BIOCHAM is a modeling environment for systems biology that encompasses the published implementation of a state-of-the-art algorithm for reconstructing and inferring the complete reaction model from a given set of ODEs ([Fages et al., 2014](https://scholar.google.com/citations?view_op=view_citation&hl=en&user=0S_WDQUAAAAJ&citation_for_view=0S_WDQUAAAAJ:IjCSPb-OGe4C)).  The output from BIOCHAM is post-processed to add initial assignments, references to the time variable (if used in the original model), and other missing pieces.
 
-MOCCASIN also provides a graphical user interface.  The GUI is implemented using [wxPython](http://wxpython.org), a cross-platform GUI toolkit.  The interface provides a straightforward way for users to input MATLAB files, set MOCCASIN options such as the type of output (SBML or XPP), view the resulting output, and saving the converted file.
+Finally, MOCCASIN provides two user interfaces.  First, there is a cross-platform, user-friendly command-line interface (CLI) as well as a graphical-user interface (GUI). Command-line runs may be customized via flags which, for instance, allow the display of debugging information or enable the encoding of model variables as SBML *parameters* instead of SBML *species*.  MOCCASIN also provides a graphical user interface.  The GUI is implemented using [wxPython](http://wxpython.org), a cross-platform GUI toolkit.  The interface provides a straightforward way for users to input MATLAB files, set MOCCASIN options such as the type of output (SBML or XPP), view the resulting output, and saving the converted file.
