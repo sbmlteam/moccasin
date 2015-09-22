@@ -179,9 +179,9 @@ The fields in `MatlabContext` are the following:
 
 <dt>name</dt> <dd>The name of this context.  If this context represents a function definition, it will be the function name; otherwise, it will be something else indicating the context.</dd>
 
-<dt>parent</dt> <dd>The parent `MatlabContext` object of this one.</dd>
+<dt>parent</dt> <dd>The parent <code>MatlabContext</code> object of this one.</dd>
 
-<dt>nodes</dt> <dd>The parsed representation of the MATLAB code within this context, expressed as a list of `MatlabNode` objects.  If this context is a script file, then it's the list of statements in the file; if it's a function, it's the list of statements in the function's body.</dd>
+<dt>nodes</dt> <dd>The parsed representation of the MATLAB code within this context, expressed as a list of <code>MatlabNode</code> objects.  If this context is a script file, then it's the list of statements in the file; if it's a function, it's the list of statements in the function's body.</dd>
 
 <dt>parameters</dt> <dd>If this is a function, a list of the parameters it takes.  This list contains just symbol names, not parse objects.</dd>
 
@@ -189,13 +189,13 @@ The fields in `MatlabContext` are the following:
 
 <dt>functions</dt> <dd>A dictionary of functions defined within this context.  The keys are the function names; the values are Context objects for the functions.</dd>
 
-<dt>assignments</dt> <dd>A dictionary of the assignment statements within this context.  For simple variables (`a = ...`), the keys are the variable names.  In the case of arrays, the keys are assumed to be string representations of the array, with the following features.  If it's a bare matrix, square braces surround the matrix, semicolons separate rows, commas separate index terms within rows, and all spaces are removed.  If it's a matrix reference, it is similar but starts with a name and uses regular parentheses instead of square braces.  So, e.g., `[a b]` is turned into `"[a,b]"`, `"[ a ; b ; c]"` is turned into `"[a;b;c]"`, `"foo(1, 2)"` is turned into `"foo(1,2)"`, and so on.  The dict values are the `ParseResults` objects for the RHS.</dd>
+<dt>assignments</dt> <dd>A dictionary of the assignment statements within this context.  For simple variables (<code>a = ...</code>), the keys are the variable names.  In the case of arrays, the keys are assumed to be string representations of the array, with the following features.  If it's a bare matrix, square braces surround the matrix, semicolons separate rows, commas separate index terms within rows, and all spaces are removed.  If it's a matrix reference, it is similar but starts with a name and uses regular parentheses instead of square braces.  So, e.g., <code>[a b]</code> is turned into <code>"[a,b]"</code>, <code>"[ a ; b ; c]"</code> is turned into <code>"[a;b;c]"</code>, <code>"foo(1, 2)"</code> is turned into <code>"foo(1,2)"</code>, and so on.  The dict values are the <code>ParseResults</code> objects for the RHS.</dd>
 
-<dt>types</dt> <dd>A dictionary of data types associated with objects.  For example, when `MatlabGrammar` encounters an assignment statement or a function definition, it stores the identifier of the assigned variable or parameter in this dictionary and sets the value to `"variable"`, to distinguish it from a `"function"`.</dd>
+<dt>types</dt> <dd>A dictionary of data types associated with objects.  For example, when <code>MatlabGrammar</code> encounters an assignment statement or a function definition, it stores the identifier of the assigned variable or parameter in this dictionary and sets the value to <code>"variable"</code>, to distinguish it from a <code>"function"</code>.</dd>
 
-<dt>calls</dt> <dd>A dictionary of functions called within this context.  The keys are the function names; the values is a list of the arguments (as annotated `ParseResults` objects).</dd>
+<dt>calls</dt> <dd>A dictionary of functions called within this context.  The keys are the function names; the values is a list of the arguments (as annotated <code>ParseResults</code> objects).</dd>
 
-<dt>pr</dt> <dd>The `ParseResults` object related to this context.  This `MatlabContext` will contain the stuff from which we constructed this instance of a `MatlabContext` object.  The representation is awkward and not meant to be used by callers, but it's left around for debugging purposes.</dd>
+<dt>pr</dt> <dd>The <code>ParseResults</code> object related to this context.  This <code>MatlabContext</code> will contain the stuff from which we constructed this instance of a <code>MatlabContext</code> object.  The representation is awkward and not meant to be used by callers, but it's left around for debugging purposes.</dd>
 
 <dt>file</dt> <dd>If the contents of this context came from a file, the path to the file.</dd>
 
