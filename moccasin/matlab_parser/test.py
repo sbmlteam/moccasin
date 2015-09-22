@@ -20,6 +20,25 @@
 # available online at https://github.com/sbmlteam/moccasin/.
 # ------------------------------------------------------------------------- -->
 
+# Basic principles
+# ----------------
+#
+# This is a simple test driver for the parser module.  You can invoke it
+# on the command line as follows:
+#
+#    ./test.py matlabfile.m
+#
+# where "matlabfile.m" is some (preferrably very simple) matlab input file.
+# test.py will parse the file using MatlabGrammar.parse_string() and print an
+# annotated representation of how the input was interpreted.  This
+# representation is in the form of a MatlabContext object for the input file
+# "matlabfile.m".  If given the optional argument -d, then test.py invokes
+# the Python pdb debugger after parsing the input, thus allowing you to
+# inspect the resulting data structure interactively.  The parse results are
+# stored in the compellingly-named variable "results".  To begin debugging,
+# you could print the values of the fields in the MatlabContext object, such
+# as "nodes", "types", "assignments", "functions", "calls", and others.
+
 from __future__ import print_function
 import sys
 import getopt
@@ -27,6 +46,7 @@ from grammar import *
 
 
 def get_filename_and_options(argv):
+    '''Helper function for parsing command-line arguments.'''
     try:
         options, path = getopt.getopt(argv[1:], "dpq")
     except:
@@ -55,7 +75,13 @@ Arguments:
     if not quiet: print(contents)
 
     parser  = MatlabGrammar()
+    # This uses parse_string() instead of parse_file() because the file has
+    # already been opened.  This is a minor performance improvement in case
+    # someone tries to read a really huge file -- no sense reading it twice.
     results = parser.parse_string(contents)
+    # parse_string() doesn't set the name of the file in the context object,
+    # so let's do it ourselves as a convenience to the user.
+    results.file = path
     if not print_old_format:
         if not quiet: print('----- raw parse results ' + '-'*50)
         parser.print_parse_results(results, print_raw=True)
