@@ -1286,7 +1286,12 @@ class MatlabGrammar:
 
     def _save_function_call(self, node):
         key = MatlabGrammar.make_key(node.name)
-        self._context.calls[key] = node.args
+        # Save each call as a list of the arguments to the call.
+        # This will thus be a list of lists.
+        if key not in self._context.calls:
+            self._context.calls[key] = [node.args]
+        else:
+            self._context.calls[key].append(node.args)
 
 
     def _save_type(self, thing, type):
