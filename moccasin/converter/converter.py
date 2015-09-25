@@ -724,7 +724,11 @@ def create_raterule_model(parse_results, use_species=True, produce_sbml=True,
     for name, arglist in calls.items():
         if isinstance(name, str) and re.match('^ode[0-9]', name):
             # Found the invocation of an ode function.
-            call_arglist = arglist
+
+            # FIXME: there may be more than one call in a file; if so we
+            # should track down which one is relevant.  However; the current
+            # code below doesn't do that -- it just takes the first one found.
+            call_arglist = arglist[0]
             ode_function = name
             break
 

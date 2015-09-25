@@ -779,6 +779,10 @@ class NodeTransformer(MatlabNodeVisitor):
                 self._parser._save_function_call(node)
             the_args = self.visit(node.args)
             node = FunCall(name=node.name, args=the_args)
+        else:
+            # Although we didn't change the type of this ArrayRef, we may
+            # still be able to change some of its arguments.
+            node.args = self.visit(node.args)
         return node
 
 
