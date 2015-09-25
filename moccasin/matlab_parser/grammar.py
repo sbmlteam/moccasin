@@ -566,7 +566,60 @@ class ParseResultsTransformer(ParseResultsVisitor):
         return [self._convert_list(row['subscript list']) for row in rowlist]
 
 
-# KindAnalyzer
+# FunctionFinder
+#
+# Helper class to look for function definitions.  Currently, it only looks in
+# the file for function definitions, but in the future it could be extended
+# to look in the user's environment.  This is called as one of the first
+# steps in parsing Matlab input, so that the parser can perform better kind
+# analysis in subsequent passes over the Matlab input.
+#
+# FIXME: this is not a valid approach in general, because if a function is
+# called in a file before the function is defined in that same file, this
+# code will remember it and go on whereas Matlab will complain about an
+# undefined function.  However, this approach is a easy way to solve the
+# problem of recognizing a function that is called inside another function,
+# such as in the following example:
+#
+#    function [x] = valid_76(a)
+#        x = other(4)
+#    end
+#
+#    function [x] = other(y)
+#        x = 10
+#    end
+#
+#    valid_76(1)
+#
+# Without FunctionFinder, when we parse this top-down, we would otherwise not
+# know about the second function at the time we're parsing the first one.
+#
+# Despite this being invalid in general, it works because we can assume that
+# the input is valid Matlab to begin with.  So, the cases that shouldn't be
+# permitted (such as a call to a function in a file before the function is
+# actually defined) should not arise in practice.
+
+class FunctionFinder(MatlabNodeVisitor):
+    def __init__(self, parser):
+        self._parser = parser
+
+
+    def visit_FunDef(self, node):
+        # Push a new function context, so that the other methods in this
+        # class work with the right context.
+        self._parser._save_type(node.name, 'function')
+        self._parser._push_context(self._parser._save_function_definition(node))
+        return node
+
+
+    def visit_End(self, node):
+        # Pop the current function context.
+        if not self._parser._context.topmost:
+            self._parser._pop_context()
+        return node
+
+
+# NodeTransformer
 #
 # Helper class that walks down a MatlabNode tree and simultaneously performs
 # several jobs:
@@ -601,7 +654,7 @@ class NodeTransformer(MatlabNodeVisitor):
         self._parser._save_type(node.name, 'function')
 
         # Push a new function context.
-        self._parser._push_context(self._parser._save_function_definition(node))
+        self._parser._push_context(self._parser._get_function_definition(node))
 
         # Record inferred type info about the input and output parameters.
         # The type info applies *inside* the function.
@@ -612,13 +665,33 @@ class NodeTransformer(MatlabNodeVisitor):
                 if isinstance(var, Identifier):
                     self._parser._save_type(var.name, 'variable')
         if node.parameters:
+            # We later correlate the arguments with calls to this function,
+            # to figure out whether any of the arguments are known to be
+            # function handles.  If they're not, we assume they're variables.
+
+            # First, set the default as being variables.
             for param in node.parameters:
-                # FIXME this labels parameters as variables, but the
-                # parameter could be a function name or handle when it's
-                # called.  Need to correlate what's done here with the
-                # arguments used in the call to the function.
-                if isinstance(param, Identifier):
+                if not isinstance(param, Special):
                     self._parser._save_type(param.name, 'variable')
+
+            # Next, search through the dictionary of calls in the parent
+            # context.  Did we ever see this function get called directly?
+            # If we did, examine the arguments to the call.
+            fun_name = node.name.name
+            num_param = len(node.parameters)
+            parent_context = self._parser._context.parent
+            if fun_name in parent_context.calls:
+                for arglist in parent_context.calls[fun_name]:
+                    if len(arglist) != num_param:
+                        continue
+                    for i in range(0, num_param):
+                        arg = arglist[i]
+                        param = node.parameters[i]
+                        if not isinstance(param, Identifier):
+                            continue
+                        if isinstance(arg, FunHandle):
+                            self._parser._save_type(param.name, 'function')
+                            break
         return node
 
 
@@ -633,8 +706,14 @@ class NodeTransformer(MatlabNodeVisitor):
         lhs = node.lhs
         rhs = node.rhs
         if isinstance(lhs, Identifier):
-            if isinstance(rhs, Array) or isinstance(rhs, Number) or \
-               isinstance(rhs, Boolean) or isinstance(rhs, String):
+            if (isinstance(rhs, FunCall) and isinstance(rhs.name, Identifier)
+                and rhs.name.name == 'str2func'):
+                # Special case: a function is being created using Matlab's
+                # str2func(), so in fact, the thing we're assigning to should
+                # be considered a function.
+                self._parser._save_type(lhs.name, 'function')
+            elif (isinstance(rhs, Array) or isinstance(rhs, Number)
+                  or isinstance(rhs, Boolean) or isinstance(rhs, String)):
                 self._parser._save_type(lhs.name, 'variable')
         elif isinstance(lhs, ArrayRef):
             # A function call can't appear on the LHS of an assignment, so
@@ -659,14 +738,14 @@ class NodeTransformer(MatlabNodeVisitor):
             # doesn't handle that case.
             return node
         the_name = node.name.name
-        parent_context = self._parser._context
+        context = self._parser._context
         if (matlab_function_or_command(the_name) or
-            self._parser._get_type(the_name, parent_context, True) == 'function'):
+            self._parser._get_type(the_name, context, True) == 'function'):
             # This is a known function or command.  We can convert this
             # to a FunCall.  At this time, we also process the arguments.
             the_args = self.visit(node.args)
             node = FunCall(name=node.name, args=the_args)
-        elif self._parser._get_type(the_name, parent_context, True) == 'variable':
+        elif self._parser._get_type(the_name, context, True) == 'variable':
             # We have seen this name before, and it's not a function.  We
             # can convert this ArrayOrFunCall to an ArrayRef.  We can
             # also convert the arguments/subscripts.
@@ -674,8 +753,8 @@ class NodeTransformer(MatlabNodeVisitor):
             # Also, if it was previously unknown whether this name is a
             # function or array, it might have been put in the list of
             # function calls.  Remove it if so.
-            if the_name in parent_context.calls:
-                parent_context.calls.pop(the_name)
+            if the_name in context.calls:
+                context.calls.pop(the_name)
 
             the_args = self.visit(node.args)
             node = ArrayRef(name=node.name, args=the_args, is_cell=False)
@@ -683,6 +762,23 @@ class NodeTransformer(MatlabNodeVisitor):
             # Although we didn't change the type of this ArrayOrFunCall,
             # we may still be able to change some of its arguments.
             node.args = self.visit(node.args)
+        return node
+
+
+    def visit_ArrayRef(self, node):
+        # Convert array refs that were later found out to be function calls.
+        if not isinstance(node.name, Identifier):
+            return node
+        the_name = node.name.name
+        context = self._parser._context
+        if self._parser._get_type(the_name, context, True) == 'function':
+            # We have seen this name before, and it's a function.  We need to
+            # convert this ArrayRef to FunCall.  Also, store this as a
+            # function call.  And let's not forget to convert the subscripts.
+            if the_name not in context.calls:
+                self._parser._save_function_call(node)
+            the_args = self.visit(node.args)
+            node = FunCall(name=node.name, args=the_args)
         return node
 
 
@@ -1199,13 +1295,26 @@ class MatlabGrammar:
         # file and there's no closing 'end' statement.
         self._push_context(MatlabContext(topmost=True))
 
+        postprocessor = FunctionFinder(self)
+        nodes = [postprocessor.visit(node) for node in nodes]
+        self._reset_context()
+
         postprocessor = NodeTransformer(self)
         nodes = [postprocessor.visit(node) for node in nodes]
         self._reset_context()
 
-        # Make sure to save assignments *after* doing other transformations.
         saver = EntitySaver(self)
         nodes = [saver.visit(node) for node in nodes]
+        self._reset_context()
+
+        # We do node transformation twice.  Yes, it's inefficient.  Maybe a
+        # future update can figure out how to avoid it.  The problem this
+        # solves is that we can't tell what some things are until we see how
+        # they're used, and we don't have that information until we've seen
+        # the whole file.  This is approach is a sledgehammer, but it does it.
+
+        postprocessor = NodeTransformer(self)
+        nodes = [postprocessor.visit(node) for node in nodes]
         self._reset_context()
 
         self._context.nodes = nodes
@@ -1286,7 +1395,12 @@ class MatlabGrammar:
 
     def _save_function_call(self, node):
         key = MatlabGrammar.make_key(node.name)
-        self._context.calls[key] = node.args
+        # Save each call as a list of the arguments to the call.
+        # This will thus be a list of lists.
+        if key not in self._context.calls:
+            self._context.calls[key] = [node.args]
+        else:
+            self._context.calls[key].append(node.args)
 
 
     def _save_type(self, thing, type):

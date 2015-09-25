@@ -1,0 +1,8 @@
+{function definition: {identifier: "valid_76"} parameters ( {identifier: "a"} ) output {identifier: "x"}}
+{assign: {identifier: "x"} = {array {identifier: "a"}: [ {number: 3} ]}}
+{assign: {identifier: "x"} = {function {identifier: "other"} ( {number: 4} ) }}
+{end}
+{function definition: {identifier: "other"} parameters ( {identifier: "y"} ) output {identifier: "x"}}
+{assign: {identifier: "x"} = {number: 10}}
+{end}
+( {function {identifier: "valid_76"} ( {array: [ {row 1: {number: 1}, {number: 2}, {number: 3}, {number: 4}} ]} ) } )
