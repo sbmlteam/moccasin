@@ -591,11 +591,13 @@ class ParseResultsTransformer(ParseResultsVisitor):
 #
 #    valid_76(1)
 #
-# When we parse this top-down, we won't know about the second function at the
-# time we're parsing the first one.
+# Without FunctionFinder, when we parse this top-down, we would otherwise not
+# know about the second function at the time we're parsing the first one.
 #
-# Despite this being invalid in general, it works because we assume that the
-# input is valid Matlab to begin with.
+# Despite this being invalid in general, it works because we can assume that
+# the input is valid Matlab to begin with.  So, the cases that shouldn't be
+# permitted (such as a call to a function in a file before the function is
+# actually defined) should not arise in practice.
 
 class FunctionFinder(MatlabNodeVisitor):
     def __init__(self, parser):
