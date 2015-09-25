@@ -5,3 +5,4 @@
 moccasin.egg-info
 .coverage
 htmlcov
+.tox
