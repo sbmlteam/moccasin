@@ -79,8 +79,6 @@ Fages, F. et al. (2015) Inferring Reaction Systems from Ordinary Differential Eq
 
 Gay, S. et al. (2014) On the Subgraph Epimorphism Problem. Discrete Applied Mathematics, 162: 214–228.
 
-Ghosh, S. et al. (2011) Software for Systems Biology: From Tools to Integrated Platforms. Nature Reviews Genetics, 12: 821-832.
-
 Hucka, M. et al. (2003) The systems biology markup language (SBML): a medium for representation and exchange of biochemical network models. Bioinformatics, 19, 524-531.
 
 Keating, S.M. et al. (2006) SBMLToolbox: An SBML Toolbox for MATLAB Users. Bioinformatics, 22 (10): 1275–1277.
