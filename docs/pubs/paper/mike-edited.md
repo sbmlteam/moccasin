@@ -35,7 +35,7 @@ The AST produced by the parser module is then processed to recognize specific co
 
 ### 2.3 BIOCHAM module
 
-Encoding a model's ODE equations in a one-to-one fashion using SBML's "rate equations" is sufficient to ensure simulation reproducibility, but the translated model is not ideal if the original system of ODEs actually represents a biochemical reaction network. Reconstructing this network captures the underlying model more productively and enables subsequent application of analyses that require biochemical reactions (e.g., Gay et al., 2014 Fages et al., 2004). In order to export SBML models with fully resolved reaction networks, the MOCCASIN sends the output from the converter module to BIOCHAM’s web service via Simple Object Access Protocol (SOAP), and post-processes the result to produce SBML with reaction definitions. BIOCHAM is a modeling environment for systems biology that encompasses the published implementation of a state-of-the-art algorithm for reconstructing and inferring the complete reaction model from a given set of ODEs (Fages et al., 2015).
+Encoding a model's ODE equations in a one-to-one fashion using SBML's "rate equations" is sufficient to ensure simulation reproducibility, but the translated model is not ideal if the original system of ODEs actually represents a biochemical reaction network. Reconstructing this network captures the underlying model more productively and enables subsequent application of analyses that require biochemical reactions (e.g., Gay et al., 2014 Fages et al., 2004). In order to export SBML models with fully resolved reaction networks, MOCCASIN sends the output from the converter module to BIOCHAM’s web service via Simple Object Access Protocol (SOAP), and post-processes the result to produce SBML with reaction definitions. BIOCHAM is a modeling environment for systems biology that encompasses the published implementation of a state-of-the-art algorithm for reconstructing and inferring the complete reaction model from a given set of ODEs (Fages et al., 2015).
 
 Due to XPP's syntactic limitations as well as limitations in BIOCHAM, the model retrieved from BIOCHAM lacks a variety of components present in the original model (including initial assignments, references to the time variable, units, and others). To accurately translate more of the ODE-based MATLAB model and accommodate a wider range of modeling scenarios, the output from BIOCHAM is post-processed to add initial assignments, references to the time variable (if used in the original model), and other missing pieces. All components of the initial MATLAB file are thus modeled and each reaction in the final SBML system is fully characterized with well-identified reactants, products and modifiers.
 
@@ -59,7 +59,7 @@ ACKNOWLEDGEMENTS
 
 The authors thank Thomas B. Kepler, Franz-Josef Elmer, Bernd Rinn and Jannik Vollmer for their helpful discussions and implementation ideas.
 
-*Funding*: This work was supported by the Modeling Immunity for Biodefense contract by the National Institutes of Health (NIH contract numbers HHSN266200500021C, awarded to Stuart Sealfon; and HHSN272201000053C, awarded to Thomas B. Kepler and Garnett H. Kelsoe). We also acknowledge support by the Swiss Institute of Bioinformatics.
+*Funding*: This work was supported by the Modeling Immunity for Biodefense contract by the National Institutes of Health (NIH contract numbers HHSN266200500021C, awarded to Stuart Sealfon; and HHSN272201000053C, awarded to Thomas B. Kepler). We also acknowledge support by the Swiss Institute of Bioinformatics.
 
 *Conflict of Interest*: none declared.
 
@@ -78,8 +78,6 @@ Fages, F. et al. (2004) Modelling and querying interaction networks in the bioch
 Fages, F. et al. (2015) Inferring Reaction Systems from Ordinary Differential Equations. Theoretical Computer Science, 22 (4): 514-515.
 
 Gay, S. et al. (2014) On the Subgraph Epimorphism Problem. Discrete Applied Mathematics, 162: 214–228.
-
-Ghosh, S. et al. (2011) Software for Systems Biology: From Tools to Integrated Platforms. Nature Reviews Genetics, 12: 821-832.
 
 Hucka, M. et al. (2003) The systems biology markup language (SBML): a medium for representation and exchange of biochemical network models. Bioinformatics, 19, 524-531.
 

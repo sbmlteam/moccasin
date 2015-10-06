@@ -6,3 +6,5 @@ moccasin.egg-info
 .coverage
 htmlcov
 .tox
+build/
+dist/
