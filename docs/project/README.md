@@ -6,4 +6,5 @@ This directory contains various documentation files about the MOCCASIN project a
 | File or directory   | Topic                                 |
 |---------------------|---------------------------------------|
 | [code-conventions.md](code-conventions.md) | Project conventions for writing code. |
+| [logo](logo) | MOCCASIN logo graphics files. |
 
