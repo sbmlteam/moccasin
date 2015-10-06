@@ -105,6 +105,7 @@ This work is made possible thanks in part to funding from the Icahn School of Me
 
 We also acknowledge the contributions made by Dr. [Dagmar Iber](http://www.silva.bsse.ethz.ch/cobi/people/iberd) from the Department of Biosystems Science and Engineering (D-BSSE), and Dr. [Bernd Rinn](https://www1.ethz.ch/id/about/sections/sis/index_EN) from the Scientific IT Services (SIS) division from ETH Zurich.
 
+The MOCCASIN logo was created by Randy Carlton (<rcarlton@rancar2.com>).
 
 Copyright and license
 ---------------------
