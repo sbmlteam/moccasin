@@ -8,3 +8,4 @@ htmlcov
 .tox
 build/
 dist/
+.git/COMMIT_EDITMSG
