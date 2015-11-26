@@ -350,7 +350,8 @@ class ParseResultsTransformer(ParseResultsVisitor):
 
 
     def visit_colon_operator(self, pr):
-        return TernaryOp(op=':')
+        # The values of left/middle/right are set properly in a later step.
+        return TernaryOp(op=':', left=None, middle=None, right=None)
 
 
     def visit_unary_operator(self, pr):
@@ -640,9 +641,36 @@ class NodeTransformer(MatlabNodeVisitor):
 
 
     def visit_list(self, node):
-        if len(node) == 2 and isinstance(node[0], UnaryOp) and isinstance(node[1], Number):
+        # This first looks for some special cases that need to be converted
+        # to their proper form.  If no special cases exist, it simply visits
+        # every element in the list and returns a list of the result.
+
+        # Special case: Ternary operators.
+        # This is needed because infixNotation(), used in our Matlab grammar
+        # definition, does not support ternary operators.  So, we currently
+        # define ':' as being binary when it appears in an expression
+        # context, which leads to the ternary ':' expression to be turned
+        # into a nested list of two binary operators.  FIXME: ask the
+        # PyParsing developer for a way to do ternary operators properly.
+        if len(node) == 3 and isinstance(node[1], TernaryOp):
+            if isinstance(node[0], list) and len(node[0]) == 3 \
+               and isinstance(node[0][1], TernaryOp):
+                l = self.visit(node[0][0])
+                m = self.visit(node[0][2])
+                r = self.visit(node[2])
+                return TernaryOp(op=':', left=l, middle=m, right=r)
+            else:
+                l = self.visit(node[0])
+                r = self.visit(node[2])
+                return TernaryOp(op=':', left=l, middle=None, right=r)
+
+        # Special case: Unary operators.
+        elif len(node) == 2 and isinstance(node[0], UnaryOp) \
+             and isinstance(node[1], Number):
             # Replace [UnaryOp(op='-'), Number(value='x')] with Number(value='-x')
             return Number(value='-' + node[1].value)
+
+        # Default case: a plain list.
         else:
             return [self.visit(item) for item in node]
 
@@ -784,6 +812,7 @@ class NodeTransformer(MatlabNodeVisitor):
             # still be able to change some of its arguments.
             node.args = self.visit(node.args)
         return node
+
 
 
 # EntitySaver
@@ -1127,7 +1156,9 @@ class MatlabGrammar:
     # The operator precedence rules in Matlab are listed here:
     # http://www.mathworks.com/help/matlab/matlab_prog/operator-precedence.html
 
-    # FIXME: colon operator for 3 arguments is wrong.
+    # Note: colon operator for 3 arguments is not implemented with the code
+    # below, but it looks like PyParsing won't allow a ternary operator in
+    # infixNotation().  We will need to fix it in post-processing.
 
     _plusminus     = _PLUS ^ _MINUS
     _uplusminusneg = _UMINUS ^ _UPLUS ^ _UNOT
