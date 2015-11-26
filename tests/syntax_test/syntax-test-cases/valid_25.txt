@@ -1,6 +1,6 @@
 {comment:  quick functions}
 {assign: {identifier: "f"} = {anon @ handle: args ( {identifier: "x"} ) body ( ( ( {number: 3} {binary op: *} ( {identifier: "x"} {binary op: .^} {number: 2} ) ) {binary op: +} ( {number: 2} {binary op: *} {identifier: "x"} ) ) {binary op: +} {number: 7} ) }}
-{assign: {identifier: "t"} = ( ( {number: 0} {colon operator} {number: 0.001} ) {colon operator} {number: 1} )}
+{assign: {identifier: "t"} = {colon op: left={number: 0}, middle={number: 0.001}, right={number: 1}}}
 ( {function {identifier: "plot"} ( {identifier: "t"}, {function/array: {identifier: "f"} ( {identifier: "t"} )}, {identifier: "t"}, {function/array: {identifier: "f"} ( ( {number: 2} {binary op: *} {identifier: "t"} ) )}, {identifier: "t"}, {function/array: {identifier: "f"} ( ( {number: 3} {binary op: *} {identifier: "t"} ) )} ) } )
 {comment:  closures (linfunc below is a function that returns a function,}
 {comment:  and the outer functions arguments are held for the lifetime}
