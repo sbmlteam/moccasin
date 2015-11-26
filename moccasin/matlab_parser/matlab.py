@@ -316,14 +316,16 @@ class BinaryOp(Operator):
 
 
 class TernaryOp(Operator):
-    # FIXME this is currently wrong.
-    _attr_names = ['op']
+    _attr_names = ['op', 'left', 'middle', 'right']
+    _visitable_attr = ['left', 'middle', 'right']
 
     def __repr__(self):
-        return 'TernaryOp(op=\'{}\')'.format(self.op)
+        return 'TernaryOp(op=\'{}\', left={}, middle={}, right={})'.format(
+            self.op, repr(self.left), repr(self.middle), repr(self.right))
 
     def __str__(self):
-        return '{colon operator}'
+        return '{{colon op: left={}, middle={}, right={}}}'.format(
+            _str_format(self.left), _str_format(self.middle), _str_format(self.right))
 
 
 class Transpose(Operator):
