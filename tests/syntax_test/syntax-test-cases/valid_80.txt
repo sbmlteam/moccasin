@@ -1,0 +1,3 @@
+{shell command: vi yearlystats.m}
+{shell command: excel.exe &}
+{shell command: echo $PATH}
