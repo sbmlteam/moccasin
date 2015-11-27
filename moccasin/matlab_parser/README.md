@@ -153,6 +153,8 @@ A word about the syntax of expressions.  Mathematical and conditional expression
 
 Note the location of the nested square brackets in the output above.
 
+The only ternary operator currently implemented is the colon (`:`) operator.  In MATLAB, it has a 2 term and 3 term variant.  In MOCCASIN, both variants are represented by a `TernaryOp` object, and this object will have attributes `left`, `middle`, and `right`, to represent the *left*:*middle*:*right* parts of the colon operator expression.  In the case of a 2-term colon operator expression in the MATLAB input, the field `middle` will have a value of `None`.
+
 
 Matrices and functions in MATLAB
 --------------------------------
