@@ -551,13 +551,15 @@ class Command(MatlabNode):
 
 
 class ShellCommand(Command):
-    _attr_names = ['command']
+    _attr_names = ['command', 'background']
 
     def __repr__(self):
-        return 'ShellCommand(command={})'.format(repr(self.command))
+        return 'ShellCommand(command={}, bkgnd={})'.format(repr(self.command),
+                                                           self.background)
 
     def __str__(self):
-        return '{{shell command: {}}}'.format(_str_format(self.command))
+        bkgnd = ' &' if self.background else ''
+        return '{{shell command: {}{}}}'.format(_str_format(self.command), bkgnd)
 
 
 class MatlabCommand(Command):

@@ -464,8 +464,11 @@ class ParseResultsTransformer(ParseResultsVisitor):
 
     def visit_shell_command(self, pr):
         content = pr['shell command']
-        the_command = self.visit(content['command'][0])
-        return ShellCommand(command=the_command)
+        cmd = content[1][0]
+        backgrounded = cmd.strip().endswith('&')
+        if backgrounded:
+            cmd = cmd[:cmd.rfind('&') - 1]
+        return ShellCommand(command=cmd, background=backgrounded)
 
 
     def visit_command_statement(self, pr):
@@ -553,10 +556,6 @@ class ParseResultsTransformer(ParseResultsVisitor):
 
     def visit_continue(self, pr):
         return Branch(kind='continue')
-
-
-    def visit_shell_command(self, pr):
-        return ShellCommand(command=pr['shell command'][1][0])
 
 
     def _convert_list(self, list):
