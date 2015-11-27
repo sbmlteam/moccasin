@@ -1286,7 +1286,7 @@ Available options:
 
     try:
         parser = MatlabGrammar()
-        parse_results = parser.parse_string(file_contents)
+        parse_results = parser.parse_file(path)
     except Exception as err:
         print("error: {0}".format(err))
 
