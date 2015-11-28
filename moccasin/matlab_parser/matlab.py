@@ -475,10 +475,10 @@ class If(FlowControl):
     _visitable_attr = ['cond']
 
     def __repr__(self):
-        return 'While(cond={})'.format(repr(self.cond))
+        return 'If(cond={})'.format(repr(self.cond))
 
     def __str__(self):
-        return '{{while stmt: {}}}'.format(_str_format(self.cond))
+        return '{{if stmt: {}}}'.format(_str_format(self.cond))
 
 
 class Elseif(FlowControl):
