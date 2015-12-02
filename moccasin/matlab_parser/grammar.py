@@ -88,16 +88,11 @@
 #   |  +- FunDef
 #   |
 #   +--FlowControl
-#   |  +- Try
-#   |  +- Catch
-#   |  +- Switch
-#   |  +- Case
-#   |  +- Otherwise
-#   |  +- If
-#   |  +- Elseif
-#   |  +- Else
+#   |  +- IfElse
 #   |  +- While
 #   |  +- For
+#   |  +- Switch
+#   |  +- TryCatch
 #   |  +- End
 #   |  +- Branch
 #   |
@@ -441,14 +436,12 @@ class ParseResultsTransformer(ParseResultsVisitor):
     def visit_function_definition(self, pr):
         content = pr['function definition']
         the_name = self.visit(content['name'])
+        the_params = None
+        the_output = None
         if 'parameter list' in content:
             the_params = self._convert_list(content['parameter list'])
-        else:
-            the_params = None
         if 'output list' in content:
             the_output = self._convert_list(content['output list'])
-        else:
-            the_output = None
         # FIXME should get the body somehow
         the_body = None
         return FunDef(name=the_name, parameters=the_params,
@@ -490,60 +483,74 @@ class ParseResultsTransformer(ParseResultsVisitor):
     def visit_while_statement(self, pr):
         content = pr['while statement']
         the_cond = self.visit(content['condition'])
-        return While(cond=the_cond)
+        the_body = None
+        if 'body' in content:
+            the_body = self._convert_list(content['body'])
+        return While(cond=the_cond, body=the_body)
 
 
     def visit_if_statement(self, pr):
         content = pr['if statement']
         the_cond = self.visit(content['condition'])
-        return If(cond=the_cond)
-
-
-    def visit_elseif_statement(self, pr):
-        content = pr['elseif statement']
-        the_cond = self.visit(content['condition'])
-        return Elseif(cond=the_cond)
-
-
-    def visit_else_statement(self, pr):
-        return Else()
+        the_body = None
+        the_else_body = None
+        elseifs = []
+        if 'body' in content:
+            the_body = self._convert_list(content['body'])
+        if 'else statement' in content and 'body' in content['else statement']:
+            the_else_body = self._convert_list(content['else statement']['body'])
+        if 'elseif statements' in content:
+            # We create tuples of (condition, body) for each elseif clause.
+            for clause in content['elseif statements']:
+                cond = self.visit(clause['condition'])
+                body = None
+                if 'body' in clause:
+                    body = self._convert_list(clause['body'])
+                elseifs.append((cond, body))
+        return IfElse(cond=the_cond, body=the_body, elseif_tuples=elseifs,
+                      else_body=the_else_body)
 
 
     def visit_switch_statement(self, pr):
         content = pr['switch statement']
         the_cond = self.visit(content['expression'])
-        return Switch(cond=the_cond)
-
-
-    def visit_case_statement(self, pr):
-        content = pr['case statement']
-        the_cond = self.visit(content['expression'])
-        return Case(cond=the_cond)
-
-
-    def visit_otherwise_statement(self, pr):
-        return Otherwise()
+        the_other = None
+        the_cases = []
+        if 'case statements' in content:
+            # We create tuples of (condition, body) for each elseif clause.
+            for clause in content['case statements']:
+                cond = self.visit(clause['expression'])
+                body = None
+                if 'body' in clause:
+                    body = self._convert_list(clause['body'])
+                the_cases.append((cond, body))
+        if 'otherwise statement' in content and 'body' in content['otherwise statement']:
+            the_other = self._convert_list(content['otherwise statement']['body'])
+        return Switch(cond=the_cond, case_tuples=the_cases, otherwise=the_other)
 
 
     def visit_for_statement(self, pr):
         content = pr['for statement']
         the_var = self.visit(content['loop variable'])
         the_expr = self.visit(content['expression'])
-        return For(var=the_var, expr=the_expr)
+        the_body = None
+        if 'body' in content:
+            the_body = self._convert_list(content['body'])
+        return For(var=the_var, expr=the_expr, body=the_body)
 
 
     def visit_try_statement(self, pr):
-        return Try()
-
-
-    def visit_catch_statement(self, pr):
-        content = pr['catch statement']
-        the_var = self.visit(content['catch variable'])
-        return Catch(var=the_var)
-
-
-    def visit_end_statement(self, pr):
-        return End()
+        content = pr['try statement']
+        the_body = None
+        the_var = None
+        the_catch_body = None
+        if 'body' in content:
+            the_body = self._convert_list(content['body'])
+        if 'catch variable' in content:
+            the_var = self.visit(content['catch variable'])
+        if 'catch body' in content:
+            the_catch_body = self._convert_list(content['catch body'])
+        return TryCatch(body=the_body, catch=the_var, catch_body=the_catch_body)
 
 
     def visit_break(self, pr):
@@ -904,11 +911,12 @@ class MatlabGrammar:
     # second parenthesized argument on each line is something PyParsing allows;
     # it's a short form, equivalent to calling .setResultsName(...).
 
+    _TRUE       = Keyword('true')
+    _FALSE      = Keyword('false')
+    _BOOLEAN    = (_TRUE | _FALSE)                    ('boolean')
     _NUMBER     = (_FLOAT | _INTEGER)                 ('number')
-    _BOOLEAN    = (Keyword('true') | Keyword('false'))('boolean')
     _STRING     = QuotedString("'", escQuote="''")    ('string')
 
-    _ID         = Word(alphas, alphanums + '_')       ('identifier')
     _TILDE      = Literal('~')                        ('tilde')
 
     _UMINUS     = Literal('-')                        ('unary operator')
@@ -941,27 +949,40 @@ class MatlabGrammar:
     _NC_TRANSP  = Literal(".'")
     _CC_TRANSP  = Literal("'")
 
-    # Basic keywords.
+    # Basic keywords.  This list is based on what the command 'iskeyword'
+    # returns in MATLAB 2014b.
 
-    _BREAK      = Keyword('break')                     ('keyword')
-    _CASE       = Keyword('case')                      ('keyword')
-    _CATCH      = Keyword('catch')                     ('keyword')
-    _CLASSDEF   = Keyword('classdef')                  ('keyword')
-    _CONTINUE   = Keyword('continue')                  ('keyword')
-    _ELSE       = Keyword('else')                      ('keyword')
-    _ELSEIF     = Keyword('elseif')                    ('keyword')
-    _END        = Keyword('end')                       ('keyword')
-    _FOR        = Keyword('for')                       ('keyword')
-    _FUNCTION   = Keyword('function')                  ('keyword')
-    _GLOBAL     = Keyword('global')                    ('keyword')
-    _IF         = Keyword('if')                        ('keyword')
-    _OTHERWISE  = Keyword('otherwise')                 ('keyword')
-    _PARFOR     = Keyword('parfor')                    ('keyword')
-    _PERSISTENT = Keyword('persistent')                ('keyword')
-    _RETURN     = Keyword('return')                    ('keyword')
-    _SWITCH     = Keyword('switch')                    ('keyword')
-    _TRY        = Keyword('try')                       ('keyword')
-    _WHILE      = Keyword('while')                     ('keyword')
+    _BREAK      = Keyword('break')                    ('keyword')
+    _CASE       = Keyword('case')                     ('keyword')
+    _CATCH      = Keyword('catch')                    ('keyword')
+    _CLASSDEF   = Keyword('classdef')                 ('keyword')
+    _CONTINUE   = Keyword('continue')                 ('keyword')
+    _ELSE       = Keyword('else')                     ('keyword')
+    _ELSEIF     = Keyword('elseif')                   ('keyword')
+    _END        = Keyword('end')                      ('keyword')
+    _FOR        = Keyword('for')                      ('keyword')
+    _FUNCTION   = Keyword('function')                 ('keyword')
+    _GLOBAL     = Keyword('global')                   ('keyword')
+    _IF         = Keyword('if')                       ('keyword')
+    _OTHERWISE  = Keyword('otherwise')                ('keyword')
+    _PARFOR     = Keyword('parfor')                   ('keyword')
+    _PERSISTENT = Keyword('persistent')               ('keyword')
+    _RETURN     = Keyword('return')                   ('keyword')
+    _SPMD       = Keyword('spmd')                     ('keyword')
+    _SWITCH     = Keyword('switch')                   ('keyword')
+    _TRY        = Keyword('try')                      ('keyword')
+    _WHILE      = Keyword('while')                    ('keyword')
+
+    # Identifiers allowed in user programs.  They can't be the same as
+    # known MATLAB language keywords or the words for Boolean values.
+
+    _reserved   = _BREAK | _CASE | _CATCH | _CLASSDEF | _CONTINUE \
+                  | _ELSE | _ELSEIF | _END | _FALSE | _FOR | _FUNCTION \
+                  | _GLOBAL | _IF | _OTHERWISE | _PARFOR | _PERSISTENT \
+                  | _RETURN | _SPMD | _SWITCH | _TRUE | _TRY | _WHILE
+
+    _identifier = Word(alphas, alphanums + '_')('identifier')
+    _id         = NotAny(_reserved) + _identifier
 
     # Grammar for expressions.
     #
@@ -1030,7 +1051,7 @@ class MatlabGrammar:
     _comma_subs    = _one_sub + ZeroOrMore(_COMMA + _one_sub)
     _space_subs    = _one_sub + ZeroOrMore(_WHITE.suppress() + _one_sub).leaveWhitespace()
     _call_args     = delimitedList(_expr)
-    _fun_params    = delimitedList(Group(_TILDE) | Group(_ID))
+    _fun_params    = delimitedList(Group(_TILDE) | Group(_id))
 
     # Bare matrices.  This is a cheat because it doesn't check that all the
     # element contents have the same data type.  But again, since we expect our
@@ -1054,7 +1075,7 @@ class MatlabGrammar:
 
     _bare_cell     = Group(_LBRACE + ZeroOrMore(_rows('row list')) + _RBRACE
                           ).setResultsName('cell array')  # noqa
-    _cell_name     = Group(_ID)
+    _cell_name     = Group(_id)
     _cell_args     = Group(_comma_subs)
     _cell_access   = Group(_cell_name('name') + _LBRACE.leaveWhitespace()
                            + _cell_args('subscript list') + _RBRACE
@@ -1085,13 +1106,13 @@ class MatlabGrammar:
     #    x = somearray{1}(2,3)
     # That's the reason for _cell_access in the definition of _fun_access.
 
-    _fun_arr_name     = Group(_ID)
+    _fun_arr_name     = Group(_id)
     _fun_access       = _fun_arr_name ^ Group(_cell_access('cell array'))
     _funcall_or_array = Group(_fun_access('name')
                               + _LPAR + _call_args('argument list') + _RPAR
                              ).setResultsName('array or function')  # noqa
 
-    _array_name       = Group(_ID)
+    _array_name       = Group(_id)
     _array_args       = Group(_comma_subs)
     _array_access     = Group(_array_name('name')
                               + _LPAR + _array_args('subscript list') + _RPAR
@@ -1103,7 +1124,7 @@ class MatlabGrammar:
     # documentation, but it seems to be the case when I try it.  (It's the
     # case for function defs and function return values too.)
 
-    _handle_name   = Group(_ID)
+    _handle_name   = Group(_id)
     _named_handle  = Group('@' + _handle_name('name'))
     _anon_handle   = Group('@' + _LPAR + _call_args('argument list')
                            + _RPAR + _expr('function definition'))  # noqa
@@ -1112,7 +1133,7 @@ class MatlabGrammar:
     # Struct array references.  This is incomplete: in Matlab, the LHS can
     # actually be a full expression that yields a struct.  Here, to avoid an
     # infinitely recursive grammar, we only allow a specific set of objects
-    # and exclude a full expr.  (Doing the obvious thing, expr + "." + _ID,
+    # and exclude a full expr.  (Doing the obvious thing, expr + "." + _id,
     # results in an infinitely-recursive grammar.)  Also note _bare_array is
     # deliberately not part of the following because [1].foo is not legal.
 
@@ -1120,8 +1141,8 @@ class MatlabGrammar:
                            | _funcall_or_array
                            | _array_access
                            | _fun_handle
-                           | _ID)
-    _struct_field  = Group(_ID) | Group(_LPAR + _expr + _RPAR)
+                           | _id)
+    _struct_field  = Group(_id) | Group(_LPAR + _expr + _RPAR)
     _struct_access = Group(_struct_base('struct base')
                            + _DOT.leaveWhitespace() + _struct_field('field')
                           ).setResultsName('struct')  # noqa
@@ -1136,7 +1157,10 @@ class MatlabGrammar:
                                          | _bare_array
                                          | _array_access
                                          | _fun_handle
-                                         | _BOOLEAN | _ID | _NUMBER | _STRING)
+                                         | _id
+                                         | _BOOLEAN
+                                         | _NUMBER
+                                         | _STRING)
     _transpose_op  = _NC_TRANSP ^ _CC_TRANSP
     _transpose     = Group(_transp_what('operand') + _transpose_op('operator')
                           ).setResultsName('transpose')  # noqa
@@ -1150,7 +1174,10 @@ class MatlabGrammar:
                            | _array_access
                            | _cell_array
                            | _fun_handle
-                           | _BOOLEAN | _ID | _NUMBER | _STRING)
+                           | _id
+                           | _BOOLEAN
+                           | _NUMBER
+                           | _STRING)
 
     # The operator precedence rules in Matlab are listed here:
     # http://www.mathworks.com/help/matlab/matlab_prog/operator-precedence.html
@@ -1179,79 +1206,45 @@ class MatlabGrammar:
         (Group(_SHORT_OR),      2, opAssoc.LEFT, makeLRlike(2)),
     ])
 
-    _cond_expr     = infixNotation(_operand, [
-        (Group(_logical_op),    2, opAssoc.LEFT, makeLRlike(2)),
-        (Group(_AND),           2, opAssoc.LEFT, makeLRlike(2)),
-        (Group(_OR),            2, opAssoc.LEFT, makeLRlike(2)),
-        (Group(_SHORT_AND),     2, opAssoc.LEFT, makeLRlike(2)),
-        (Group(_SHORT_OR),      2, opAssoc.LEFT, makeLRlike(2)),
-    ])
+    # Standalone expressions.
+    #
+    # If an expression is written on a line outside of another construct,
+    # it needs to be separated from other expressions by commas or newlines.
 
-    # Assignments.  We tag the LHS with 'lhs' whether it's a single variable
-    # or an array, because we can distinguish the cases by examining the
-    # parsed object.
+    _single_expr = _expr + FollowedBy(_delimiter | _comment | _EOL)
 
-    _lhs_var        = Group(_ID)
+    # Assignments.
+    #
+    # We tag the LHS with 'lhs' whether it's a single variable or an array,
+    # because we can distinguish the cases by examining the parsed object.
+
+    _lhs_var        = Group(_id)
     _simple_assign  = Group(_lhs_var('lhs') + _EQUALS + _expr('rhs'))
     _lhs_array      = Group(_bare_array | _array_access | _cell_array | _struct_access)
     _other_assign   = Group(_lhs_array('lhs') + _EQUALS + _expr('rhs'))
     _assignment     = (_other_assign | _simple_assign).setResultsName('assignment')
 
-    # Control statements.
-    # FIXME: this should be full statements, not line-oriented.
+    # Function definitions.
+    #
+    # Note that when a function returns multiple values and the LHS is an
+    # array expression in square brackets, a bare tilde can be put in place
+    # of an argument value to indicate that the value is to be ignored.
 
-    _cond           = Group(_cond_expr)                   ('condition')
-    _while_stmt     = Group(_WHILE + _cond)               ('while statement')
-    _if_stmt        = Group(_IF + _cond)                  ('if statement')
-    _elseif_stmt    = Group(_ELSEIF + _cond)              ('elseif statement')
-    _loop_var       = Group(_ID)                          ('loop variable')
-    _for_stmt       = Group(_FOR + _loop_var + _EQUALS
-                            + _expr('expression'))        ('for statement')
-    _switch_stmt    = Group(_SWITCH + _expr('expression'))('switch statement')
-    _case_stmt      = Group(_CASE + _expr('expression'))  ('case statement')
-    _catch_var      = Group(_ID)                          ('catch variable')
-    _catch_stmt     = Group(_CATCH + _catch_var)          ('catch statement')
-    _otherwise_stmt = _OTHERWISE                          ('otherwise statement')
-    _else_stmt      = _ELSE                               ('else statement')
-    _end_stmt       = _END                                ('end statement')
-    _try_stmt       = _TRY                                ('try statement')
-    _continue_stmt  = _CONTINUE                           ('continue statement')
-    _break_stmt     = _BREAK                              ('break statement')
-    _return_stmt    = _RETURN                             ('return statement')
-
-    _control_stmt   = Group(_while_stmt
-                            | _if_stmt
-                            | _else_stmt
-                            | _elseif_stmt
-                            | _switch_stmt
-                            | _case_stmt
-                            | _otherwise_stmt
-                            | _for_stmt
-                            | _try_stmt
-                            | _catch_stmt
-                            | _continue_stmt
-                            | _break_stmt
-                            | _return_stmt
-                            | _end_stmt
-                           ).setResultsName('control statement')  # noqa
-
-    # When a function returns multiple values and the LHS is an array
-    # expression in square brackets, a bare tilde can be put in place of an
-    # argument value to indicate that the value is to be ignored.
-
-    _single_value   = Group(_ID) | Group(_TILDE)
+    _single_value   = Group(_id) | Group(_TILDE)
     _comma_values   = delimitedList(_single_value)
     _space_values   = OneOrMore(_single_value)
     _multi_values   = _LBRACKET + (_comma_values ^ _space_values) + _RBRACKET
     _fun_outputs    = Group(_multi_values) | Group(_single_value)
     _fun_paramslist = _LPAR + Optional(_fun_params) + _RPAR
-    _fun_name       = Group(_ID)
+    _fun_name       = Group(_id)
     _fun_def_stmt   = Group(_FUNCTION.suppress()
                             + Optional(_fun_outputs('output list') + _EQUALS())
                             + _fun_name('name')
                             + Optional(_fun_paramslist('parameter list'))
                            ).setResultsName('function definition')  # noqa
 
+    # Commands.
+    #
     # Shell commands don't respect ellipses or delimiters, so we use EOL
     # explicitly here and match _shell_cmd at the _matlab_syntax level.
 
@@ -1284,29 +1277,91 @@ class MatlabGrammar:
     # to be tried before trying _expr.
 
     ParserElement.setDefaultWhitespaceChars(' \t')
-
-    _noncmd_start = _EQUALS | _LPAR | _delimiter | _comment
-    _cmd_name     = Group(_ID)
-    _cmd_args     = Group(SkipTo(_delimiter | _comment | _EOL))
+    _noncmd_start = _EQUALS | _delimiter | _comment
+    _cmd_name     = Group(_id)
+    _cmd_args     = Group(SkipTo(_delimiter | _comment | _EOL, include=False))
     _cmd_stmt     = Group(_cmd_name('name')
-                          + FollowedBy(_WHITE + NotAny(_noncmd_start))
-                          + _cmd_args('arguments')
+                          + Optional(NotAny(_noncmd_start)
+                                     + _cmd_args('arguments')
+                                     + restOfLine.suppress() + _EOL)
                          ).setResultsName('command statement')  # noqa
-
     ParserElement.setDefaultWhitespaceChars(' \t\n\r')
+
+    # Control-flow statements.
+
+    _control_stmt   = Forward()
+    _stmt_list      = Forward()
+
+    _body           = Group(_stmt_list)                    ('body')
+    _cond           = _single_expr                         ('condition')
+    _break_stmt     = _BREAK                               ('break statement')
+    _return_stmt    = _RETURN                              ('return statement')
+    _continue_stmt  = _CONTINUE                            ('continue statement')
+
+    _while_stmt     = Group(_WHILE + _cond + _body + _END) ('while statement')
+
+    _loop_var       = Group(_id)                           ('loop variable')
+    _for_expr       = _single_expr                         ('expression')
+    _for_stmt       = Group(_FOR + _loop_var + _EQUALS + _for_expr
+                            + _body
+                            + _END)                        ('for statement')
+
+    _catch_var      = Group(_id)                           ('catch variable')
+    ParserElement.setDefaultWhitespaceChars(' \t')
+    _noncontent     = _delimiter | _comment | _EOL
+    _catch_term     = _CATCH + Optional(NotAny(_noncontent) + _catch_var) + _noncontent
+    ParserElement.setDefaultWhitespaceChars(' \t\n\r')
+    _catch_body     = Group(_stmt_list)                    ('catch body')
+    _try_stmt       = Group(_TRY
+                            + _body
+                            + _catch_term
+                            + _catch_body
+                            + _END)                        ('try statement')
+
+    _else_stmt      = Group(_ELSE + _body)                 ('else statement')
+    _elseif_stmt    = Group(_ELSEIF + _cond + _body)
+    _if_stmt        = Group(_IF + _cond
+                            + _body
+                            + ZeroOrMore(_elseif_stmt)     ('elseif statements')
+                            + Optional(_else_stmt)
+                            + _END).setResultsName         ('if statement')
+
+    _switch_expr    = _single_expr                         ('expression')
+    _case_stmt      = Group(_CASE + _switch_expr + _body)
+    _switch_other   = Group(_OTHERWISE + _body)            ('otherwise statement')
+    _switch_stmt    = Group(_SWITCH + _switch_expr
+                            + ZeroOrMore(_case_stmt)       ('case statements')
+                            + Optional(_switch_other)
+                            + _END)                        ('switch statement')
+
+    _control_stmt   << Group(_while_stmt
+                            | _if_stmt
+                            | _switch_stmt
+                            | _for_stmt
+                            | _try_stmt
+                            | _continue_stmt
+                            | _break_stmt
+                            | _return_stmt
+                           ).setResultsName('control statement')  # noqa
 
     # The definition of _stmt puts all statement types except _shell_cmd
     # together and sets them up to allow ellipsis continuations.
+    # (Continuations don't work in shell commands.)
+
+    _stmt = Group(_control_stmt
+                  | _assignment
+                  | _single_expr('expression')
+                  | _cmd_stmt)
 
     _continuation  = Combine(_ELLIPSIS.leaveWhitespace() + _EOL + _SOL)
-
-    _stmt = Group(_fun_def_stmt | _control_stmt | _assignment
-                  | _cmd_stmt | _expr('expression'))
     _stmt.ignore(_continuation)
+    _fun_def_stmt.ignore(_continuation)
 
-    # Finally, we bring it all together into the root element of our grammar.
+    _stmt_list << ZeroOrMore(_stmt ^ _shell_cmd ^ _delimiter ^ _comment)
 
-    _matlab_syntax = ZeroOrMore(_stmt ^ _shell_cmd ^ _delimiter ^ _comment)
+    # The overall MATLAB file syntax definition adds function definitions.
+
+    _matlab_syntax = ZeroOrMore(_fun_def_stmt ^ _stmt ^ _shell_cmd ^ _delimiter ^ _comment)
 
 
     # Generator for final MatlabNode-based output representation.
@@ -1458,37 +1513,37 @@ class MatlabGrammar:
     # Name each grammar object after itself, so that when PyParsing prints
     # debugging output, it uses the name rather than a generic regexp term.
 
-    _to_name = [_AND, _BOOLEAN, _BREAK, _CASE, _CATCH, _CC_TRANSP, _CLASSDEF,
-                _COLON, _COMMA, _CONTINUE, _DOT, _ELLIPSIS, _ELPOWER, _ELSE,
-                _ELSEIF, _ELTIMES, _END, _EOL, _EQ, _EQUALS, _EXPONENT,
-                _FLOAT, _FOR, _FUNCTION, _GE, _GLOBAL, _GT, _ID, _IF,
-                _INTEGER, _LBRACE, _LBRACKET, _LDIVIDE, _LE, _LPAR, _LT,
-                _MINUS, _MLDIVIDE, _MPOWER, _MRDIVIDE, _NC_TRANSP, _NE,
-                _NUMBER, _OR, _OTHERWISE, _PARFOR, _PERSISTENT, _PLUS,
-                _RBRACE, _RBRACKET, _RDIVIDE, _RETURN, _RPAR, _SEMI,
-                _SHORT_AND, _SHORT_OR, _SOL, _STRING, _SWITCH, _TILDE,
-                _TIMES, _TRY, _UMINUS, _UNOT, _UPLUS, _WHILE, _WHITE,
-                _anon_handle, _assignment, _bare_cell, _bare_array,
-                _block_c_end, _block_c_start, _block_comment, _call_args,
-                _case_stmt, _catch_stmt, _cell_access, _cell_array,
-                _cell_name, _cmd_args, _cmd_name, _cmd_stmt, _comma_subs,
-                _comma_values, _comment, _cond_expr, _continuation,
-                _control_stmt, _delimiter, _elseif_stmt, _expr, _for_stmt,
-                _fun_access, _fun_def_stmt, _fun_handle, _funcall_or_array,
-                _fun_arr_name, _fun_name, _fun_outputs, _fun_params,
-                _fun_paramslist, _handle_name, _if_stmt, _lhs_array,
-                _lhs_var, _line_c_start, _line_comment, _logical_op,
-                _matlab_syntax, _array_access, _array_args, _array_name,
-                _multi_values, _named_handle, _noncmd_start, _one_row,
-                _operand, _other_assign, _otherwise_stmt, _paren_expr,
-                _plusminus, _power, _row_sep, _rows, _shell_cmd,
-                _shell_cmd_cmd, _simple_assign, _single_value, _space_subs,
-                _space_values, _stmt, _struct_access, _struct_base,
-                _struct_field, _switch_stmt, _timesdiv, _transp_what,
-                _transpose, _transpose_op, _try_stmt, _uplusminusneg,
-                _while_stmt, _otherwise_stmt, _else_stmt, _end_stmt,
-                _continue_stmt, _break_stmt, _return_stmt ]
-
+    _to_name = [
+        _AND, _BOOLEAN, _BREAK, _CASE, _CATCH, _CC_TRANSP, _CLASSDEF,
+        _COLON, _COMMA, _CONTINUE, _DOT, _ELLIPSIS, _ELPOWER, _ELSE,
+        _ELSEIF, _ELTIMES, _END, _EOL, _EQ, _EQUALS, _EXPONENT, _FALSE,
+        _FLOAT, _FOR, _FUNCTION, _GE, _GLOBAL, _GT, _IF, _INTEGER,
+        _LBRACE, _LBRACKET, _LDIVIDE, _LE, _LPAR, _LT, _MINUS, _MLDIVIDE,
+        _MPOWER, _MRDIVIDE, _NC_TRANSP, _NE, _NUMBER, _OR, _OTHERWISE,
+        _PARFOR, _PERSISTENT, _PLUS, _RBRACE, _RBRACKET, _RDIVIDE,
+        _RETURN, _RPAR, _SEMI, _SHORT_AND, _SHORT_OR, _SOL, _SPMD,
+        _STRING, _SWITCH, _TILDE, _TIMES, _TRUE, _TRY, _UMINUS, _UNOT,
+        _UPLUS, _WHILE, _WHITE, _anon_handle, _array_access, _array_args,
+        _array_name, _assignment, _bare_array, _bare_cell, _block_c_end,
+        _block_c_start, _block_comment, _body, _break_stmt, _call_args,
+        _catch_body, _catch_var, _cell_access,
+        _cell_args, _cell_array, _cell_name, _cmd_args, _cmd_name,
+        _cmd_stmt, _colon_op, _comma_subs, _comma_values, _comment, _cond,
+        _continuation, _continue_stmt, _control_stmt, _delimiter,
+        _else_stmt, _elseif_stmt, _expr, _expr, _for_expr, _for_stmt,
+        _fun_access, _fun_arr_name, _fun_def_stmt, _fun_handle, _fun_name,
+        _fun_outputs, _fun_params, _fun_paramslist, _funcall_or_array,
+        _handle_name, _id, _identifier, _if_stmt, _lhs_array, _lhs_var,
+        _line_c_start, _line_comment, _logical_op, _loop_var,
+        _matlab_syntax, _multi_values, _named_handle, _noncmd_start,
+        _one_row, _one_sub, _operand, _other_assign, _paren_expr,
+        _plusminus, _power, _reserved, _return_stmt, _row_sep, _rows,
+        _shell_cmd, _shell_cmd_cmd, _simple_assign, _single_expr,
+        _single_value, _space_subs, _space_values, _stmt, _stmt_list,
+        _struct_access, _struct_base, _struct_field, _switch_expr,
+        _switch_other, _switch_stmt, _timesdiv, _transp_what, _transpose,
+        _transpose_op, _try_stmt, _uplusminusneg, _while_stmt
+    ]
 
     def _object_name(self, obj):
         """Returns the name of a given object."""

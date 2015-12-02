@@ -353,10 +353,10 @@ class Expression(MatlabNode):
     _visitable_attr = ['content']
 
     def __repr__(self):
-        return 'Expression({})'.format(self.content)
+        return 'Expression({})'.format(repr(self.content))
 
     def __str__(self):
-        return _str_format(self.content)
+        return _str_format(_str_format(self.content))
 
 
 # Definitions: assignments, function definitions, scripts.
@@ -421,106 +421,74 @@ class FlowControl(MatlabNode):
     # FIXME
 
 
-class Try(FlowControl):
-    def __repr__(self):
-        return 'Try()'
-
-    def __str__(self):
-        return '{try}'
-
-
-class Catch(FlowControl):
-    _attr_names = ['var']
-    _visitable_attr = ['var']
+class TryCatch(FlowControl):
+    _attr_names = ['body', 'catch', 'catch_body']
+    _visitable_attr = ['body', 'catch', 'catch_body']
 
     def __repr__(self):
-        return 'Catch(var={})'.format(repr(self.var))
+        return 'Try(body={}, catch={}, catch_body={})'.format(
+            repr(self.body), repr(self.catch), repr(self.catch_body))
 
     def __str__(self):
-        return '{{catch: var {}}}'.format(_str_format(self.var))
+        return '{{try: {} catch {} catch_body {}}}'.format(
+            _str_format(self.body), _str_format(self.catch),
+            _str_format(self.catch_body))
 
 
 class Switch(FlowControl):
-    _attr_names = ['cond']
-    _visitable_attr = ['cond']
+    _attr_names = ['cond', 'case_tuples', 'otherwise']
+    _visitable_attr = ['cond', 'case_tuples', 'otherwise']
 
     def __repr__(self):
-        return 'Switch(cond={})'.format(repr(self.cond))
+        return 'Switch(cond={}, case_tuples={}, otherwise={})'.format(
+            repr(self.cond), repr(self.case_tuples), repr(self.otherwise))
 
     def __str__(self):
-        return '{{switch stmt: {}}}'.format(_str_format(self.cond))
+        return '{{switch stmt: {} case_tuples {} otherwise {}}}'.format(
+            _str_format(self.cond), _str_format(self.case_tuples),
+            _str_format(self.otherwise))
 
 
-class Case(FlowControl):
-    _attr_names = ['cond']
-    _visitable_attr = ['cond']
+class IfElse(FlowControl):
+    _attr_names = ['cond', 'body', 'elseif_tuples', 'else_body']
+    _visitable_attr = ['cond', 'body', 'elseif_tuples', 'else_body']
 
     def __repr__(self):
-        return 'Case(cond={})'.format(repr(self.cond))
+        return 'If(cond={}, body={}, elseif_tuples={}, else={})'.format(
+            repr(self.cond), repr(self.body), repr(self.elseif_tuples),
+            repr(self.else_body))
 
     def __str__(self):
-        return '{{case: {}}}'.format(_str_format(self.cond))
-
-
-class Otherwise(FlowControl):
-    def __repr__(self):
-        return 'Otherwise()'
-
-    def __str__(self):
-        return '{otherwise}'
-
-
-class If(FlowControl):
-    _attr_names = ['cond']
-    _visitable_attr = ['cond']
-
-    def __repr__(self):
-        return 'If(cond={})'.format(repr(self.cond))
-
-    def __str__(self):
-        return '{{if stmt: {}}}'.format(_str_format(self.cond))
-
-
-class Elseif(FlowControl):
-    _attr_names = ['cond']
-    _visitable_attr = ['cond']
-
-    def __repr__(self):
-        return 'Elseif(cond={})'.format(repr(self.cond))
-
-    def __str__(self):
-        return '{{elseif stmt: {}}}'.format(_str_format(self.cond))
-
-
-class Else(FlowControl):
-    def __repr__(self):
-        return 'Else()'
-
-    def __str__(self):
-        return '{else}'
+        return '{{if stmt: {} body {} elseif_tuples {} else {}}}'.format(
+            _str_format(self.cond), _str_format(self.body),
+            _str_format(self.elseif_tuples), _str_format(self.else_body))
 
 
 class While(FlowControl):
-    _attr_names = ['cond']
-    _visitable_attr = ['cond']
+    _attr_names = ['cond', 'body']
+    _visitable_attr = ['cond', 'body']
 
     def __repr__(self):
-        return 'While(cond={})'.format(repr(self.cond))
+        return 'While(cond={}, body={})'.format(repr(self.cond), repr(self.body))
 
     def __str__(self):
-        return '{{while stmt: {}}}'.format(_str_format(self.cond))
+        return '{{while stmt: condition {} body {}}}'.format(
+            _str_format(self.cond), _str_format(self.body))
 
 
 class For(FlowControl):
-    _attr_names = ['var', 'expr']
-    _visitable_attr = ['var', 'expr']
+    _attr_names = ['var', 'expr', 'body']
+    _visitable_attr = ['var', 'expr', 'body']
 
     def __repr__(self):
-        return 'For(var={}, expr={})'.format(repr(self.var), repr(self.expr))
+        return 'For(var={}, expr={}, body={})'.format(repr(self.var),
+                                                      repr(self.expr),
+                                                      repr(self.body))
 
     def __str__(self):
-        return '{{for stmt: var {} in {}}}'.format(_str_format(self.var),
-                                                   _str_format(self.expr))
+        return '{{for stmt: var {} in {} do {}}}'.format(_str_format(self.var),
+                                                         _str_format(self.expr),
+                                                         _str_format(self.body))
 
 
 class End(FlowControl):
@@ -606,6 +574,8 @@ class MatlabNodeVisitor(object):
             if meth is None:
                 meth = self.default_visit_list
             return meth(node)
+        elif isinstance(node, tuple):
+            return (self.visit(node[0]), self.visit(node[1]))
         else:
             # Call ourselves on the node attributes that are indicated as
             # being ones that should be visited recursively.
