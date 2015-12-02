@@ -1,0 +1,1 @@
+{try: ( {while stmt: condition ( ( {identifier: "x"} {binary op: >} {identifier: "c"} ) ) body ( ( {function {identifier: "bar"} ( {identifier: "c"} ) } ) )} ) catch None catch_body ( ( {function {identifier: "warning"} ( {identifier: "x"} ) } ) )}

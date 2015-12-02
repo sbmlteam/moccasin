@@ -1,0 +1,1 @@
+{while stmt: condition ( ( {identifier: "x"} {binary op: >} {number: 1} ) ) body ( {assign: {identifier: "x"} = ( {identifier: "x"} {binary op: -} {number: 1} )} )}

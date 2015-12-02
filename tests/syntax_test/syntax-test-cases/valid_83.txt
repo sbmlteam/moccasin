@@ -1,0 +1,1 @@
+{try: ( {assign: {identifier: "C"} = {array: [ {row 1: {identifier: "A"}}; {row 2: {identifier: "B"}} ]}} ) catch {identifier: "ME"} catch_body ( ( {function {identifier: "rethrow"} ( {identifier: "ME"} ) } ) )}

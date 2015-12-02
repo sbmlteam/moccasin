@@ -1,0 +1,1 @@
+{while stmt: condition ( ( ( {identifier: "a"} {binary op: +} {identifier: "b"} ) {binary op: >} {identifier: "c"} ) ) body ( {command: name {identifier: "print"} args  c} {assign: {identifier: "a"} = {function/array: {identifier: "foo"} ( {identifier: "b"} )}} )}
