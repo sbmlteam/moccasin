@@ -6,4 +6,6 @@ function [x] = other(y)
     x = y
 end
 
-valid_78(@other)
+function [x] = another()
+    valid_78(@other)
+end
