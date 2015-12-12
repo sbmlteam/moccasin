@@ -8,5 +8,7 @@ function [x] = other(y)
     x = y
 end
 
-valid_77('other')
+function [x] = another()
+    valid_77('other')
+end
 
