@@ -1,1 +1,3 @@
-{try: ( {assign: {identifier: "C"} = {array: [ {row 1: {identifier: "A"}}; {row 2: {identifier: "B"}} ]}} ) catch {identifier: "ME"} catch_body ( ( {function {identifier: "rethrow"} ( {identifier: "ME"} ) } ) )}
+[
+Try(body=[Assignment(lhs=Identifier(name='C'), rhs=Array(is_cell=False, rows=[[Identifier(name='A')], [Identifier(name='B')]]))], catch_var=Identifier(name='ME'), catch_body=[FunCall(name=Identifier(name='rethrow'), args=[Identifier(name='ME')])])
+]

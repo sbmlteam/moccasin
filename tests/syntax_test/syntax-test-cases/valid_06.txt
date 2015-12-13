@@ -1,2 +1,4 @@
-{comment:  comment line 10}
-{assign: {identifier: "k"} = ( {identifier: "a"} {binary op: +} {identifier: "b"} )}
+[
+Comment(content=' comment line 10')
+Assignment(lhs=Identifier(name='k'), rhs=BinaryOp(op='+', left=Identifier(name='a'), right=Identifier(name='b')))
+]

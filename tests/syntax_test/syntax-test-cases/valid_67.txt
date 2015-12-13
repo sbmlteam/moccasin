@@ -1,2 +1,4 @@
-{assign: {identifier: "p"} = {function {identifier: "fminsearch"} ( {function @ handle: {identifier: "humps"}}, {number: .5} ) }}
-{assign: {identifier: "exp_pdf"} = {anon @ handle: args ( {identifier: "t"} ) body ( ( {number: 1} {binary op: /} {identifier: "mu1"} ) {binary op: *} {function {identifier: "exp"} ( ( ( {unary op: -} {identifier: "t"} ) {binary op: /} {identifier: "mu1"} ) ) } ) }}
+[
+Assignment(lhs=Identifier(name='p'), rhs=FunCall(name=Identifier(name='fminsearch'), args=[FunHandle(name=Identifier(name='humps')), Number(value='.5')]))
+Assignment(lhs=Identifier(name='exp_pdf'), rhs=AnonFun(args=[Identifier(name='t')], body=BinaryOp(op='*', left=BinaryOp(op='/', left=Number(value='1'), right=Identifier(name='mu1')), right=FunCall(name=Identifier(name='exp'), args=[BinaryOp(op='/', left=UnaryOp(op='-', operand=Identifier(name='t')), right=Identifier(name='mu1'))]))))
+]

@@ -1,3 +1,3 @@
-{function definition: {identifier: "valid_37"} parameters ( {identifier: "r"} ) output [ {identifier: "x"}, {identifier: "y"} ]}
-{assign: {identifier: "x"} = {array: [ {row 1: {identifier: "r"}}; {row 2: {identifier: "r"}} ]}}
-{end}
+[
+FunDef(name=Identifier(name='valid_37'), parameters=[Identifier(name='r')], output=[Identifier(name='x'), Identifier(name='y')], body=[Assignment(lhs=Identifier(name='x'), rhs=Array(is_cell=False, rows=[[Identifier(name='r')], [Identifier(name='r')]]))])
+]

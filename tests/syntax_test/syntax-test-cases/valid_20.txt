@@ -1,5 +1,7 @@
-{assign: {identifier: "t"} = {colon op: left={number: 0}, middle={number: 0.001}, right={number: 1}}}
-( {function {identifier: "plot"} ( {identifier: "t"}, {function {identifier: "sin"} ( ( ( {number: 2} {binary op: *} {identifier: "pi"} ) {binary op: *} {array: [ {row 1: {identifier: "t"}}; {row 2: ( {identifier: "t"} {binary op: +} {number: 0.25} )} ]} ) ) } ) } )
-( {function {identifier: "xlabel"} ( {string: "t"} ) } )
-( {function {identifier: "ylabel"} ( {string: "$\hat{y}_k=sin 2\pi (t+{k \over 4})$"}, {string: "Interpreter"}, {string: "latex"} ) } )
-( {function {identifier: "legend"} ( {cell array: [ {row 1: {string: "$\hat{y}_0$"}, {string: "$\hat{y}_1$"}} ]}, {string: "Interpreter"}, {string: "latex"} ) } )
+[
+Assignment(lhs=Identifier(name='t'), rhs=ColonOp(left=Number(value='0'), middle=Number(value='0.001'), right=Number(value='1')))
+FunCall(name=Identifier(name='plot'), args=[Identifier(name='t'), FunCall(name=Identifier(name='sin'), args=[BinaryOp(op='*', left=BinaryOp(op='*', left=Number(value='2'), right=Identifier(name='pi')), right=Array(is_cell=False, rows=[[Identifier(name='t')], [BinaryOp(op='+', left=Identifier(name='t'), right=Number(value='0.25'))]]))])])
+FunCall(name=Identifier(name='xlabel'), args=[String(value='t')])
+FunCall(name=Identifier(name='ylabel'), args=[String(value='$\\hat{y}_k=sin 2\\pi (t+{k \\over 4})$'), String(value='Interpreter'), String(value='latex')])
+FunCall(name=Identifier(name='legend'), args=[Array(is_cell=True, rows=[[String(value='$\\hat{y}_0$'), String(value='$\\hat{y}_1$')]]), String(value='Interpreter'), String(value='latex')])
+]

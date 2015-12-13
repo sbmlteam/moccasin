@@ -1,5 +1,7 @@
-{assign: {identifier: "y"} = {number: 4}}
-{assign: {array: [ {row 1: {identifier: "x"}, {identifier: "y"}} ]} = {array: [ {row 1: {number: 3}, {number: 5}} ]}}
-{assign: {array: [ {row 1: {array {identifier: "z"}: [ {number: 1} ]}, {array {identifier: "z"}: [ {number: 2} ]}} ]} = {array: [ {row 1: {number: 7}, {number: 8}} ]}}
-{assign: {identifier: "z"} = {array: [ {row 1: {number: 9}, {number: 9}} ]}}
-{assign: {array: [ {row 1: {array {identifier: "z"}: [ {number: 1} ]}, {array {identifier: "z"}: [ {number: 2} ]}} ]} = {array: [ {row 1: {number: 7}, {number: 8}} ]}}
+[
+Assignment(lhs=Identifier(name='y'), rhs=Number(value='4'))
+Assignment(lhs=Array(is_cell=False, rows=[[Identifier(name='x'), Identifier(name='y')]]), rhs=Array(is_cell=False, rows=[[Number(value='3'), Number(value='5')]]))
+Assignment(lhs=Array(is_cell=False, rows=[[ArrayRef(is_cell=False, name=Identifier(name='z'), args=[Number(value='1')]), ArrayRef(is_cell=False, name=Identifier(name='z'), args=[Number(value='2')])]]), rhs=Array(is_cell=False, rows=[[Number(value='7'), Number(value='8')]]))
+Assignment(lhs=Identifier(name='z'), rhs=Array(is_cell=False, rows=[[Number(value='9'), Number(value='9')]]))
+Assignment(lhs=Array(is_cell=False, rows=[[ArrayRef(is_cell=False, name=Identifier(name='z'), args=[Number(value='1')]), ArrayRef(is_cell=False, name=Identifier(name='z'), args=[Number(value='2')])]]), rhs=Array(is_cell=False, rows=[[Number(value='7'), Number(value='8')]]))
+]

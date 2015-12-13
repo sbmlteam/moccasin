@@ -1,1 +1,3 @@
-{command: name {identifier: "hold"} args  on}
+[
+FunCall(name=Identifier(name='hold'), args=[String(value='on')])
+]

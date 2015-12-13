@@ -1,2 +1,4 @@
-{assign: {array: [ {row 1: {identifier: "x"}, {identifier: "y"}} ]} = {function/array: {identifier: "somefunc"} ( {number: 3} )}}
-{assign: {array: [ {row 1: {identifier: "x"}, {identifier: "y"}} ]} = {function/array: {identifier: "somefunc"} ( {number: 3} )}}
+[
+Assignment(lhs=Array(is_cell=False, rows=[[Identifier(name='x'), Identifier(name='y')]]), rhs=ArrayOrFunCall(name=Identifier(name='somefunc'), args=[Number(value='3')]))
+Assignment(lhs=Array(is_cell=False, rows=[[Identifier(name='x'), Identifier(name='y')]]), rhs=ArrayOrFunCall(name=Identifier(name='somefunc'), args=[Number(value='3')]))
+]

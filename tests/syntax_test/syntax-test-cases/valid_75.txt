@@ -1,2 +1,3 @@
-{assign: {identifier: "r2"} = ( ( ( {number: 1e9} {binary op: *} {identifier: "C"} ) {binary op: *} {identifier: "vmax2"} ) {binary op: /} {identifier: "NA"} )}
-
+[
+Assignment(lhs=Identifier(name='r2'), rhs=BinaryOp(op='/', left=BinaryOp(op='*', left=BinaryOp(op='*', left=Number(value='1e9'), right=Identifier(name='C')), right=Identifier(name='vmax2')), right=Identifier(name='NA')))
+]

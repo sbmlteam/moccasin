@@ -1,3 +1,5 @@
-{assign: {identifier: "str"} = {string: "ones"}}
-{assign: {identifier: "fh"} = {function {identifier: "str2func"} ( {identifier: "str"} ) }}
-( {function {identifier: "fh"} ( {number: 1}, {number: 5} ) } )
+[
+Assignment(lhs=Identifier(name='str'), rhs=String(value='ones'))
+Assignment(lhs=Identifier(name='fh'), rhs=FunCall(name=Identifier(name='str2func'), args=[Identifier(name='str')]))
+FunCall(name=Identifier(name='fh'), args=[Number(value='1'), Number(value='5')])
+]

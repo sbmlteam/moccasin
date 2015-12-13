@@ -1,9 +1,5 @@
-{function definition: {identifier: "valid_77"} parameters ( {identifier: "a"} ) output {identifier: "x"}}
-{assign: {identifier: "x"} = {function {identifier: "str2func"} ( {identifier: "a"} ) }}
-{assign: {identifier: "y"} = {function {identifier: "x"} ( {number: 2} ) }}
-{assign: {identifier: "z"} = {function {identifier: "other"} ( {number: 2} ) }}
-{end}
-{function definition: {identifier: "other"} parameters ( {identifier: "y"} ) output {identifier: "x"}}
-{assign: {identifier: "x"} = {identifier: "y"}}
-{end}
-( {function {identifier: "valid_77"} ( {string: "other"} ) } )
+[
+FunDef(name=Identifier(name='valid_77'), parameters=[Identifier(name='a')], output=[Identifier(name='x')], body=[Assignment(lhs=Identifier(name='x'), rhs=FunCall(name=Identifier(name='str2func'), args=[Identifier(name='a')])), Assignment(lhs=Identifier(name='y'), rhs=FunCall(name=Identifier(name='x'), args=[Number(value='2')])), Assignment(lhs=Identifier(name='z'), rhs=FunCall(name=Identifier(name='other'), args=[Number(value='2')]))])
+FunDef(name=Identifier(name='other'), parameters=[Identifier(name='y')], output=[Identifier(name='x')], body=[Assignment(lhs=Identifier(name='x'), rhs=Identifier(name='y'))])
+FunDef(name=Identifier(name='another'), parameters=[], output=[Identifier(name='x')], body=[FunCall(name=Identifier(name='valid_77'), args=[String(value='other')])])
+]

@@ -1,5 +1,3 @@
-{function definition: {identifier: "valid_38"} parameters ( none ) output none}
-{while stmt: ( {number: 1} )}
-{assign: {identifier: "x"} = {number: 3}}
-{end}
-{end}
+[
+FunDef(name=Identifier(name='valid_38'), parameters=None, output=None, body=[While(cond=Number(value='1'), body=[Assignment(lhs=Identifier(name='x'), rhs=Number(value='3'))])])
+]

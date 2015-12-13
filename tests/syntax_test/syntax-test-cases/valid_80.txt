@@ -1,3 +1,5 @@
-{shell command: vi yearlystats.m}
-{shell command: excel.exe &}
-{shell command: echo $PATH}
+[
+ShellCommand(command='vi yearlystats.m', bkgnd=False)
+ShellCommand(command='excel.exe', bkgnd=True)
+ShellCommand(command='echo $PATH', bkgnd=False)
+]

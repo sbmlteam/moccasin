@@ -1,8 +1,6 @@
-{assign: {identifier: "a"} = {array: [ {row 1: {number: 1}, {number: 2}} ]}}
-{assign: {identifier: "b"} = {array {identifier: "a"}: [ {number: 1} ]}}
-{assign: {identifier: "d"} = {function/array: {identifier: "c"} ( {number: 1} )}}
-{function definition: {identifier: "foo"} parameters ( {identifier: "x"} ) output {identifier: "y"}}
-{assign: {identifier: "m"} = {array {identifier: "x"}: [ {number: 1} ]}}
-{assign: {identifier: "n"} = {array {identifier: "y"}: [ {number: 1} ]}}
-{assign: {identifier: "p"} = {function/array: {identifier: "z"} ( {number: 1} )}}
-{end}
+[
+Assignment(lhs=Identifier(name='a'), rhs=Array(is_cell=False, rows=[[Number(value='1'), Number(value='2')]]))
+Assignment(lhs=Identifier(name='b'), rhs=ArrayRef(is_cell=False, name=Identifier(name='a'), args=[Number(value='1')]))
+Assignment(lhs=Identifier(name='d'), rhs=ArrayOrFunCall(name=Identifier(name='c'), args=[Number(value='1')]))
+FunDef(name=Identifier(name='foo'), parameters=[Identifier(name='x')], output=[Identifier(name='y')], body=[Assignment(lhs=Identifier(name='m'), rhs=ArrayRef(is_cell=False, name=Identifier(name='x'), args=[Number(value='1')])), Assignment(lhs=Identifier(name='n'), rhs=ArrayRef(is_cell=False, name=Identifier(name='y'), args=[Number(value='1')])), Assignment(lhs=Identifier(name='p'), rhs=ArrayOrFunCall(name=Identifier(name='z'), args=[Number(value='1')]))])
+]

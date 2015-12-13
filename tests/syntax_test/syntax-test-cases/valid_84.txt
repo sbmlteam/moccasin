@@ -1,1 +1,3 @@
-{try: ( {while stmt: condition ( ( {identifier: "x"} {binary op: >} {identifier: "c"} ) ) body ( ( {function {identifier: "bar"} ( {identifier: "c"} ) } ) )} ) catch None catch_body ( ( {function {identifier: "warning"} ( {identifier: "x"} ) } ) )}
+[
+Try(body=[While(cond=BinaryOp(op='>', left=Identifier(name='x'), right=Identifier(name='c')), body=[FunCall(name=Identifier(name='bar'), args=[Identifier(name='c')])])], catch_var=None, catch_body=[FunCall(name=Identifier(name='warning'), args=[Identifier(name='x')])])
+]

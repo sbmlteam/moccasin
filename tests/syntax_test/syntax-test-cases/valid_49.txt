@@ -1,2 +1,4 @@
-{assign: {identifier: "fcnArray"} = {cell array: [ {row 1: {function @ handle: {identifier: "fcn1"}}, {function @ handle: {identifier: "fcn2"}}} ]}}
-{assign: {identifier: "outargs"} = {function/array: {cell array: {identifier: "fcnArray"} [ {identifier: "number"} ]} ( {identifier: "inargs"} )}}
+[
+Assignment(lhs=Identifier(name='fcnArray'), rhs=Array(is_cell=True, rows=[[FunHandle(name=Identifier(name='fcn1')), FunHandle(name=Identifier(name='fcn2'))]]))
+Assignment(lhs=Identifier(name='outargs'), rhs=ArrayOrFunCall(name=ArrayRef(is_cell=True, name=Identifier(name='fcnArray'), args=[Identifier(name='number')]), args=[Identifier(name='inargs')]))
+]

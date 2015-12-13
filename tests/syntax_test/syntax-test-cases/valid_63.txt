@@ -1,8 +1,10 @@
-{shell command: echo 'foo'}
-{comment:  Matlab shell commands have an annoying feature: they don't respect}
-{comment:  elipsis continuation or comments on the same line.  The next two}
-{comment:  lines should therefore result in 2 separate statements: one a }
-{comment:  shell command with "echo ..." as the argument, and the second}
-{comment:  as simply the string 'foo'.}
-{shell command: echo ...}
-( {string: "foo"} )
+[
+ShellCommand(command="echo 'foo'", bkgnd=False)
+Comment(content=" Matlab shell commands have an annoying feature: they don't respect")
+Comment(content=' elipsis continuation or comments on the same line.  The next two')
+Comment(content=' lines should therefore result in 2 separate statements: one a ')
+Comment(content=' shell command with "echo ..." as the argument, and the second')
+Comment(content=" as simply the string 'foo'.")
+ShellCommand(command='echo ...', bkgnd=False)
+String(value='foo')
+]

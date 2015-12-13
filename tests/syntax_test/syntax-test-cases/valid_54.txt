@@ -1,6 +1,8 @@
-{assign: {identifier: "a"} = {array: [ {row 1: {number: 1}, {number: 2}, {number: 3}}; {row 2: {number: 4}, {number: 5}, {number: 6}}; {row 3: {number: 7}, {number: 8}, {number: 10}} ]}}
-{command: name {identifier: "format"} args  long}
-{assign: {identifier: "p"} = ( {identifier: "a"} {binary op: *} {function {identifier: "inv"} ( {identifier: "a"} ) } )}
-{command: name {identifier: "save"} args  myfile.mat}
-{command: name {identifier: "save"} args  secondfile.mat}
-{command: name {identifier: "save"} args  anotherfile.mat}
+[
+Assignment(lhs=Identifier(name='a'), rhs=Array(is_cell=False, rows=[[Number(value='1'), Number(value='2'), Number(value='3')], [Number(value='4'), Number(value='5'), Number(value='6')], [Number(value='7'), Number(value='8'), Number(value='10')]]))
+FunCall(name=Identifier(name='format'), args=[String(value='long')])
+Assignment(lhs=Identifier(name='p'), rhs=BinaryOp(op='*', left=Identifier(name='a'), right=FunCall(name=Identifier(name='inv'), args=[Identifier(name='a')])))
+FunCall(name=Identifier(name='save'), args=[String(value='myfile.mat')])
+FunCall(name=Identifier(name='save'), args=[String(value='secondfile.mat')])
+FunCall(name=Identifier(name='save'), args=[String(value='anotherfile.mat')])
+]

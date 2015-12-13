@@ -1,10 +1,12 @@
-{comment:  quick functions}
-{assign: {identifier: "f"} = {anon @ handle: args ( {identifier: "x"} ) body ( ( ( {number: 3} {binary op: *} ( {identifier: "x"} {binary op: .^} {number: 2} ) ) {binary op: +} ( {number: 2} {binary op: *} {identifier: "x"} ) ) {binary op: +} {number: 7} ) }}
-{assign: {identifier: "t"} = {colon op: left={number: 0}, middle={number: 0.001}, right={number: 1}}}
-( {function {identifier: "plot"} ( {identifier: "t"}, {function/array: {identifier: "f"} ( {identifier: "t"} )}, {identifier: "t"}, {function/array: {identifier: "f"} ( ( {number: 2} {binary op: *} {identifier: "t"} ) )}, {identifier: "t"}, {function/array: {identifier: "f"} ( ( {number: 3} {binary op: *} {identifier: "t"} ) )} ) } )
-{comment:  closures (linfunc below is a function that returns a function,}
-{comment:  and the outer functions arguments are held for the lifetime}
-{comment:  of the returned function.}
-{assign: {identifier: "linfunc"} = {anon @ handle: args ( {identifier: "m"}, {identifier: "b"} ) body {anon @ handle: args ( {identifier: "x"} ) body ( ( {identifier: "m"} {binary op: *} {identifier: "x"} ) {binary op: +} {identifier: "b"} ) } }}
-{assign: {identifier: "C2F"} = {function/array: {identifier: "linfunc"} ( ( {number: 9} {binary op: /} {number: 5} ), {number: 32} )}}
-{assign: {identifier: "F2C"} = {function/array: {identifier: "linfunc"} ( ( {number: 5} {binary op: /} {number: 9} ), ( ( {number: -32} {binary op: *} {number: 5} ) {binary op: /} {number: 9} ) )}}
+[
+Comment(content=' quick functions')
+Assignment(lhs=Identifier(name='f'), rhs=AnonFun(args=[Identifier(name='x')], body=BinaryOp(op='+', left=BinaryOp(op='+', left=BinaryOp(op='*', left=Number(value='3'), right=BinaryOp(op='.^', left=Identifier(name='x'), right=Number(value='2'))), right=BinaryOp(op='*', left=Number(value='2'), right=Identifier(name='x'))), right=Number(value='7'))))
+Assignment(lhs=Identifier(name='t'), rhs=ColonOp(left=Number(value='0'), middle=Number(value='0.001'), right=Number(value='1')))
+FunCall(name=Identifier(name='plot'), args=[Identifier(name='t'), ArrayOrFunCall(name=Identifier(name='f'), args=[Identifier(name='t')]), Identifier(name='t'), ArrayOrFunCall(name=Identifier(name='f'), args=[BinaryOp(op='*', left=Number(value='2'), right=Identifier(name='t'))]), Identifier(name='t'), ArrayOrFunCall(name=Identifier(name='f'), args=[BinaryOp(op='*', left=Number(value='3'), right=Identifier(name='t'))])])
+Comment(content=' closures (linfunc below is a function that returns a function,')
+Comment(content=' and the outer functions arguments are held for the lifetime')
+Comment(content=' of the returned function.')
+Assignment(lhs=Identifier(name='linfunc'), rhs=AnonFun(args=[Identifier(name='m'), Identifier(name='b')], body=AnonFun(args=[Identifier(name='x')], body=BinaryOp(op='+', left=BinaryOp(op='*', left=Identifier(name='m'), right=Identifier(name='x')), right=Identifier(name='b')))))
+Assignment(lhs=Identifier(name='C2F'), rhs=ArrayOrFunCall(name=Identifier(name='linfunc'), args=[BinaryOp(op='/', left=Number(value='9'), right=Number(value='5')), Number(value='32')]))
+Assignment(lhs=Identifier(name='F2C'), rhs=ArrayOrFunCall(name=Identifier(name='linfunc'), args=[BinaryOp(op='/', left=Number(value='5'), right=Number(value='9')), BinaryOp(op='/', left=BinaryOp(op='*', left=Number(value='-32'), right=Number(value='5')), right=Number(value='9'))]))
+]

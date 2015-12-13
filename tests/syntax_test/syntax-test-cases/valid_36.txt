@@ -1,6 +1,8 @@
-{assign: {identifier: "fhandle"} = {function @ handle: {identifier: "humps"}}}
-{assign: {identifier: "sqr"} = {anon @ handle: args ( {identifier: "x"} ) body ( {identifier: "x"} {binary op: .^} {number: 2} ) }}
-{assign: {struct: {identifier: "S"}.{identifier: "a"} } = {function @ handle: {identifier: "sin"}}}
-{assign: {struct: {identifier: "S"}.{identifier: "b"} } = {function @ handle: {identifier: "cos"}}}
-{assign: {struct: {identifier: "S"}.{identifier: "c"} } = {function @ handle: {identifier: "tan"}}}
-( {function {identifier: "structfun"} ( {anon @ handle: args ( {identifier: "x"} ) body {function/array: {identifier: "x"} ( {function {identifier: "linspace"} ( {number: 1}, {number: 4}, {number: 3} ) } )} }, {identifier: "S"}, {string: "UniformOutput"}, {boolean: false} ) } )
+[
+Assignment(lhs=Identifier(name='fhandle'), rhs=FunHandle(name=Identifier(name='humps')))
+Assignment(lhs=Identifier(name='sqr'), rhs=AnonFun(args=[Identifier(name='x')], body=BinaryOp(op='.^', left=Identifier(name='x'), right=Number(value='2'))))
+Assignment(lhs=StructRef(name=Identifier(name='S'), field=Identifier(name='a'), dynamic_access=False), rhs=FunHandle(name=Identifier(name='sin')))
+Assignment(lhs=StructRef(name=Identifier(name='S'), field=Identifier(name='b'), dynamic_access=False), rhs=FunHandle(name=Identifier(name='cos')))
+Assignment(lhs=StructRef(name=Identifier(name='S'), field=Identifier(name='c'), dynamic_access=False), rhs=FunHandle(name=Identifier(name='tan')))
+FunCall(name=Identifier(name='structfun'), args=[AnonFun(args=[Identifier(name='x')], body=ArrayOrFunCall(name=Identifier(name='x'), args=[FunCall(name=Identifier(name='linspace'), args=[Number(value='1'), Number(value='4'), Number(value='3')])])), Identifier(name='S'), String(value='UniformOutput'), Boolean(value='false')])
+]

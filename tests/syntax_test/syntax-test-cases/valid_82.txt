@@ -1,1 +1,3 @@
-{while stmt: condition ( ( ( {identifier: "a"} {binary op: +} {identifier: "b"} ) {binary op: >} {identifier: "c"} ) ) body ( {command: name {identifier: "print"} args  c} {assign: {identifier: "a"} = {function/array: {identifier: "foo"} ( {identifier: "b"} )}} )}
+[
+While(cond=BinaryOp(op='>', left=BinaryOp(op='+', left=Identifier(name='a'), right=Identifier(name='b')), right=Identifier(name='c')), body=[FunCall(name=Identifier(name='print'), args=[String(value='c')]), Assignment(lhs=Identifier(name='a'), rhs=ArrayOrFunCall(name=Identifier(name='foo'), args=[Identifier(name='b')]))])
+]

@@ -1,1 +1,3 @@
-{assign: {identifier: "C"} = {cell array: [ {row 1: {identifier: "A"}, {function {identifier: "sum"} ( {identifier: "A"} ) }, {function {identifier: "prod"} ( {function {identifier: "prod"} ( {identifier: "A"} ) } ) }} ]}}
+[
+Assignment(lhs=Identifier(name='C'), rhs=Array(is_cell=True, rows=[[Identifier(name='A'), FunCall(name=Identifier(name='sum'), args=[Identifier(name='A')]), FunCall(name=Identifier(name='prod'), args=[FunCall(name=Identifier(name='prod'), args=[Identifier(name='A')])])]]))
+]

@@ -1,1 +1,3 @@
-{shell command: echo 'foo', 'bar', 'biff'; echo 'foo'}
+[
+ShellCommand(command="echo 'foo', 'bar', 'biff'; echo 'foo'", bkgnd=False)
+]

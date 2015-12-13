@@ -1,4 +1,6 @@
-{comment:  Build a list of args, like so:}
-{assign: {identifier: "args"} = {cell array: [ {row 1: {string: "a"}, {number: 1}, {string: "b"}, {number: 2}} ]}}
-{comment:  Then expand this into arguments:}
-{assign: {identifier: "output"} = {function/array: {identifier: "func"} ( {cell array: {identifier: "args"} [ {colon} ]} )}}
+[
+Comment(content=' Build a list of args, like so:')
+Assignment(lhs=Identifier(name='args'), rhs=Array(is_cell=True, rows=[[String(value='a'), Number(value='1'), String(value='b'), Number(value='2')]]))
+Comment(content=' Then expand this into arguments:')
+Assignment(lhs=Identifier(name='output'), rhs=ArrayOrFunCall(name=Identifier(name='func'), args=[ArrayRef(is_cell=True, name=Identifier(name='args'), args=[Special(value=':')])]))
+]

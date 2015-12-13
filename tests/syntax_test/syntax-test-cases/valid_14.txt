@@ -1,2 +1,4 @@
-{assign: {identifier: "x"} = ( {function {identifier: "rand"} ( {number: 1}, {number: 50} ) } {binary op: .*} {number: 100} )}
-{assign: {identifier: "xpart"} = {function/array: {identifier: "x"} ( ( ( {identifier: "x"} {binary op: >} {number: 20} ) {binary op: &} ( {identifier: "x"} {binary op: <} {number: 35} ) ) )}}
+[
+Assignment(lhs=Identifier(name='x'), rhs=BinaryOp(op='.*', left=FunCall(name=Identifier(name='rand'), args=[Number(value='1'), Number(value='50')]), right=Number(value='100')))
+Assignment(lhs=Identifier(name='xpart'), rhs=ArrayOrFunCall(name=Identifier(name='x'), args=[BinaryOp(op='&', left=BinaryOp(op='>', left=Identifier(name='x'), right=Number(value='20')), right=BinaryOp(op='<', left=Identifier(name='x'), right=Number(value='35')))]))
+]

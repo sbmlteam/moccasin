@@ -1,4 +1,6 @@
-{assign: {identifier: "a"} = {number: 1}}
-{assign: {identifier: "b"} = ( ( {number: -2} {binary op: +} ( {number: 3} {binary op: *} ( {number: 2} {binary op: ^} {number: 2} ) ) ) {binary op: +} {number: 10} )}
-{assign: {identifier: "c"} = ( {number: 2} {binary op: /} {number: 4} )}
-{assign: {identifier: "d"} = {array: [ {row 1: {number: 5}} ]}}
+[
+Assignment(lhs=Identifier(name='a'), rhs=Number(value='1'))
+Assignment(lhs=Identifier(name='b'), rhs=BinaryOp(op='+', left=BinaryOp(op='+', left=Number(value='-2'), right=BinaryOp(op='*', left=Number(value='3'), right=BinaryOp(op='^', left=Number(value='2'), right=Number(value='2')))), right=Number(value='10')))
+Assignment(lhs=Identifier(name='c'), rhs=BinaryOp(op='/', left=Number(value='2'), right=Number(value='4')))
+Assignment(lhs=Identifier(name='d'), rhs=Array(is_cell=False, rows=[[Number(value='5')]]))
+]

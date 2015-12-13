@@ -1,3 +1,4 @@
-{comment:  foo}
-{function definition: {identifier: "valid_35"} parameters ( {identifier: "x"} ) output none}
-( ( {identifier: "x"} {binary op: *} {number: 2} ) )
+[
+Comment(content=' foo')
+FunDef(name=Identifier(name='valid_35'), parameters=[Identifier(name='x')], output=None, body=[BinaryOp(op='*', left=Identifier(name='x'), right=Number(value='2'))])
+]

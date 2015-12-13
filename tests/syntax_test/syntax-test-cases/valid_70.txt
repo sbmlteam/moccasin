@@ -1,3 +1,3 @@
-{function definition: {identifier: "valid_70"} parameters ( {identifier: "x"}, {tilde} ) output [ {tilde}, {identifier: "b"} ]}
-( {function {identifier: "ylabel"} ( {string: "Y Axis"} ) } )
-{end}
+[
+FunDef(name=Identifier(name='valid_70'), parameters=[Identifier(name='x'), Special(value='~')], output=[Special(value='~'), Identifier(name='b')], body=[FunCall(name=Identifier(name='ylabel'), args=[String(value='Y Axis')])])
+]

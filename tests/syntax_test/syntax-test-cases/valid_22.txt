@@ -1,3 +1,5 @@
-{assign: {identifier: "list2"} = {colon op: left={number: 1}, middle={number: 2}, right={number: 10}}}
-{assign: {identifier: "nsamp"} = {number: 5}}
-{assign: {identifier: "sliceOfPi"} = ( {colon op: left={number: 0}, middle=( {number: 1} {binary op: /} ( {identifier: "nsamp"} {binary op: -} {number: 1} ) ), right={number: 1}} {binary op: *} {identifier: "pi"} )}
+[
+Assignment(lhs=Identifier(name='list2'), rhs=ColonOp(left=Number(value='1'), middle=Number(value='2'), right=Number(value='10')))
+Assignment(lhs=Identifier(name='nsamp'), rhs=Number(value='5'))
+Assignment(lhs=Identifier(name='sliceOfPi'), rhs=BinaryOp(op='*', left=ColonOp(left=Number(value='0'), middle=BinaryOp(op='/', left=Number(value='1'), right=BinaryOp(op='-', left=Identifier(name='nsamp'), right=Number(value='1'))), right=Number(value='1')), right=Identifier(name='pi')))
+]

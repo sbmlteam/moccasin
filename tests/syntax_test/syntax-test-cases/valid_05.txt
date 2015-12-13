@@ -1,2 +1,4 @@
-{assign: {identifier: "g"} = {number: 5}}
-{assign: {identifier: "h"} = {number: 7}}
+[
+Assignment(lhs=Identifier(name='g'), rhs=Number(value='5'))
+Assignment(lhs=Identifier(name='h'), rhs=Number(value='7'))
+]

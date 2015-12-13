@@ -1,16 +1,3 @@
-{function definition: {identifier: "valid_71"} parameters ( none ) output none}
-{comment:  time is in minutes}
-{assign: {identifier: "tspan"} = {array: [ {row 1: {number: 0}, {number: 300}} ]}}
-{assign: {identifier: "xzero"} = {array: [ {row 1: {number: 0}}; {row 2: {number: 0}} ]}}
-{comment:  parameter values  (Time is in minutes)}
-{assign: {identifier: "a"} = ( {number: 0.1} {binary op: *} {number: 60} )}
-{assign: {identifier: "b"} = ( {number: 0.0058} {binary op: *} {number: 60} )}
-{assign: {identifier: "c"} = ( {number: 0.006} {binary op: *} {number: 60} )}
-{assign: {identifier: "d"} = ( {number: 0.000192} {binary op: *} {number: 60} )}
-{assign: {array: [ {row 1: {identifier: "t"}, {identifier: "y"}} ]} = {function {identifier: "ode45"} ( {function @ handle: {identifier: "g"}}, {identifier: "tspan"}, {identifier: "xzero"} ) }}
-( {identifier: "figure"} )
-( {function {identifier: "plot"} ( {identifier: "t"}, {array {identifier: "y"}: [ {colon}, {number: 2} ]} ) } )
-{function definition: {identifier: "g"} parameters ( {identifier: "t"}, {identifier: "x"} ) output {identifier: "y"}}
-{assign: {identifier: "y"} = {array: [ {row 1: ( {identifier: "a"} {binary op: -} ( {identifier: "b"} {binary op: *} {array {identifier: "x"}: [ {number: 1} ]} ) )}; {row 2: ( ( {identifier: "c"} {binary op: *} {array {identifier: "x"}: [ {number: 1} ]} ) {binary op: -} ( {identifier: "d"} {binary op: *} {array {identifier: "x"}: [ {number: 2} ]} ) )} ]}}
-{end}
-{end}
+[
+FunDef(name=Identifier(name='valid_71'), parameters=None, output=None, body=[Comment(content=' time is in minutes'), Assignment(lhs=Identifier(name='tspan'), rhs=Array(is_cell=False, rows=[[Number(value='0'), Number(value='300')]])), Assignment(lhs=Identifier(name='xzero'), rhs=Array(is_cell=False, rows=[[Number(value='0')], [Number(value='0')]])), Comment(content=' parameter values  (Time is in minutes)'), Assignment(lhs=Identifier(name='a'), rhs=BinaryOp(op='*', left=Number(value='0.1'), right=Number(value='60'))), Assignment(lhs=Identifier(name='b'), rhs=BinaryOp(op='*', left=Number(value='0.0058'), right=Number(value='60'))), Assignment(lhs=Identifier(name='c'), rhs=BinaryOp(op='*', left=Number(value='0.006'), right=Number(value='60'))), Assignment(lhs=Identifier(name='d'), rhs=BinaryOp(op='*', left=Number(value='0.000192'), right=Number(value='60'))), Assignment(lhs=Array(is_cell=False, rows=[[Identifier(name='t'), Identifier(name='y')]]), rhs=FunCall(name=Identifier(name='ode45'), args=[FunHandle(name=Identifier(name='g')), Identifier(name='tspan'), Identifier(name='xzero')])), Identifier(name='figure'), FunCall(name=Identifier(name='plot'), args=[Identifier(name='t'), ArrayRef(is_cell=False, name=Identifier(name='y'), args=[Special(value=':'), Number(value='2')])]), FunDef(name=Identifier(name='g'), parameters=[Identifier(name='t'), Identifier(name='x')], output=[Identifier(name='y')], body=[Assignment(lhs=Identifier(name='y'), rhs=Array(is_cell=False, rows=[[BinaryOp(op='-', left=Identifier(name='a'), right=BinaryOp(op='*', left=Identifier(name='b'), right=ArrayRef(is_cell=False, name=Identifier(name='x'), args=[Number(value='1')])))], [BinaryOp(op='-', left=BinaryOp(op='*', left=Identifier(name='c'), right=ArrayRef(is_cell=False, name=Identifier(name='x'), args=[Number(value='1')])), right=BinaryOp(op='*', left=Identifier(name='d'), right=ArrayRef(is_cell=False, name=Identifier(name='x'), args=[Number(value='2')])))]]))])])
+]

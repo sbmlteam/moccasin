@@ -1,4 +1,6 @@
-{shell command: echo 'foo', 'bar', 'biff'; echo 'foo'}
-{shell command: echo 'zoo', 'zee'}
-( {function/array: {identifier: "foo"} ( {identifier: "x"} )} )
-{command: name {identifier: "save"} args   /tmp/foo.mat}
+[
+ShellCommand(command="echo 'foo', 'bar', 'biff'; echo 'foo'", bkgnd=False)
+ShellCommand(command="echo 'zoo', 'zee'", bkgnd=False)
+ArrayOrFunCall(name=Identifier(name='foo'), args=[Identifier(name='x')])
+FunCall(name=Identifier(name='save'), args=[String(value='/tmp/foo.mat')])
+]

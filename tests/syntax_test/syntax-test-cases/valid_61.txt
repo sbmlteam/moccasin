@@ -1,7 +1,9 @@
-( {function {identifier: "plot"} ( {identifier: "r"} ) } )
-{assign: {identifier: "m"} = {function {identifier: "mean"} ( {identifier: "r"} ) }}
-{command: name {identifier: "hold"} args  on}
-( {function {identifier: "plot"} ( {array: [ {row 1: {number: 0}, {identifier: "n"}} ]}, {array: [ {row 1: {identifier: "m"}, {identifier: "m"}} ]} ) } )
-{command: name {identifier: "hold"} args  off}
-( {function {identifier: "title"} ( {string: "Mean of Random Uniform Data"} ) } )
-{command: name {identifier: "print"} args  -dpng magicsquare.png}
+[
+FunCall(name=Identifier(name='plot'), args=[Identifier(name='r')])
+Assignment(lhs=Identifier(name='m'), rhs=FunCall(name=Identifier(name='mean'), args=[Identifier(name='r')]))
+FunCall(name=Identifier(name='hold'), args=[String(value='on')])
+FunCall(name=Identifier(name='plot'), args=[Array(is_cell=False, rows=[[Number(value='0'), Identifier(name='n')]]), Array(is_cell=False, rows=[[Identifier(name='m'), Identifier(name='m')]])])
+FunCall(name=Identifier(name='hold'), args=[String(value='off')])
+FunCall(name=Identifier(name='title'), args=[String(value='Mean of Random Uniform Data')])
+FunCall(name=Identifier(name='print'), args=[String(value='-dpng'), String(value='magicsquare.png')])
+]

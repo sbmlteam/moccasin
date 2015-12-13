@@ -1,2 +1,4 @@
-{command: name {identifier: "close"} args  all}
-{command: name {identifier: "clear"} args  all}
+[
+FunCall(name=Identifier(name='close'), args=[String(value='all')])
+FunCall(name=Identifier(name='clear'), args=[String(value='all')])
+]

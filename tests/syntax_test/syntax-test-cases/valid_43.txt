@@ -1,12 +1,4 @@
-{assign: {identifier: "name"} = {string: "core_sbml"}}
-{switch stmt: {identifier: "name"}}
-{case: {string: "core"}}
-{comment:  core model time in [min]}
-{assign: {identifier: "dydt_fun"} = {anon @ handle: args ( {identifier: "t"}, {identifier: "y"} ) body {function/array: {identifier: "dydt_model_glucose"} ( {identifier: "t"}, {identifier: "y"} )} }}
-{case: {string: "core_sbml"}}
-{comment:  sbml model time in [s]}
-{assign: {identifier: "dydt_fun"} = {anon @ handle: args ( {identifier: "t"}, {identifier: "y"} ) body {function/array: {identifier: "dydt_model_glucose_sbml"} ( {identifier: "t"}, {identifier: "y"} )} }}
-{assign: {identifier: "tspan"} = ( {number: 60} {binary op: *} {identifier: "tspan"} )}
-{comment:  [s -> min]}
-{comment:  v_full = 60 * v_full;  % [per_s] -> [per_min]}
-{end}
+[
+Assignment(lhs=Identifier(name='name'), rhs=String(value='core_sbml'))
+Switch(cond=Identifier(name='name'), case_tuples=[(String(value='core'), [Comment(content=' core model time in [min]'), Assignment(lhs=Identifier(name='dydt_fun'), rhs=AnonFun(args=[Identifier(name='t'), Identifier(name='y')], body=ArrayOrFunCall(name=Identifier(name='dydt_model_glucose'), args=[Identifier(name='t'), Identifier(name='y')])))]), (String(value='core_sbml'), [Comment(content=' sbml model time in [s]'), Assignment(lhs=Identifier(name='dydt_fun'), rhs=AnonFun(args=[Identifier(name='t'), Identifier(name='y')], body=ArrayOrFunCall(name=Identifier(name='dydt_model_glucose_sbml'), args=[Identifier(name='t'), Identifier(name='y')]))), Assignment(lhs=Identifier(name='tspan'), rhs=BinaryOp(op='*', left=Number(value='60'), right=Identifier(name='tspan'))), Comment(content=' [s -> min]'), Comment(content=' v_full = 60 * v_full;  % [per_s] -> [per_min]')])], otherwise=None)
+]

@@ -1,5 +1,7 @@
-{comment:  comment before}
-{assign: {identifier: "a"} = {number: 1}}
-{assign: {identifier: "b"} = {array: [ {row 1: {number: 1}, {number: 2}}; {row 2: {number: 3}, {number: 4}} ]}}
-{assign: {identifier: "c"} = {number: 3}}
-{comment:  comment after}
+[
+Comment(content=' comment before')
+Assignment(lhs=Identifier(name='a'), rhs=Number(value='1'))
+Assignment(lhs=Identifier(name='b'), rhs=Array(is_cell=False, rows=[[Number(value='1'), Number(value='2')], [Number(value='3'), Number(value='4')]]))
+Assignment(lhs=Identifier(name='c'), rhs=Number(value='3'))
+Comment(content=' comment after')
+]

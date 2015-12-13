@@ -1,8 +1,4 @@
-{function definition: {identifier: "valid_76"} parameters ( {identifier: "a"} ) output {identifier: "x"}}
-{assign: {identifier: "x"} = {array {identifier: "a"}: [ {number: 3} ]}}
-{assign: {identifier: "x"} = {function {identifier: "other"} ( {number: 4} ) }}
-{end}
-{function definition: {identifier: "other"} parameters ( {identifier: "y"} ) output {identifier: "x"}}
-{assign: {identifier: "x"} = {number: 10}}
-{end}
-( {function {identifier: "valid_76"} ( {array: [ {row 1: {number: 1}, {number: 2}, {number: 3}, {number: 4}} ]} ) } )
+[
+FunDef(name=Identifier(name='valid_76'), parameters=[Identifier(name='a')], output=[Identifier(name='x')], body=[Assignment(lhs=Identifier(name='x'), rhs=ArrayRef(is_cell=False, name=Identifier(name='a'), args=[Number(value='3')])), Assignment(lhs=Identifier(name='x'), rhs=FunCall(name=Identifier(name='other'), args=[Number(value='4')]))])
+FunDef(name=Identifier(name='other'), parameters=[Identifier(name='y')], output=[Identifier(name='x')], body=[Assignment(lhs=Identifier(name='x'), rhs=Number(value='10'))])
+]

@@ -1,1 +1,3 @@
-{assign: {identifier: "ptmp"} = {function {identifier: "pcolor"} ( {identifier: "x"}, {identifier: "y"}, {transpose: {identifier: "z"} operator ' } ) }}
+[
+Assignment(lhs=Identifier(name='ptmp'), rhs=FunCall(name=Identifier(name='pcolor'), args=[Identifier(name='x'), Identifier(name='y'), Transpose(op=''', operand=Identifier(name='z'))]))
+]

@@ -1,2 +1,4 @@
-{assign: {array: [ {row 1: {identifier: "C"}, {identifier: "h"}} ]} = {function {identifier: "contour"} ( {identifier: "x"}, {identifier: "y"}, {transpose: {identifier: "z"} operator ' }, {identifier: "clines_hgp"}, {string: "k-"}, {string: "LineColor"}, {identifier: "ccolor_hgp"} ) }}
-{command: name {identifier: "hold"} args  off}
+[
+Assignment(lhs=Array(is_cell=False, rows=[[Identifier(name='C'), Identifier(name='h')]]), rhs=FunCall(name=Identifier(name='contour'), args=[Identifier(name='x'), Identifier(name='y'), Transpose(op=''', operand=Identifier(name='z')), Identifier(name='clines_hgp'), String(value='k-'), String(value='LineColor'), Identifier(name='ccolor_hgp')]))
+FunCall(name=Identifier(name='hold'), args=[String(value='off')])
+]

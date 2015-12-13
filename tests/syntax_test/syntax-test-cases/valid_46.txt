@@ -1,7 +1,9 @@
-( {function/array: {identifier: "x"} ( {number: 1} )} )
-{assign: {identifier: "y"} = {transpose: {identifier: "x"} operator ' }}
-( {transpose: {array: [] } operator ' } )
-( {transpose: {number: 1} operator ' } )
-( {transpose: {function/array: {identifier: "x"} ( {number: 1} )} operator ' } )
-{assign: {identifier: "y"} = {transpose: {function/array: {identifier: "x"} ( {number: 1} )} operator ' }}
-{assign: {identifier: "y"} = {transpose: {identifier: "x"} operator ' }}
+[
+ArrayOrFunCall(name=Identifier(name='x'), args=[Number(value='1')])
+Assignment(lhs=Identifier(name='y'), rhs=Transpose(op=''', operand=Identifier(name='x')))
+Transpose(op=''', operand=Array(is_cell=False, rows=[]))
+Transpose(op=''', operand=Number(value='1'))
+Transpose(op=''', operand=ArrayOrFunCall(name=Identifier(name='x'), args=[Number(value='1')]))
+Assignment(lhs=Identifier(name='y'), rhs=Transpose(op=''', operand=ArrayOrFunCall(name=Identifier(name='x'), args=[Number(value='1')])))
+Assignment(lhs=Identifier(name='y'), rhs=Transpose(op=''', operand=Identifier(name='x')))
+]

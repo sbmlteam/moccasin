@@ -1,2 +1,4 @@
-{assign: {identifier: "n"} = {function {identifier: "input"} ( {string: "Enter a number: "} ) }}
-{switch stmt: ( {identifier: "n"} ) case_tuples ( (Expression([Number(value='-1')]), [Expression([FunCall(name=Identifier(name='disp'), args=[String(value='negative one')])])]) (Expression([Number(value='0')]), [Expression([FunCall(name=Identifier(name='disp'), args=[String(value='zero')])])]) (Expression([Number(value='1')]), [Expression([FunCall(name=Identifier(name='disp'), args=[String(value='positive one')])])]) ) otherwise ( ( {function {identifier: "disp"} ( {string: "other value"} ) } ) )}
+[
+Assignment(lhs=Identifier(name='n'), rhs=FunCall(name=Identifier(name='input'), args=[String(value='Enter a number: ')]))
+Switch(cond=Identifier(name='n'), case_tuples=[(Number(value='-1'), [FunCall(name=Identifier(name='disp'), args=[String(value='negative one')])]), (Number(value='0'), [FunCall(name=Identifier(name='disp'), args=[String(value='zero')])]), (Number(value='1'), [FunCall(name=Identifier(name='disp'), args=[String(value='positive one')])])], otherwise=[FunCall(name=Identifier(name='disp'), args=[String(value='other value')])])
+]

@@ -1,2 +1,4 @@
-{assign: {identifier: "m"} = {function/array: {identifier: "f"} ( {number: 1} )}}
-{assign: {identifier: "n"} = {function/array: {identifier: "f"} ( {number: 2}, {number: 3}, {number: 4} )}}
+[
+Assignment(lhs=Identifier(name='m'), rhs=ArrayOrFunCall(name=Identifier(name='f'), args=[Number(value='1')]))
+Assignment(lhs=Identifier(name='n'), rhs=ArrayOrFunCall(name=Identifier(name='f'), args=[Number(value='2'), Number(value='3'), Number(value='4')]))
+]

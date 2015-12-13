@@ -1,6 +1,8 @@
-{comment:  The following should parse as a cell array reference:}
-( {cell array: {identifier: "a"} [ {number: 1} ]} )
-{comment:  The following should parse as a command called with one argument:}
-{command: name {identifier: "a"} args  {1}}
-{comment:  The following should parse as an array of 3 elements:}
-( {array: [ {row 1: {identifier: "a"}, {cell array: [ {row 1: {number: 1}} ]}, {identifier: "a"}} ]} )
+[
+Comment(content=' The following should parse as a cell array reference:')
+ArrayRef(is_cell=True, name=Identifier(name='a'), args=[Number(value='1')])
+Comment(content=' The following should parse as a command called with one argument:')
+FunCall(name=Identifier(name='a'), args=[String(value='{1}')])
+Comment(content=' The following should parse as an array of 3 elements:')
+Array(is_cell=False, rows=[[Identifier(name='a'), Array(is_cell=True, rows=[[Number(value='1')]]), Identifier(name='a')]])
+]

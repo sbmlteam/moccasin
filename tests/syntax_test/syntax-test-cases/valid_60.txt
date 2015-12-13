@@ -1,4 +1,6 @@
-( {function/array: {identifier: "func"} ( {number: 3} )} )
-{command: name {identifier: "func"} args  4}
-{command: name {identifier: "func"} args  5}
-{command: name {identifier: "func"} args  6}
+[
+ArrayOrFunCall(name=Identifier(name='func'), args=[Number(value='3')])
+FunCall(name=Identifier(name='func'), args=[String(value='4')])
+FunCall(name=Identifier(name='func'), args=[String(value='5')])
+FunCall(name=Identifier(name='func'), args=[String(value='6')])
+]
