@@ -64,10 +64,19 @@ class MatlabNode(object):
         return '{MatlabNode}'
 
 
+# Expressions -- parent class of operators and other things in expressions.
+# .........................................................................
+
+class Expression(MatlabNode):
+    '''Parent class for expressions.'''
+    pass
+
+
+
 # Entity -- parent class of things that show up in expressions.
 # .........................................................................
 
-class Entity(MatlabNode):
+class Entity(Expression):
     '''Parent class for entities in expressions.'''
 
     def __repr__(self):
@@ -280,51 +289,64 @@ class StructRef(Reference):
     '''Objects that are determined to be structure references.
     Warning: `name` may be an expression, not just an identifier.'''
 
-    _attr_names = ['name', 'field']
-    _visitable_attr = ['name']
+    _attr_names = ['name', 'field', 'dynamic']
+    _visitable_attr = ['name', 'field']
 
     def __repr__(self):
-        return 'StructRef(name={}, field={})'.format(repr(self.name), repr(self.field))
+        return 'StructRef(name={}, field={}, dynamic_access={})'.format(
+            repr(self.name), repr(self.field), repr(self.dynamic))
 
     def __str__(self):
-        return '{{struct: {}.{} }}'.format(_str_format(self.name), _str_format(self.field))
+        return '{{struct: {}.{} using {} access}}'.format(
+            _str_format(self.name), _str_format(self.field),
+            'dynamic' if self.dynamic else 'static')
 
 
-#
-# Operators.
-#
+# Operators
+# .........................................................................
 
-class Operator(Entity):
-    '''Parent class for operators.'''
-    _attr_names = ['op']
+class Operator(Expression):
+    '''Parent class for operators in expressions.'''
+    pass
 
 
 class UnaryOp(Operator):
+    _attr_names = ['op', 'operand']
+    _visitable_attr = ['operand']
+
     def __repr__(self):
-        return 'UnaryOp(op=\'{}\')'.format(self.op)
+        return 'UnaryOp(op=\'{}\', operand={})'.format(
+            self.op, repr(self.operand))
 
     def __str__(self):
-        return '{{unary op: {}}}'.format(self.op)
+        return '{{unary op expression {} operand {}}}'.format(
+            self.op, _str_format(self.operand))
 
 
 class BinaryOp(Operator):
+    _attr_names = ['op', 'left', 'right']
+    _visitable_attr = ['left', 'right']
+
     def __repr__(self):
-        return 'BinaryOp(op=\'{}\')'.format(self.op)
+        return 'BinaryOp(op=\'{}\', left={}, right={})'.format(
+            self.op, repr(self.left), repr(self.right))
+
 
     def __str__(self):
-        return '{{binary op: {}}}'.format(self.op)
+        return '{{binary op expression {} left {} right {}}}'.format(
+            self.op, _str_format(self.left), _str_format(self.right))
 
 
-class TernaryOp(Operator):
-    _attr_names = ['op', 'left', 'middle', 'right']
+class ColonOp(Operator):
+    _attr_names = ['left', 'middle', 'right']
     _visitable_attr = ['left', 'middle', 'right']
 
     def __repr__(self):
-        return 'TernaryOp(op=\'{}\', left={}, middle={}, right={})'.format(
-            self.op, repr(self.left), repr(self.middle), repr(self.right))
+        return 'ColonOp(left={}, middle={}, right={})'.format(
+            repr(self.left), repr(self.middle), repr(self.right))
 
     def __str__(self):
-        return '{{colon op: left={}, middle={}, right={}}}'.format(
+        return '{{colon op expression: left={}, middle={}, right={}}}'.format(
             _str_format(self.left), _str_format(self.middle), _str_format(self.right))
 
 
@@ -333,30 +355,12 @@ class Transpose(Operator):
     _visitable_attr = ['operand']
 
     def __repr__(self):
-        return 'Transpose(op=\'{}\', operand={})'.format(self.op, repr(self.operand))
+        return 'Transpose(op=\'{}\', operand={})'.format(
+            self.op, repr(self.operand))
 
     def __str__(self):
-        return '{{transpose: {} operator {} }}'.format(_str_format(self.operand), self.op)
-
-
-# Expressions
-#
-# An expression is represented as a list of nodes of either type Entity or
-# type Expression.  It's always a list, even if there is a single entity
-# inside of it.  Parenthesized expressions are represented as nested
-# Expression objects.
-# .........................................................................
-
-class Expression(MatlabNode):
-    '''The `content` field stores a list of Expression or Entity nodes.'''
-    _attr_names = ['content']
-    _visitable_attr = ['content']
-
-    def __repr__(self):
-        return 'Expression({})'.format(repr(self.content))
-
-    def __str__(self):
-        return _str_format(_str_format(self.content))
+        return '{{transpose expression: {} operator {} }}'.format(
+            _str_format(self.operand), self.op)
 
 
 # Definitions: assignments, function definitions, scripts.
@@ -365,6 +369,18 @@ class Expression(MatlabNode):
 class Definition(MatlabNode):
     '''Parent class for definitions.'''
     pass
+
+
+class ScopeDecl(Definition):
+    _attr_names = ['type', 'variables']
+    _visitable_attr = ['variables']
+
+    def __repr__(self):
+        return 'ScopeDecl(type={}, variables={})'.format(repr(self.type),
+                                                         repr(self.variables))
+
+    def __str__(self):
+        return '{{scope: {} {}}}'.format(self.type, _str_format(self.variables))
 
 
 class Assignment(Definition):
@@ -380,7 +396,7 @@ class Assignment(Definition):
 
 
 class FunDef(Definition):
-    _attr_names = ['name', 'parameters', 'output', 'body']
+    _attr_names = ['name', 'parameters', 'output', 'body', 'context']
     _visitable_attr = ['name', 'parameters', 'output', 'body']
 
     def __repr__(self):
@@ -402,8 +418,8 @@ class FunDef(Definition):
             params = _str_format_args(self.parameters)
         else:
             params = '( none )'
-        return '{{function definition: {} parameters {} output {}}}'.format(
-            _str_format(self.name), params, output)
+        return '{{function definition: {} parameters {} output {} body {}}}'.format(
+            _str_format(self.name), params, output, _str_format(self.body))
 
 
 # Decided not to do this for now.
@@ -422,16 +438,16 @@ class FlowControl(MatlabNode):
 
 
 class TryCatch(FlowControl):
-    _attr_names = ['body', 'catch', 'catch_body']
-    _visitable_attr = ['body', 'catch', 'catch_body']
+    _attr_names = ['body', 'catch_var', 'catch_body']
+    _visitable_attr = ['body', 'catch_var', 'catch_body']
 
     def __repr__(self):
-        return 'Try(body={}, catch={}, catch_body={})'.format(
-            repr(self.body), repr(self.catch), repr(self.catch_body))
+        return 'Try(body={}, catch_var={}, catch_body={})'.format(
+            repr(self.body), repr(self.catch_var), repr(self.catch_body))
 
     def __str__(self):
-        return '{{try: {} catch {} catch_body {}}}'.format(
-            _str_format(self.body), _str_format(self.catch),
+        return '{{try: {} catch_var {} catch_body {}}}'.format(
+            _str_format(self.body), _str_format(self.catch_var),
             _str_format(self.catch_body))
 
 
@@ -449,7 +465,7 @@ class Switch(FlowControl):
             _str_format(self.otherwise))
 
 
-class IfElse(FlowControl):
+class If(FlowControl):
     _attr_names = ['cond', 'body', 'elseif_tuples', 'else_body']
     _visitable_attr = ['cond', 'body', 'elseif_tuples', 'else_body']
 
@@ -491,14 +507,6 @@ class For(FlowControl):
                                                          _str_format(self.body))
 
 
-class End(FlowControl):
-    def __repr__(self):
-        return 'End()'
-
-    def __str__(self):
-        return '{end}'
-
-
 class Branch(FlowControl):
     __attr_names = ['kind']
 
@@ -511,14 +519,10 @@ class Branch(FlowControl):
             return '{return}'
 
 
-# Commands.
+# Shell commands.
 # .........................................................................
 
-class Command(MatlabNode):
-    pass
-
-
-class ShellCommand(Command):
+class ShellCommand(MatlabNode):
     _attr_names = ['command', 'background']
 
     def __repr__(self):
@@ -528,18 +532,6 @@ class ShellCommand(Command):
     def __str__(self):
         bkgnd = ' &' if self.background else ''
         return '{{shell command: {}{}}}'.format(_str_format(self.command), bkgnd)
-
-
-class MatlabCommand(Command):
-    _attr_names = ['command', 'args']
-
-    def __repr__(self):
-        return 'MatlabCommand(command={}, args={})'.format(repr(self.command),
-                                                           repr(self.args))
-
-    def __str__(self):
-        return '{{command: name {} args {}}}'.format(_str_format(self.command),
-                                                     _str_format(self.args))
 
 
 # Comments.
