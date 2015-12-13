@@ -1,0 +1,5 @@
+[
+Assignment(lhs=Identifier(name='s'), rhs=Number(value='10'))
+Assignment(lhs=Identifier(name='H'), rhs=FunCall(name=Identifier(name='zeros'), args=[Identifier(name='s')]))
+For(var=Identifier(name='c'), expr=ColonOp(left=Number(value='1'), middle=None, right=Identifier(name='s')), body=[For(var=Identifier(name='r'), expr=ColonOp(left=Number(value='1'), middle=None, right=Identifier(name='s')), body=[Assignment(lhs=ArrayRef(is_cell=False, name=Identifier(name='H'), args=[Identifier(name='r'), Identifier(name='c')]), rhs=BinaryOp(op='/', left=Number(value='1'), right=BinaryOp(op='-', left=BinaryOp(op='+', left=Identifier(name='r'), right=Identifier(name='c')), right=Number(value='1'))))])])
+]

@@ -1,0 +1,4 @@
+[
+FunDef(name=Identifier(name='valid_89'), parameters=[Identifier(name='y')], output=[Identifier(name='x')], body=[Assignment(lhs=Identifier(name='x'), rhs=FunCall(name=Identifier(name='foo'), args=[Number(value='2')]))])
+FunDef(name=Identifier(name='foo'), parameters=[Identifier(name='w')], output=[Identifier(name='z')], body=[Assignment(lhs=Identifier(name='z'), rhs=BinaryOp(op='*', left=Identifier(name='w'), right=Number(value='2')))])
+]

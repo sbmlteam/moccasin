@@ -1,0 +1,5 @@
+[
+Assignment(lhs=Identifier(name='x'), rhs=Number(value='2'))
+Comment(content=' This should not be parsed as a transpose.')
+Assignment(lhs=Identifier(name='y'), rhs=Array(is_cell=True, rows=[[Identifier(name='x'), String(value=' '), Identifier(name='x'), String(value=' ')]]))
+]

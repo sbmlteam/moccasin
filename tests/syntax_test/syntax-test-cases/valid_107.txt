@@ -1,0 +1,8 @@
+[
+Comment(content=' From MATLAB docs at')
+Comment(content=' https://en.wikibooks.org/wiki/MATLAB_Programming/Arrays/Struct_Arrays')
+Assignment(lhs=Identifier(name='foo'), rhs=FunCall(name=Identifier(name='struct'), args=[String(value='field_a'), Array(is_cell=True, rows=[[Number(value='1'), Number(value='2'), Number(value='3'), Number(value='4')]]), String(value='field_b'), Array(is_cell=True, rows=[[Number(value='4'), Number(value='8'), Number(value='12'), Number(value='16')]])]))
+Assignment(lhs=Identifier(name='value'), rhs=Number(value='1'))
+Assignment(lhs=Array(is_cell=False, rows=[[StructRef(name=Identifier(name='foo'), field=Identifier(name='field_b'), dynamic_access=False)]]), rhs=FunCall(name=Identifier(name='deal'), args=[Identifier(name='value')]))
+ArrayOrFunCall(name=Identifier(name='foo'), args=[BinaryOp(op='==', left=Array(is_cell=False, rows=[[StructRef(name=Identifier(name='foo'), field=Identifier(name='field_a'), dynamic_access=False)]]), right=Number(value='2'))])
+]

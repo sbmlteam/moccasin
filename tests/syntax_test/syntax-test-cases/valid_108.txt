@@ -1,0 +1,13 @@
+[
+Comment(content=' From MATLAB docs at')
+Comment(content=' https://en.wikibooks.org/wiki/MATLAB_Programming/Arrays/Struct_Arrays')
+Assignment(lhs=Identifier(name='a'), rhs=FunCall(name=Identifier(name='struct'), args=[String(value='b'), Number(value='0'), String(value='c'), String(value='test')]))
+Comment(content=' Create structure')
+Assignment(lhs=StructRef(name=ArrayRef(is_cell=False, name=Identifier(name='a'), args=[Number(value='2')]), field=Identifier(name='b'), dynamic_access=False), rhs=Number(value='1'))
+Comment(content=' Turn it into an array by creating another element')
+Assignment(lhs=StructRef(name=ArrayRef(is_cell=False, name=Identifier(name='a'), args=[Number(value='2')]), field=Identifier(name='c'), dynamic_access=False), rhs=String(value='testing'))
+Comment(content=' Dynamic field access:')
+Assignment(lhs=Identifier(name='str'), rhs=String(value='c'))
+StructRef(name=ArrayRef(is_cell=False, name=Identifier(name='a'), args=[Number(value='1')]), field=Identifier(name='str'), dynamic_access=True)
+Array(is_cell=False, rows=[[StructRef(name=Identifier(name='a'), field=String(value='c'), dynamic_access=True)]])
+]

@@ -1,0 +1,3 @@
+[
+Assignment(lhs=Identifier(name='y'), rhs=Array(is_cell=False, rows=[[Identifier(name='x'), String(value=' ')]]))
+]

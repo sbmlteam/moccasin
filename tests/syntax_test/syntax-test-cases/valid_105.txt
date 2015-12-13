@@ -1,0 +1,5 @@
+[
+FunCall(name=Identifier(name='disp'), args=[String(value='1')])
+FunCall(name=Identifier(name='disp'), args=[Number(value='1')])
+FunCall(name=Identifier(name='disp'), args=[BinaryOp(op='+', left=Number(value='1'), right=Number(value='2'))])
+]
