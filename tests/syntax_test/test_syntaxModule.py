@@ -28,7 +28,7 @@ def build_model(path):
     try:
         parser = MatlabGrammar()
         results = parser.parse_string(contents, fail_soft=True)
-        parser.print_parse_results(results)
+        parser.print_parse_results(results, print_raw=True)
         file.close()
     except Exception as e:
         print(e)
