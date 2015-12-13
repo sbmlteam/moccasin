@@ -26,33 +26,9 @@ import sys
 import six
 from pyparsing import ParseResults
 
-
 #
 # Parsing helpers.
 # .............................................................................
-
-# Visitor class for ParseResults.
-
-class ParseResultsVisitor(object):
-    def visit(self, pr):
-        if len(pr) > 1 and not nonempty_dict(pr):
-            # It's a list of items.  Return a list.
-            return [self.visit(item) for item in pr]
-        if not nonempty_dict(pr):
-            # It's an expression.
-            return self.visit_expression(pr)
-        # Not an expression, but an individual, single parse result.
-        # We dispatch to the appropriate transformer by building the name.
-        key = first_key(pr)
-        methname = 'visit_' + '_'.join(key.split())
-        meth = getattr(self, methname, None)
-        if meth is None:
-            meth = self.default_visit
-        return meth(pr)
-
-    def default_visit(self, pr):
-        return pr
-
 
 # makeLRlike -- function used in the definition of our grammar in grammar.py
 
@@ -78,6 +54,14 @@ def makeLRlike(numterms):
 
     # Return the closure.
     return pa
+
+
+# From http://pyparsing.wikispaces.com/share/view/41237655
+
+def setVar(varname, varvalue):
+    def parseAction(tokens):
+        tokens[varname] = varvalue
+    return parseAction
 
 
 #
@@ -141,5 +125,5 @@ def first_key(d):
             return key
 
 
-def nonempty_dict(d):
-    return (d.keys() and len(list(d.keys())) > 0)
+def empty_dict(d):
+    return not (d.keys() and len(list(d.keys())) > 0)
