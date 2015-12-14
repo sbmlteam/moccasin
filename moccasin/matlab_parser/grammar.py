@@ -1166,7 +1166,7 @@ class MatlabGrammar:
     _comma_subs    = _one_sub + ZeroOrMore(_COMMA + _one_sub)
     _space_subs    = _one_sub + ZeroOrMore(_WHITE.suppress() + _one_sub).leaveWhitespace()
     _call_args     = delimitedList(_expr)
-    _fun_params    = delimitedList(Group(_TILDE) | Group(_id))
+    _opt_arglist   = Optional(_call_args('argument list'))
 
     # Bare matrices.  This is a cheat because it doesn't check that all the
     # element contents have the same data type.  But again, since we expect our
@@ -1179,6 +1179,14 @@ class MatlabGrammar:
                              ).setResultsName('array')  # noqa
 
     ParserElement.setDefaultWhitespaceChars(' \t\n\r')
+
+    # Named array references.  Note: this interacts with the definition of
+    # function calls later below.  (See _funcall_or_array.)
+
+    _array_args    = Group(_comma_subs)
+    _array_access  = Group(_name
+                           + _LPAR + _array_args('subscript list') + _RPAR
+                          ).setResultsName('array')  # noqa
 
     # Cell arrays.  You can write {} by itself, but a reference has to have at
     # least one subscript: "somearray{}" is not valid.  Newlines don't
@@ -1196,6 +1204,19 @@ class MatlabGrammar:
                              ).setResultsName('cell array')  # noqa
     _cell_array    = _cell_access | _bare_cell
 
+    # Function handles.
+    #
+    # See http://mathworks.com/help/matlab/ref/function_handle.html
+    # In all function arguments, you can use a bare tilde to indicate a value
+    # that can be ignored.  This is not obvious from the functional
+    # documentation, but it seems to be the case when I try it.  (It's the
+    # case for function defs and function return values too.)
+
+    _named_handle  = Group('@' + _name)
+    _anon_handle   = Group('@' + _LPAR + _opt_arglist + _RPAR
+                           + _expr('function definition'))  # noqa
+    _fun_handle    = (_named_handle | _anon_handle).setResultsName('function handle')
+
     # Struct array references.  This is incomplete: in Matlab, the LHS can
     # actually be a full expression that yields a struct.  Here, to avoid an
     # infinitely recursive grammar, we only allow a specific set of objects
@@ -1209,22 +1230,26 @@ class MatlabGrammar:
     # identifier.  Thus, we can't return Identifier(name='str') alone, or
     # the caller will not be able to distinguish that from a static access,
     #    a.str
-    # The solution here is to explicitly label the two types of fields.
+    # The solution here is to detect the use of ".()" and explicitly label
+    # the type of field found (as either 'static field' or 'dynamic field').
+    #
+    # Note: BE VERY CAREFUL about the ordering of the terms in _struct_base.
+    # A change to the order can lead to infinite recursion on some inputs.
+    # The current order was determined by trial and error to work on our
+    # various test cases.  (And no, I'm not proud of the hackiness.)
 
     _funcall_or_array = Forward()
-    _fun_handle       = Forward()
-    _array_access     = Forward()
-    _struct_base      = Group(_cell_access
-                              | _funcall_or_array
+    _struct_base      = Group(_fun_handle
+                              | _cell_array
                               | _array_access
-                              | _fun_handle
+                              | _funcall_or_array
                               | _id)
     _struct_field     = _id('static field') | _LPAR + _expr('dynamic field') + _RPAR
     _struct_access    = Group(_struct_base('struct base')
                               + _DOT.leaveWhitespace() + _struct_field
                               ).setResultsName('struct')  # noqa
 
-    # Function calls and array references.
+    # "Command syntax" function calls and array references.
     #
     # Matlab functions can be called with arguments either surrounded with
     # parentheses or not.  This is called "command vs. function syntax".
@@ -1245,7 +1270,7 @@ class MatlabGrammar:
     #    load '(\'durer.mat\')'
     #
     # The syntactic rules are explained in the following MATLAB document:
-    # http://www.mathworks.com/help/matlab/matlab_prog/command-vs-function-syntax.html
+    # http://mathworks.com/help/matlab/matlab_prog/command-vs-function-syntax.html
     # The grammar below for command-style syntax is not fully compliant.  One
     # known failure: it requires an argument.  We deal with command-syntax
     # function calls *without* arguments separately in post-processing.
@@ -1260,6 +1285,8 @@ class MatlabGrammar:
                                + _fun_cmd_arglist('arguments')
                               ).setResultsName('command statement')
 
+    # "Function syntax" function calls.
+    #
     # Unfortunately, the function call forms using parentheses look identical
     # to matrix/array accesses, and in fact in MATLAB there's no way to tell
     # them apart except by determining whether the first name is a function
@@ -1280,8 +1307,7 @@ class MatlabGrammar:
     # Another complication: you can put function names or arrays inside a
     # cell array or struct, reference into that to get the function, and hand
     # it arguments.  E.g.:
-    #    x = fcnArray{3}(y)
-    #    x = somearray{1}(2,3)
+    #    x = somearray{1}(x, 3)
     # or even
     #    somestruct(2).somefieldname = str2func('functionname')
     #    somestruct(2).somefieldname(42)
@@ -1297,26 +1323,9 @@ class MatlabGrammar:
     _fun_access         = Group(_id) \
                           ^ Group(_cell_access('cell array')) \
                           ^ Group(_simple_struct('struct'))
-    _optional_arglist   = Optional(_call_args('argument list'))
     _funcall_or_array  << Group(_fun_access('name')
-                                + _LPAR + _optional_arglist + _RPAR
+                                + _LPAR + _opt_arglist + _RPAR
                                ).setResultsName('array or function')  # noqa
-
-    _array_args         = Group(_comma_subs)
-    _array_access      << Group(_name
-                                + _LPAR + _array_args('subscript list') + _RPAR
-                               ).setResultsName('array')  # noqa
-
-    # Handles: http://www.mathworks.com/help/matlab/ref/function_handle.html
-    # In all function arguments, you can use a bare tilde to indicate a value
-    # that can be ignored.  This is not obvious from the functional
-    # documentation, but it seems to be the case when I try it.  (It's the
-    # case for function defs and function return values too.)
-
-    _named_handle  = Group('@' + _name)
-    _anon_handle   = Group('@' + _LPAR + _optional_arglist + _RPAR
-                           + _expr('function definition'))  # noqa
-    _fun_handle   << (_named_handle | _anon_handle).setResultsName('function handle')
 
     # Transpose operators.  The operator must immediately follow the thing
     # being transposed, without whitespace.
@@ -1326,13 +1335,15 @@ class MatlabGrammar:
     # been able to write a proper grammar that doesn't lead to infinite
     # recursion.  This hacky thing is a partial solution.  The basic idea is
     # to avoid writing what would be the natural definition, namely
-    #    _expr.leaveWhitespace() + NotAny(_WHITE) + _transp_op('operator')
-    # and replace _expr with a limited subset of allowed expressions.  The
+    # _expr.leaveWhitespace() + NotAny(_WHITE) + _transp_op('operator') and
+    # replace _expr with a limited subset of allowed expressions.  The
     # specific subset and their order inside the Group() inside _trans_what
-    # was determined by trial and error.  DO NOT CHANGE THE ORDER even though
-    # it is not the same as _operand_basic.
+    # was determined by trial and error.  BE VERY CAREFUL about the ordering,
+    # even though it is not the same as _operand_basic.  A change to the order
+    # can lead to infinite recursion on some inputs.  The current order was
+    # determined by trial and error to work on our various test cases.
     #
-    # The part involving _paren_expr is that it turns out you don't get
+    # The part involving _paren_expr is because it turns out you don't get
     # infinite recursion for cases when the expression is inside parens, so
     # at least we can handle that much (though handling _expr completely
     # would be more correct).
@@ -1359,16 +1370,16 @@ class MatlabGrammar:
     # permitted -- see http://stackoverflow.com/a/23017087/743730).  This
     # leads to the following two versions of _operand and _expr.
 
-    _operand_basic = _transpose \
-                     | _funcall_or_array      \
-                     | _bare_array     \
-                     | _struct_access  \
-                     | _array_access   \
-                     | _cell_array     \
-                     | _fun_handle     \
-                     | _id             \
-                     | _BOOLEAN        \
-                     | _NUMBER         \
+    _operand_basic = _transpose          \
+                     | _funcall_or_array \
+                     | _bare_array       \
+                     | _struct_access    \
+                     | _array_access     \
+                     | _cell_array       \
+                     | _fun_handle       \
+                     | _id               \
+                     | _BOOLEAN          \
+                     | _NUMBER           \
                      | _STRING
 
     _operand          = Group(_operand_basic)
@@ -1542,6 +1553,7 @@ class MatlabGrammar:
     _space_values   = OneOrMore(_single_value)
     _multi_values   = _LBRACKET + (_comma_values ^ _space_values) + _RBRACKET
     _fun_outputs    = Group(_multi_values) | Group(_single_value)
+    _fun_params     = delimitedList(Group(_TILDE) | Group(_id))
     _fun_paramslist = _LPAR + Optional(_fun_params) + _RPAR
     _fun_def        = Group(_FUNCTION
                             + Optional(_fun_outputs('output list') + _EQUALS())
@@ -1715,7 +1727,7 @@ class MatlabGrammar:
                  _logical_op, _loop_var, _matlab_syntax, _multi_values,
                  _named_handle, _noncmd_arg_start, _noncontent, _one_row,
                  _one_sub, _operand, _operand_basic, _operand_incl_end,
-                 _optional_arglist, _other_assign, _paren_expr, _plusminus,
+                 _opt_arglist, _other_assign, _paren_expr, _plusminus,
                  _power, _reserved, _return_stmt, _row_sep, _rows, _scope_args,
                  _scope_stmt, _scope_type, _scope_var_list, _shell_cmd,
                  _shell_cmd_cmd, _simple_assign, _single_expr, _single_value,
