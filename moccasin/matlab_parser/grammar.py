@@ -1393,7 +1393,7 @@ class MatlabGrammar:
     # in infixNotation().  We define the colon operators as binary and then
     # fix it in post-processing (see NodeTransformer).
 
-    _plusminus     = _PLUS ^ _MINUS
+    _plusminus     = _PLUS ^ _MINUS.leaveWhitespace()
     _uplusminusneg = _UMINUS ^ _UPLUS ^ _UNOT
     _timesdiv      = _TIMES ^ _ELTIMES ^ _MRDIVIDE ^ _MLDIVIDE ^ _RDIVIDE ^ _LDIVIDE
     _power         = _MPOWER ^ _ELPOWER
