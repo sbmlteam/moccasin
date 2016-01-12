@@ -73,10 +73,12 @@ Before installing MOCCASIN, you need to separately install the following softwar
   * `libz-dev`
   * `libbz2-dev`
 
+* and [wxPython](http://wxpython.org/).
+
 Once that is done, you can download or clone the MOCCASIN source code base and then run
 
 ```
-python setup.py
+python setup.py install
 ```
 
 ► Using MOCCASIN
