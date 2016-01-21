@@ -6,7 +6,7 @@
 #
 # <!---------------------------------------------------------------------------
 # This software is part of MOCCASIN, the Model ODE Converter for Creating
-# Awesome SBML INteroperability. Visit https://github.com/sbmlteam/moccasin/.
+# Automated SBML INteroperability. Visit https://github.com/sbmlteam/moccasin/.
 #
 # Copyright (C) 2014 jointly by the following organizations:
 #  1. California Institute of Technology, Pasadena, CA, USA
@@ -483,7 +483,7 @@ class MainFrame ( wx.Frame ):
                 dlg.SetVersion("1.0.0")
                 dlg.SetLicense("GNU Lesser GPL version 2.1")
                 dlg.SetDescription('\n'.join(textwrap.wrap(
-                        "MOCCASIN is the Model ODE Converter for Creating Awesome "
+                        "MOCCASIN is the Model ODE Converter for Creating Automated "
                         "SBML INteroperability.  It is a user-assisted converter "
                         "that can take MATLAB or Octave ODE-based models in "
                         "biology and translate them into the SBML format.", 81)))

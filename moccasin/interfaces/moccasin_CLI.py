@@ -6,7 +6,7 @@
 #
 # <!---------------------------------------------------------------------------
 # This software is part of MOCCASIN, the Model ODE Converter for Creating
-# Awesome SBML INteroperability. Visit https://github.com/sbmlteam/moccasin/.
+# Automated SBML INteroperability. Visit https://github.com/sbmlteam/moccasin/.
 #
 # Copyright (C) 2014-2015 jointly by the following organizations:
 #  1. California Institute of Technology, Pasadena, CA, USA
