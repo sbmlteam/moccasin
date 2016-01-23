@@ -1,0 +1,7 @@
+Dear editors and reviewers,
+
+We are pleased to submit this short Application Note describing our work on MOCCASIN, a software system that can translate certain classes of MATLAB programs (containing ODE-based models of biological phenomena) from MATLAB to SBML format.  While the capabilities of the system are admittedly limited at this time, we nevertheless feel it can offer an important novel capability that is missing from the field today; moreover, we continue to develop and expand MOCCASIN's capabilities to handle more MATLAB inputs.
+
+Best regards,
+Michael Hucka (on behalf of all the authors)
+
