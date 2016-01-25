@@ -45,7 +45,6 @@ MatlabNode
 │  │  ├─ Primitive
 │  │  │  ├─ Number
 │  │  │  ├─ String
-│  │  │  ├─ Boolean
 │  │  │  └─ Special       # A colon or tilde character, or the string "end".
 │  │  │
 │  │  ├─ Array            # Unnamed arrays ("square-bracket" type or cell).
@@ -177,7 +176,7 @@ Here is an example.  Suppose that an input consists of this:
 
 ```
 if x > 1
-    foo = true
+    foo = 5
 end
 ```
 
@@ -186,7 +185,7 @@ The MOCCASIN parser will return the following (with indentation added here to im
 ```
 [
 If(cond=BinaryOp(op='>', left=Identifier(name='x'), right=Number(value='1')),
-   body=[ Assignment(lhs=Identifier(name='foo'), rhs=Boolean(value='true')) ],
+   body=[ Assignment(lhs=Identifier(name='foo'), rhs=Number(value='5')) ],
    elseif_tuples=[],
    else=None)
 ]
