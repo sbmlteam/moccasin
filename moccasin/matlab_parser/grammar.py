@@ -1572,7 +1572,7 @@ class MatlabGrammar:
     _catch_body     = Group(_stmt_list)                    ('catch body')
     _try_stmt       = Group(_TRY
                             + _body
-                            + _catch_term
+                            + Optional(_catch_term)
                             + _catch_body
                             + _END)                        ('try statement')
 
