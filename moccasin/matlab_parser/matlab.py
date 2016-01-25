@@ -105,11 +105,6 @@ class Number(Primitive):
     pass
 
 
-class Boolean(Primitive):
-    '''A Boolean value.'''
-    pass
-
-
 class String(Primitive):
     '''A text string.'''
 
