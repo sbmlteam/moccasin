@@ -417,6 +417,7 @@ class ParseResultsTransformer:
             # It's a terminal element, so we don't do anything more.
             return pr
 
+#        pdb.set_trace()
         if len(pr) > 1 and empty_dict(pr):
             # It's an expression.  We deconstruct the infix notation.
             if len(pr) == 2 and 'unary operator' in pr[0].keys():
@@ -462,10 +463,10 @@ class ParseResultsTransformer:
         return Special(value=':')
 
 
-    def visit_keyword(self, pr):
+    def visit_end_operator(self, pr):
         # 'end' should be the only keyword we ever encounter.
         # FIXME this needs to be checked more closely.
-        if 'end' in pr['keyword']:
+        if 'end' in pr['end operator']:
             return Special(value='end')
 
 
@@ -473,9 +474,13 @@ class ParseResultsTransformer:
         op_key = first_key(pr[0])
         op = pr[0][op_key]
         operand = self.visit(pr[1])
-        if (op == '-' or op == '+') and isinstance(operand, Number):
+        if op == '-' and isinstance(operand, Number):
             # Replace [UnaryOp(op='-'), Number(value='x')] with Number(value='-x')
             return Number(value=op + operand.value)
+        elif op == '+' and isinstance(operand, Number):
+            # Doesn't seem worth preserving the '+'.
+            # Replace [UnaryOp(op='+'), Number(value='x')] with Number(value='x')
+            return Number(operand.value)
         else:
             # This is probably negation, "~".
             return UnaryOp(op=op, operand=operand)
@@ -626,6 +631,16 @@ class ParseResultsTransformer:
         self._parser._pop_context()
 
         return fundef
+
+
+    def visit_funcall_or_id(self, pr):
+#        pdb.set_trace()
+        content = pr['funcall or id']
+        name = content[0]
+        if matlab_function_or_command(name):
+            return FunCall(name=Identifier(name=name), args=[])
+        else:
+            return Identifier(name=name)
 
 
     def visit_struct(self, pr):
@@ -984,7 +999,7 @@ class MatlabGrammar:
 
     _EOL        = LineEnd().suppress()
     _SOL        = LineStart().suppress()
-    _WHITE      = White(ws=' \t')
+    _WHITE      = White(ws=' \t').suppress()
 
     _SEMI       = Literal(';').suppress()
     _COMMA      = Literal(',').suppress()
@@ -1051,8 +1066,8 @@ class MatlabGrammar:
     _NC_TRANSP  = Literal(".'")
     _CC_TRANSP  = Literal("'")
 
-    # All keywords except 'end', which is handled separate below.  This list
-    # is based on what the command 'iskeyword' returns in MATLAB 2014b.
+    # Keywords.  This list is based on what the command 'iskeyword' returns
+    # in MATLAB 2014b.  Note that 'end' as an operator is defined again below.
 
     _BREAK      = Keyword('break')
     _CASE       = Keyword('case')
@@ -1061,6 +1076,7 @@ class MatlabGrammar:
     _CONTINUE   = Keyword('continue')
     _ELSE       = Keyword('else')
     _ELSEIF     = Keyword('elseif')
+    _END        = Keyword('end')
     _FOR        = Keyword('for')
     _FUNCTION   = Keyword('function')
     _GLOBAL     = Keyword('global')
@@ -1074,13 +1090,12 @@ class MatlabGrammar:
     _TRY        = Keyword('try')
     _WHILE      = Keyword('while')
 
-    # The 'end' keyword is special because of its many meanings.  We label
-    # it as 'keyword' to detect it in different situations.
-
-    _END        = Keyword('end')('keyword')
-
-    # Identifiers allowed in user programs.  They can't be the same as
-    # known MATLAB language keywords or the words for Boolean values.
+    # Identifiers.
+    #
+    # _id defines identifiers that can be used in user programs.  They can't
+    # be the same as known MATLAB language keywords or the words for Boolean
+    # values.  _name defines a labeled version of _id that we use in most
+    # grammar expressions below to avoid writing "Group(_id)('name')".
 
     _reserved   = _BREAK | _CASE | _CATCH | _CLASSDEF | _CONTINUE \
                   | _ELSE | _ELSEIF | _END | _FALSE | _FOR | _FUNCTION \
@@ -1116,7 +1131,7 @@ class MatlabGrammar:
     # .........................................................................
 
     _expr          = Forward()
-    _expr_incl_end = Forward()
+    _expr_in_array = Forward()
 
     # Continuations.
     #
@@ -1124,6 +1139,11 @@ class MatlabGrammar:
     # allow continuations.  Most do not.
 
     _continuation  = Combine(_ELLIPSIS.leaveWhitespace() + _EOL + _SOL)
+
+    # The 'end' keyword is special because of its many meanings.  One applies
+    # when indexing arrays.  This next definition is so we can detect that.
+
+    _end_op        = Keyword('end')('end operator')
 
     # The possible statement separators/delimiters in Matlab are:
     #   - EOL
@@ -1162,9 +1182,9 @@ class MatlabGrammar:
 
     ParserElement.setDefaultWhitespaceChars(' \t')
 
-    _one_sub       = Group(_COLON('colon')) | _expr_incl_end
+    _one_sub       = Group(_COLON('colon')) | _expr_in_array
     _comma_subs    = _one_sub + ZeroOrMore(_COMMA + _one_sub)
-    _space_subs    = _one_sub + ZeroOrMore(_WHITE.suppress() + _one_sub).leaveWhitespace()
+    _space_subs    = _one_sub.leaveWhitespace() + ZeroOrMore(_WHITE + _one_sub)
     _call_args     = delimitedList(_expr)
     _opt_arglist   = Optional(_call_args('argument list'))
 
@@ -1238,16 +1258,59 @@ class MatlabGrammar:
     # The current order was determined by trial and error to work on our
     # various test cases.  (And no, I'm not proud of the hackiness.)
 
-    _funcall_or_array = Forward()
-    _struct_base      = Group(_fun_handle
-                              | _cell_array
-                              | _array_access
-                              | _funcall_or_array
-                              | _id)
-    _struct_field     = _id('static field') | _LPAR + _expr('dynamic field') + _RPAR
-    _struct_access    = Group(_struct_base('struct base')
-                              + _DOT.leaveWhitespace() + _struct_field
-                              ).setResultsName('struct')  # noqa
+    _funcall_or_array   = Forward()
+    _struct_field       = _id('static field') | _LPAR + _expr('dynamic field') + _RPAR
+    _simple_struct_base = Group(_array_access | _id)
+    _simple_struct      = Group(_simple_struct_base('struct base')
+                                + _DOT.leaveWhitespace()
+                                + _struct_field)('struct')
+    _struct_base        = Group(_simple_struct + FollowedBy(_DOT)
+                                ^ _fun_handle
+                                ^ _funcall_or_array
+                                ^ _cell_access
+                                ^ _array_access
+                                ^ _id)
+    _struct_access      = Group(_struct_base('struct base')
+                                + _DOT.leaveWhitespace()
+                                + _struct_field)('struct')
+
+    # "Function syntax" function calls.
+    #
+    # Unfortunately, the function call forms using parentheses look identical
+    # to matrix/array accesses, and in fact in MATLAB there's no way to tell
+    # them apart except by determining whether the first name is a function
+    # or command.  This means it's ultimately run-time dependent, and depends
+    # on the functions and scripts that the user has defined.
+    #
+    # We don't have access to the user's MATLAB environment, so we are left
+    # to resort to various heuristics to try to guess what we have.  For
+    # instance, if something comes through in "command syntax", we can assume
+    # it's a function call.  (Handled by _funcall_cmd_style below.)  Another
+    # one is that in arrays, you can use bare ':' in the argument list.  This
+    # means that if a ':' is found, it's an array reference for sure.  (This
+    # case is handled in the definition of _opt_arglist) Beyond that, we call
+    # all cases we can't resolve syntactically as "array or function", and
+    # then in post-processing, attempt to apply other heuristics to figure
+    # out which ones are in fact functions.
+    #
+    # There are complications.  You can put function names or arrays inside a
+    # cell array or struct, reference into that to get the function, and hand
+    # it arguments.  E.g.:
+    #    x = somearray{1}(x, 3)
+    # or even
+    #    somestruct(2).somefieldname = str2func('functionname')
+    #    somestruct(2).somefieldname(42)
+    #
+    # The following definition is incomplete w.r.t. what MATLAB allows, since
+    # MATLAB would probably let you use the full range of expressions as the
+    # base for the function.
+
+    _fun_access         = Group(_cell_access('cell array')) \
+                          ^ Group(_simple_struct) \
+                          ^ Group(_id)
+    _funcall_or_array  << Group(_fun_access('name')
+                                + _LPAR + _opt_arglist + _RPAR
+                               ).setResultsName('array or function')  # noqa
 
     # "Command syntax" function calls and array references.
     #
@@ -1259,7 +1322,7 @@ class MatlabGrammar:
     #    print -dpng magicsquare.png
     #    save /tmp/foo
     #    save relative/path.m
-    # etc.  As the docs say, the following are equivalent:
+    # etc.  As the MATLAB docs say, the following are equivalent:
     #    load durer.mat        % Command syntax
     #    load('durer.mat')     % Function syntax
     # Note the way that the first form treats the arguments as (unquoted)
@@ -1274,58 +1337,43 @@ class MatlabGrammar:
     # The grammar below for command-style syntax is not fully compliant.  One
     # known failure: it requires an argument.  We deal with command-syntax
     # function calls *without* arguments separately in post-processing.
+    #
+    # We try to avoid mistakenly parsing an expression like "x > [1 2]" alone
+    # on a line as a command-style function call.  Here it's done with a
+    # negative lookahead test against many operators.  However, the list in
+    # _operators is not all possible operators, on purpose: if something
+    # looks like a unary operator (especially minus or logical not), we don't
+    # want to fail to treat it as a possible first argument to a
+    # command-style funcall.  (E.g., "print -dpng foo.png")
 
-    _noncmd_arg_start  = _EQUALS | _LPAR | _delimiter | _comment
+    _operators         = Group(_PLUS ^ _TIMES ^ _ELTIMES ^ _MLDIVIDE
+                               ^ _RDIVIDE ^ _LDIVIDE ^ _MPOWER ^ _ELPOWER
+                               ^ _LE ^ _GE ^ _NE ^ _LT ^ _GT ^ _EQ)
+    _noncmd_arg_start  = _EQUALS | _LPAR | _operators | _delimiter | _comment
     _fun_cmd_arg       = _STRING | CharsNotIn(" ,;\t\n\r")
     _fun_cmd_end       = _delimiter | _comment | _EOL
     _fun_cmd_arglist   = _fun_cmd_arg + ZeroOrMore(NotAny(_fun_cmd_end)
-                                                   + _WHITE.suppress()
+                                                   + _WHITE
                                                    + _fun_cmd_arg)
-    _funcall_cmd_style = Group(_name + _WHITE.suppress() + NotAny(_noncmd_arg_start)
+    _funcall_cmd_style = Group(_name + _WHITE + NotAny(_noncmd_arg_start)
                                + _fun_cmd_arglist('arguments')
                               ).setResultsName('command statement')
 
-    # "Function syntax" function calls.
+    # Function calls without parentheses.
     #
-    # Unfortunately, the function call forms using parentheses look identical
-    # to matrix/array accesses, and in fact in MATLAB there's no way to tell
-    # them apart except by determining whether the first name is a function
-    # or command.  This means it's ultimately run-time dependent, and depends
-    # on the functions and scripts that the user has defined.
+    # A final bit of nastiness in MATLAB is the ability to invoke a function
+    # without using parenthese, such as this example:
     #
-    # We don't have access to the user's MATLAB environment, so we are left
-    # to resort to various heuristics to try to guess what we have.
+    #   if (rand > 0.50)
+    #       A=1;
+    #   end;
     #
-    # First, if something comes through in "command syntax", we can assume
-    # it's a function call.  (Handled by _funcall_cmd_style above.)
-    #
-    # Second, in arrays, you can use bare ':' in the argument list.  This
-    # means that if a ':' is found, it's an array reference for sure --
-    # possibly helping to disambiguate some cases.  For that reason, the ':'
-    # case is split out below.  (Not yet sure if it's worth it.)
-    #
-    # Another complication: you can put function names or arrays inside a
-    # cell array or struct, reference into that to get the function, and hand
-    # it arguments.  E.g.:
-    #    x = somearray{1}(x, 3)
-    # or even
-    #    somestruct(2).somefieldname = str2func('functionname')
-    #    somestruct(2).somefieldname(42)
-    #
-    # Beyond that, we call all cases we can't resolve syntactically as "array
-    # or function", and then in post-processing, attempt to apply other
-    # heuristics to figure out which ones are in fact functions.
+    # Currently, we only recognize this case if the function involved is a
+    # known MATLAB function.  This is done in post processing, but we tag the
+    # possible cases during the initial parse by looking for _funcall_or_id
+    # instead of a plain _id.
 
-    _simple_struct_base = Group(_array_access | _id)
-    _simple_struct      = Group(_simple_struct_base('struct base')
-                                + _DOT.leaveWhitespace()
-                                + _struct_field('field'))
-    _fun_access         = Group(_id) \
-                          ^ Group(_cell_access('cell array')) \
-                          ^ Group(_simple_struct('struct'))
-    _funcall_or_array  << Group(_fun_access('name')
-                                + _LPAR + _opt_arglist + _RPAR
-                               ).setResultsName('array or function')  # noqa
+    _funcall_or_id = _id('funcall or id')
 
     # Transpose operators.  The operator must immediately follow the thing
     # being transposed, without whitespace.
@@ -1348,17 +1396,25 @@ class MatlabGrammar:
     # at least we can handle that much (though handling _expr completely
     # would be more correct).
 
-    _paren_expr    = _LPAR + Optional(_WHITE).suppress() + _expr_incl_end \
-                     + Optional(_WHITE).suppress() + _RPAR
+
+    # 2016-01-23 still doesn't work
+    # Problem is this is a left-recursive grammar, which a simple
+    # recursive-descent parser like Pyparsing can't handle.
+    # http://stackoverflow.com/a/14420388/743730
+    # Need to turn it around somehow
+
+
+    _paren_expr    = _LPAR + Optional(_WHITE) + _expr \
+                     + Optional(_WHITE) + _RPAR
+    _transp_op     = _NC_TRANSP ^ _CC_TRANSP
     _transp_what   = _paren_expr ^ Group(_funcall_or_array
                                          | _cell_array
                                          | _bare_array
                                          | _array_access
                                          | _fun_handle
-                                         | _id
+                                         | _funcall_or_id
                                          | _BOOLEAN
                                          | _NUMBER)
-    _transp_op     = _NC_TRANSP ^ _CC_TRANSP
     _transpose     = Group(_transp_what('operand').leaveWhitespace()
                            + _transp_op('operator').leaveWhitespace()
                           ).setResultsName('transpose')  # noqa
@@ -1367,37 +1423,37 @@ class MatlabGrammar:
     # ugliness, in that we need to allow the keyword 'end' in expressions
     # that involve array subscripts, but 'end' is generally not permitted
     # in other expression contexts.  (There's some question about what is
-    # permitted -- see http://stackoverflow.com/a/23017087/743730).  This
-    # leads to the following two versions of _operand and _expr.
+    # permitted -- see http://stackoverflow.com/a/23017087/743730).  We
+    # allow it everywhere, and again rely on the principle that the input is
+    # already valid MATLAB, so it won't contain 'end' where it's not allowed.
 
     _operand_basic = _transpose          \
                      | _funcall_or_array \
-                     | _bare_array       \
                      | _struct_access    \
                      | _array_access     \
                      | _cell_array       \
+                     | _bare_array       \
                      | _fun_handle       \
-                     | _id               \
+                     | _funcall_or_id    \
                      | _BOOLEAN          \
                      | _NUMBER           \
                      | _STRING
 
-    _operand          = Group(_operand_basic)
-    _operand_incl_end = Group(_operand_basic | _END)
+    _operand       = Group(_operand_basic)
 
     # The operator precedence rules in Matlab are listed here:
     # http://www.mathworks.com/help/matlab/matlab_prog/operator-precedence.html
 
     # Note: colon operator for 3 arguments is not implemented with the code
     # below, because it looks like PyParsing won't allow a ternary operator
-    # in infixNotation().  We define the colon operators as binary and then
-    # fix it in post-processing (see NodeTransformer).
+    # in infixNotation().  So, here we define the colon operators as binary,
+    # and then we fix it in post-processing in NodeTransformer.
 
-    _plusminus     = _PLUS ^ _MINUS.leaveWhitespace()
-    _uplusminusneg = _UMINUS ^ _UPLUS ^ _UNOT
+    _uplusminusneg = (_UMINUS ^ _UPLUS ^ _UNOT).leaveWhitespace() + NotAny(_WHITE)
+    _plusminus     = _PLUS ^ _MINUS
     _timesdiv      = _TIMES ^ _ELTIMES ^ _MRDIVIDE ^ _MLDIVIDE ^ _RDIVIDE ^ _LDIVIDE
     _power         = _MPOWER ^ _ELPOWER
-    _logical_op    = _LT ^ _LE ^ _GT ^ _GE ^ _EQ ^ _NE
+    _logical_op    = _LE ^ _GE ^ _NE ^ _LT ^ _GT ^ _EQ
     _colon_op      = _COLON('colon operator')
 
     _expr          << infixNotation(_operand, [
@@ -1413,11 +1469,38 @@ class MatlabGrammar:
         (Group(_SHORT_OR),      2, opAssoc.LEFT, makeLRlike(2)),
     ])
 
-    _expr_incl_end << infixNotation(_operand_incl_end, [
+    # MATLAB does something evil: the parsing behavior changes inside array
+    # expressions.  This can be seen by typing the following expressions into
+    # the MATLAB interpreter:
+    #
+    # 1 -1          result: 0
+    # [1 -1]        result: array of 2 elements, [1, -1]
+    # [1 - 1]       result: array of 1 element, [0]
+    # [1 -1 - 1]    result: array of 2 elements, [1, -2]
+    # 1 - 1         result: 0
+    # 1-1           result: 0
+    # [1- 1]        result: array of 1 element, [0]
+    # [1 2 -3 + 4]  result: array of 3 elements, [1, 2, 1]
+    # [1 2 -3 +4]   result: array of 4 elements, [1, 2, -3, 4]
+
+    # something to notice is you have an operation in these cases:
+    # 1) if there's no space after the 1st operand
+    # 2) if there's a space after the 1st operand AND after the operator
+
+
+    # 2016-01-12 this works for all the cases above! see d.m
+    # It does NOT work if you use _plusminus instead of _PLUS ^ _MINUS.  Hmm.
+
+    _plusminus_array = (OneOrMore(_WHITE) + (_PLUS ^ _MINUS).leaveWhitespace() + OneOrMore(_WHITE)) \
+                       | (NotAny(_WHITE) + (_PLUS ^ _MINUS).leaveWhitespace())
+
+    _operand_in_array = Group(_end_op | _operand_basic).leaveWhitespace()
+
+    _expr_in_array << infixNotation(_operand_in_array, [
         (Group(_uplusminusneg), 1, opAssoc.RIGHT),
         (Group(_power),         2, opAssoc.LEFT, makeLRlike(2)),
         (Group(_timesdiv),      2, opAssoc.LEFT, makeLRlike(2)),
-        (Group(_plusminus),     2, opAssoc.LEFT, makeLRlike(2)),
+        (Group(_plusminus_array),     2, opAssoc.LEFT, makeLRlike(2)),
         (Group(_colon_op),      2, opAssoc.LEFT, makeLRlike(2)),
         (Group(_logical_op),    2, opAssoc.LEFT, makeLRlike(2)),
         (Group(_AND),           2, opAssoc.LEFT, makeLRlike(2)),
@@ -1511,7 +1594,7 @@ class MatlabGrammar:
 
     _scope_type     = Group(_PERSISTENT | _GLOBAL)         ('type')
     ParserElement.setDefaultWhitespaceChars(' \t')
-    _scope_var_list = Group(_id) + ZeroOrMore(_WHITE.suppress() + Group(_id)).leaveWhitespace()
+    _scope_var_list = Group(_id) + ZeroOrMore(_WHITE + Group(_id)).leaveWhitespace()
     _scope_args     = _scope_var_list                      ('variables list')
     ParserElement.setDefaultWhitespaceChars(' \t\n\r')
     _scope_stmt     = Group(_scope_type + _scope_args)     ('scope declaration')
@@ -1702,38 +1785,37 @@ class MatlabGrammar:
     # Name each grammar object after itself, so that when PyParsing prints
     # debugging output, it uses the name rather than a generic regexp term.
 
-    _to_name = [ _AND, _BOOLEAN, _BREAK, _CASE, _CATCH, _CC_TRANSP, _CLASSDEF,
-                 _COLON, _COMMA, _CONTINUE, _DOT, _ELLIPSIS, _ELPOWER, _ELSE,
-                 _ELSEIF, _ELTIMES, _END, _EOL, _EQ, _EQUALS, _EXPONENT,
-                 _FALSE, _FLOAT, _FOR, _FUNCTION, _GE, _GLOBAL, _GT, _IF,
-                 _INTEGER, _LBRACE, _LBRACKET, _LDIVIDE, _LE, _LPAR, _LT,
-                 _MINUS, _MLDIVIDE, _MPOWER, _MRDIVIDE, _NC_TRANSP, _NE,
-                 _NUMBER, _OR, _OTHERWISE, _PARFOR, _PERSISTENT, _PLUS,
-                 _RBRACE, _RBRACKET, _RDIVIDE, _RETURN, _RPAR, _SEMI,
-                 _SHORT_AND, _SHORT_OR, _SOL, _SPMD, _STRING, _SWITCH, _TILDE,
-                 _TIMES, _TRUE, _TRY, _UMINUS, _UNOT, _UPLUS, _WHILE, _WHITE,
+    _to_name = [ _AND, _BOOLEAN, _CC_TRANSP, _COLON, _COMMA, _DOT, _ELLIPSIS,
+                 _ELPOWER, _ELTIMES, _EOL, _EQ, _EQUALS, _EXPONENT, _FLOAT,
+                 _GE, _GT, _INTEGER, _LBRACE, _LBRACKET, _LDIVIDE, _LE,
+                 _LPAR, _LT, _MINUS, _MLDIVIDE, _MPOWER, _MRDIVIDE,
+                 _NC_TRANSP, _NE, _NUMBER, _OR, _PLUS, _RBRACE, _RBRACKET,
+                 _RDIVIDE, _RPAR, _SEMI, _SHORT_AND, _SHORT_OR, _SOL,
+                 _STRING, _TILDE, _TIMES, _UMINUS, _UNOT, _UPLUS, _WHITE,
                  _anon_handle, _array_access, _array_args, _assignment,
                  _bare_array, _bare_cell, _block_c_end, _block_c_start,
                  _block_comment, _body, _break_stmt, _call_args, _catch_body,
                  _catch_term, _catch_var, _cell_access, _cell_args,
-                 _cell_array, _colon_op, _comma_subs, _comma_values, _comment,
-                 _continuation, _continue_stmt, _control_stmt, _delimiter,
-                 _else_stmt, _elseif_stmt, _expr, _expr, _expr_incl_end,
-                 _for_stmt, _for_version1, _for_version2, _fun_access,
-                 _fun_cmd_arg, _fun_cmd_arglist, _funcall_cmd_style,
-                 _fun_def_stmt, _fun_handle, _fun_outputs, _fun_params,
-                 _fun_paramslist, _funcall_or_array, _id, _identifier,
-                 _if_stmt, _lhs_array, _lhs_var, _line_c_start, _line_comment,
-                 _logical_op, _loop_var, _matlab_syntax, _multi_values,
-                 _named_handle, _noncmd_arg_start, _noncontent, _one_row,
-                 _one_sub, _operand, _operand_basic, _operand_incl_end,
-                 _opt_arglist, _other_assign, _paren_expr, _plusminus,
-                 _power, _reserved, _return_stmt, _row_sep, _rows, _scope_args,
-                 _scope_stmt, _scope_type, _scope_var_list, _shell_cmd,
-                 _shell_cmd_cmd, _simple_assign, _single_expr, _single_value,
-                 _space_subs, _space_values, _stmt, _stmt_list, _struct_access,
-                 _struct_base, _struct_field, _switch_other, _switch_stmt,
-                 _timesdiv, _transp_op, _transp_what, _transpose, _try_stmt,
+                 _cell_array, _colon_op, _comma_subs, _comma_values,
+                 _comment, _continuation, _continue_stmt, _control_stmt,
+                 _delimiter, _else_stmt, _elseif_stmt, _end_op, _expr,
+                 _expr_in_array, _for_stmt, _for_version1, _for_version2,
+                 _fun_access, _fun_cmd_arg, _fun_cmd_arglist,
+                 _funcall_cmd_style, _fun_def_stmt, _funcall_or_id,
+                 _fun_handle, _fun_outputs, _fun_params, _fun_paramslist,
+                 _funcall_or_array, _id, _identifier, _if_stmt, _lhs_array,
+                 _lhs_var, _line_c_start, _line_comment, _logical_op,
+                 _loop_var, _matlab_syntax, _multi_values, _named_handle,
+                 _noncmd_arg_start, _noncontent, _one_row, _one_sub,
+                 _operand, _operand_basic, _operand_in_array, _opt_arglist,
+                 _other_assign, _paren_expr, _plusminus, _power, _reserved,
+                 _return_stmt, _row_sep, _rows, _scope_args, _scope_stmt,
+                 _scope_type, _scope_var_list, _shell_cmd, _shell_cmd_cmd,
+                 _simple_assign, _simple_struct, _simple_struct_base,
+                 _single_expr, _single_value, _space_subs, _space_values,
+                 _stmt, _stmt_list, _struct_access, _struct_base,
+                 _struct_field, _switch_other, _switch_stmt, _timesdiv,
+                 _transp_op, _transp_what, _transpose, _try_stmt,
                  _uplusminusneg, _while_stmt ]
 
     def _object_name(self, obj):
