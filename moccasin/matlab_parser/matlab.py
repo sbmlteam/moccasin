@@ -503,7 +503,10 @@ class For(FlowControl):
 
 
 class Branch(FlowControl):
-    __attr_names = ['kind']
+    _attr_names = ['kind']
+
+    def __repr__(self):
+        return 'Branch(kind={})'.format(self.kind)
 
     def __str__(self):
         if self.kind == 'break':
