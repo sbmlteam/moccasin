@@ -1,0 +1,3 @@
+[
+Array(is_cell=False, rows=[[BinaryOp(op='<', left=UnaryOp(op='~', operand=Identifier(name='x')), right=Identifier(name='y')), Number(value='-1')]])
+]

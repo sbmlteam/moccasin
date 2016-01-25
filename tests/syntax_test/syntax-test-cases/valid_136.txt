@@ -1,0 +1,3 @@
+[
+Assignment(lhs=ArrayRef(is_cell=False, name=Identifier(name='yright'), args=[Special(value=':'), Special(value='end')]), rhs=ArrayOrFunCall(name=Identifier(name='y'), args=[Identifier(name='b')]))
+]

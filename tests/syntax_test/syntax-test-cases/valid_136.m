@@ -1,0 +1,1 @@
+yright(:,end) = y(b)

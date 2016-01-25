@@ -1,0 +1,3 @@
+[
+For(var=Identifier(name='i'), expr=ColonOp(left=Number(value='1'), middle=None, right=Number(value='3')), body=[FunCall(name=Identifier(name='eig'), args=[FunCall(name=Identifier(name='squeeze'), args=[ArrayRef(is_cell=False, name=Identifier(name='A'), args=[Identifier(name='i'), Special(value=':'), Special(value=':')])])])])
+]

@@ -1,0 +1,3 @@
+[
+Assignment(lhs=Identifier(name='B'), rhs=FunCall(name=Identifier(name='cat'), args=[Number(value='3'), Array(is_cell=False, rows=[[Number(value='2'), Number(value='8')], [Number(value='0'), Number(value='5')]]), Array(is_cell=False, rows=[[Number(value='1'), Number(value='3')], [Number(value='7'), Number(value='9')]]), Array(is_cell=False, rows=[[Number(value='2'), Number(value='3')], [Number(value='4'), Number(value='6')]])]))
+]

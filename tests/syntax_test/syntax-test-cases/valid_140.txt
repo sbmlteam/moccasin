@@ -1,0 +1,3 @@
+[
+Assignment(lhs=Identifier(name='D'), rhs=FunCall(name=Identifier(name='norm'), args=[BinaryOp(op='-', left=Identifier(name='A'), right=BinaryOp(op='*', left=Identifier(name='L'), right=Transpose(op=''', operand=Identifier(name='L')))), String(value='fro')]))
+]

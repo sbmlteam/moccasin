@@ -1,0 +1,8 @@
+[
+UnaryOp(op='~', operand=FunCall(name=Identifier(name='false'), args=[]))
+UnaryOp(op='~', operand=FunCall(name=Identifier(name='true'), args=[]))
+UnaryOp(op='~', operand=UnaryOp(op='~', operand=FunCall(name=Identifier(name='false'), args=[])))
+UnaryOp(op='~', operand=UnaryOp(op='~', operand=FunCall(name=Identifier(name='true'), args=[])))
+Assignment(lhs=Identifier(name='a'), rhs=UnaryOp(op='~', operand=UnaryOp(op='~', operand=UnaryOp(op='~', operand=FunCall(name=Identifier(name='true'), args=[])))))
+Assignment(lhs=Identifier(name='a'), rhs=UnaryOp(op='~', operand=UnaryOp(op='~', operand=UnaryOp(op='~', operand=UnaryOp(op='~', operand=FunCall(name=Identifier(name='false'), args=[]))))))
+]

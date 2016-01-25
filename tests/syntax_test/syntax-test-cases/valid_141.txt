@@ -1,0 +1,4 @@
+[
+Assignment(lhs=Identifier(name='arbitraryValue'), rhs=Number(value='5'))
+ArrayOrFunCall(name=StructRef(name=Identifier(name='testCase'), field=Identifier(name='verifyThat'), dynamic_access=False), args=[FunCall(name=Identifier(name='false'), args=[]), Identifier(name='IsTrue'), Array(is_cell=False, rows=[[String(value='should have been true'), AnonFun(args=[], body=FunCall(name=Identifier(name='system'), args=[String(value='ps')])), Identifier(name='arbitraryValue'), Identifier(name='MyCustomDiagnostic')]])])
+]

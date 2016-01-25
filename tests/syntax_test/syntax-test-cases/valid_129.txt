@@ -1,0 +1,5 @@
+[
+Assignment(lhs=Identifier(name='A'), rhs=Identifier(name='myclassexample'))
+Assignment(lhs=StructRef(name=ArrayRef(is_cell=False, name=Identifier(name='A'), args=[Number(value='1')]), field=Identifier(name='data'), dynamic_access=False), rhs=Number(value='1'))
+Assignment(lhs=StructRef(name=ArrayRef(is_cell=False, name=Identifier(name='A'), args=[Number(value='2')]), field=Identifier(name='data'), dynamic_access=False), rhs=Number(value='-2'))
+]
