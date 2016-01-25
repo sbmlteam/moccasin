@@ -70,7 +70,6 @@
 # |  |  +- Primitive
 # |  |  |  +- Number
 # |  |  |  +- String
-# |  |  |  +- Boolean
 # |  |  |  `- Special       # A colon or tilde character, or the string "end".
 # |  |  |
 # |  |  +- Array            # Unnamed arrays ("square-bracket" type or cell).
@@ -296,7 +295,7 @@
 # Here is an example.  Suppose that an input consists of this:
 #
 #  if x > 1
-#      foo = true
+#      foo = 5
 #  end
 #
 # The MOCCASIN parser will return the following (with indentation added here
@@ -304,7 +303,7 @@
 #
 #  [
 #  If(cond=BinaryOp(op='>', left=Identifier(name='x'), right=Number(value='1')),
-#     body=[ Assignment(lhs=Identifier(name='foo'), rhs=Boolean(value='true')) ],
+#     body=[ Assignment(lhs=Identifier(name='foo'), rhs=Number(value='5')) ],
 #     elseif_tuples=[],
 #     else=None)
 #  ]
@@ -447,10 +446,6 @@ class ParseResultsTransformer:
         return Number(value=pr['number'])
 
 
-    def visit_boolean(self, pr):
-        return Boolean(value=pr['boolean'])
-
-
     def visit_string(self, pr):
         return String(value=pr['string'])
 
@@ -476,7 +471,11 @@ class ParseResultsTransformer:
         operand = self.visit(pr[1])
         if op == '-' and isinstance(operand, Number):
             # Replace [UnaryOp(op='-'), Number(value='x')] with Number(value='-x')
-            return Number(value=op + operand.value)
+            # But watch out if it's already a negative number.
+            if operand.value.startswith('-'):
+                return Number(value=operand.value[1:])
+            else:
+                return Number(value=op + operand.value)
         elif op == '+' and isinstance(operand, Number):
             # Doesn't seem worth preserving the '+'.
             # Replace [UnaryOp(op='+'), Number(value='x')] with Number(value='x')
@@ -759,15 +758,15 @@ class ParseResultsTransformer:
         return ScopeDecl(type=the_type, variables=the_vars)
 
 
-    def visit_break(self, pr):
+    def visit_break_statement(self, pr):
         return Branch(kind='break')
 
 
-    def visit_return(self, pr):
+    def visit_return_statement(self, pr):
         return Branch(kind='return')
 
 
-    def visit_continue(self, pr):
+    def visit_continue_statement(self, pr):
         return Branch(kind='continue')
 
 
@@ -869,7 +868,7 @@ class NodeTransformer(MatlabNodeVisitor):
                 # be considered a function.
                 self._parser._save_type(lhs.name, 'function')
             elif (isinstance(rhs, Array) or isinstance(rhs, Number)
-                  or isinstance(rhs, Boolean) or isinstance(rhs, String)):
+                  or isinstance(rhs, String)):
                 self._parser._save_type(lhs.name, 'variable')
         elif isinstance(lhs, ArrayRef):
             # A function call can't appear on the LHS of an assignment, so
@@ -999,7 +998,10 @@ class MatlabGrammar:
 
     _EOL        = LineEnd().suppress()
     _SOL        = LineStart().suppress()
+
+    ParserElement.setDefaultWhitespaceChars(' \t')
     _WHITE      = White(ws=' \t').suppress()
+    ParserElement.setDefaultWhitespaceChars(' \t\n\r')
 
     _SEMI       = Literal(';').suppress()
     _COMMA      = Literal(',').suppress()
@@ -1022,15 +1024,13 @@ class MatlabGrammar:
                    | Combine(Word(nums) + '.' + _EXPONENT)
                    | Combine(Word(nums) + '.' + Word(nums))
                    | Combine('.' + Word(nums) + _EXPONENT)
-                   | Combine('.' + Word(nums)))
+                   | Combine('.' + Word(nums))
+                   | Combine(Word(nums) + '.'))
 
     # Next come definitions of terminal elements.  The funky syntax with the
     # second parenthesized argument on each line is something PyParsing allows;
     # it's a short form, equivalent to calling .setResultsName(...).
 
-    _TRUE       = Keyword('true')
-    _FALSE      = Keyword('false')
-    _BOOLEAN    = (_TRUE | _FALSE)                    ('boolean')
     _NUMBER     = (_FLOAT | _INTEGER)                 ('number')
     _STRING     = QuotedString("'", escQuote="''")    ('string')
 
@@ -1093,14 +1093,14 @@ class MatlabGrammar:
     # Identifiers.
     #
     # _id defines identifiers that can be used in user programs.  They can't
-    # be the same as known MATLAB language keywords or the words for Boolean
-    # values.  _name defines a labeled version of _id that we use in most
-    # grammar expressions below to avoid writing "Group(_id)('name')".
+    # be the same as known MATLAB language keywords.  _name defines a labeled
+    # version of _id that we use in most grammar expressions below to avoid
+    # writing "Group(_id)('name')".
 
     _reserved   = _BREAK | _CASE | _CATCH | _CLASSDEF | _CONTINUE \
-                  | _ELSE | _ELSEIF | _END | _FALSE | _FOR | _FUNCTION \
+                  | _ELSE | _ELSEIF | _END | _FOR | _FUNCTION \
                   | _GLOBAL | _IF | _OTHERWISE | _PARFOR | _PERSISTENT \
-                  | _RETURN | _SPMD | _SWITCH | _TRUE | _TRY | _WHILE
+                  | _RETURN | _SPMD | _SWITCH | _TRY | _WHILE
 
     _identifier = Word(alphas, alphanums + '_')('identifier')
     _id         = NotAny(_reserved) + _identifier
@@ -1179,12 +1179,23 @@ class MatlabGrammar:
     #         3 4]
     # That's the reason for the next call to setDefaultWhitespaceChars().
     # This is turned off again further below.
+    #
+    # Also, the definitions of the array contents grammars below explicitly
+    # include references to _WHITE, which normally would not be necessary and
+    # considered redundant, *except* that in order to deal with some other
+    # problems with array parsing, the definition of expressions used as
+    # array contents explicitly turn off the regular whitespace rules.  This
+    # is why whitespace appears in the next few terms.  So, if you find
+    # yourself looking at these and thinking that the business involving
+    # Optional(_WHITE) and so on is useless and can be removed: no, they have
+    # to stay to make later definitions work.
 
     ParserElement.setDefaultWhitespaceChars(' \t')
 
     _one_sub       = Group(_COLON('colon')) | _expr_in_array
-    _comma_subs    = _one_sub + ZeroOrMore(_COMMA + _one_sub)
-    _space_subs    = _one_sub.leaveWhitespace() + ZeroOrMore(_WHITE + _one_sub)
+    _comma_subs    = _one_sub + ZeroOrMore(Optional(_WHITE) + _COMMA + Optional(_WHITE) + _one_sub)
+    _space_subs    = _one_sub + ZeroOrMore(OneOrMore(_WHITE) + _one_sub)
+
     _call_args     = delimitedList(_expr)
     _opt_arglist   = Optional(_call_args('argument list'))
 
@@ -1192,9 +1203,9 @@ class MatlabGrammar:
     # element contents have the same data type.  But again, since we expect our
     # input to be valid Matlab, we don't expect to have to verify that property.
 
-    _row_sep       = _SEMI | _EOL | _comment.suppress()
+    _row_sep       = Optional(_WHITE) + _SEMI | Optional(_WHITE) + _comment.suppress() | _EOL
     _one_row       = _comma_subs('subscript list') ^ _space_subs('subscript list')
-    _rows          = Group(_one_row) + ZeroOrMore(_row_sep + Group(_one_row))
+    _rows          = Group(_one_row) + ZeroOrMore(_row_sep + Optional(_WHITE) + Group(_one_row))
     _bare_array    = Group(_LBRACKET + Optional(_rows('row list')) + _RBRACKET
                              ).setResultsName('array')  # noqa
 
@@ -1371,7 +1382,9 @@ class MatlabGrammar:
     # Currently, we only recognize this case if the function involved is a
     # known MATLAB function.  This is done in post processing, but we tag the
     # possible cases during the initial parse by looking for _funcall_or_id
-    # instead of a plain _id.
+    # instead of a plain _id.  This is why the following seemingly-pointless
+    # definition exists, and is used instead of using _id directly in
+    # _operand_basic and other similar places later.
 
     _funcall_or_id = _id('funcall or id')
 
@@ -1397,7 +1410,7 @@ class MatlabGrammar:
     # would be more correct).
 
 
-    # 2016-01-23 still doesn't work
+    # 2016-01-23 still doesn't work for nested transposes.
     # Problem is this is a left-recursive grammar, which a simple
     # recursive-descent parser like Pyparsing can't handle.
     # http://stackoverflow.com/a/14420388/743730
@@ -1413,7 +1426,6 @@ class MatlabGrammar:
                                          | _array_access
                                          | _fun_handle
                                          | _funcall_or_id
-                                         | _BOOLEAN
                                          | _NUMBER)
     _transpose     = Group(_transp_what('operand').leaveWhitespace()
                            + _transp_op('operator').leaveWhitespace()
@@ -1435,7 +1447,6 @@ class MatlabGrammar:
                      | _bare_array       \
                      | _fun_handle       \
                      | _funcall_or_id    \
-                     | _BOOLEAN          \
                      | _NUMBER           \
                      | _STRING
 
@@ -1449,7 +1460,7 @@ class MatlabGrammar:
     # in infixNotation().  So, here we define the colon operators as binary,
     # and then we fix it in post-processing in NodeTransformer.
 
-    _uplusminusneg = (_UMINUS ^ _UPLUS ^ _UNOT).leaveWhitespace() + NotAny(_WHITE)
+    _uplusminusneg = _UMINUS ^ _UPLUS ^ _UNOT
     _plusminus     = _PLUS ^ _MINUS
     _timesdiv      = _TIMES ^ _ELTIMES ^ _MRDIVIDE ^ _MLDIVIDE ^ _RDIVIDE ^ _LDIVIDE
     _power         = _MPOWER ^ _ELPOWER
@@ -1482,14 +1493,14 @@ class MatlabGrammar:
     # [1- 1]        result: array of 1 element, [0]
     # [1 2 -3 + 4]  result: array of 3 elements, [1, 2, 1]
     # [1 2 -3 +4]   result: array of 4 elements, [1, 2, -3, 4]
-
-    # something to notice is you have an operation in these cases:
-    # 1) if there's no space after the 1st operand
-    # 2) if there's a space after the 1st operand AND after the operator
-
-
-    # 2016-01-12 this works for all the cases above! see d.m
-    # It does NOT work if you use _plusminus instead of _PLUS ^ _MINUS.  Hmm.
+    #
+    # The only solution I have found so far is to define the expression
+    # grammar differently for the case of array contents.  This is the reason
+    # for _expr_in_array below; this version of _expr deals with whitespace
+    # explicitly.  The definitions of arrays and their subscripts earlier in
+    # this file have explicit whitespace definitions in them, which wouldn't
+    # be necessary except for the fact that _operand_in_array below uses
+    # leaveWhitespace() to cause whitespace to be significant.
 
     _plusminus_array = (OneOrMore(_WHITE) + (_PLUS ^ _MINUS).leaveWhitespace() + OneOrMore(_WHITE)) \
                        | (NotAny(_WHITE) + (_PLUS ^ _MINUS).leaveWhitespace())
@@ -1785,7 +1796,7 @@ class MatlabGrammar:
     # Name each grammar object after itself, so that when PyParsing prints
     # debugging output, it uses the name rather than a generic regexp term.
 
-    _to_name = [ _AND, _BOOLEAN, _CC_TRANSP, _COLON, _COMMA, _DOT, _ELLIPSIS,
+    _to_name = [ _AND, _CC_TRANSP, _COLON, _COMMA, _DOT, _ELLIPSIS,
                  _ELPOWER, _ELTIMES, _EOL, _EQ, _EQUALS, _EXPONENT, _FLOAT,
                  _GE, _GT, _INTEGER, _LBRACE, _LBRACKET, _LDIVIDE, _LE,
                  _LPAR, _LT, _MINUS, _MLDIVIDE, _MPOWER, _MRDIVIDE,
