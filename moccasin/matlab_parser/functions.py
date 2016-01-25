@@ -23,6 +23,28 @@
 # Globals.
 # .............................................................................
 
+# Certain things here are unintuitive (to me, anyway).  For example, it turns
+# out that 'pi' is a function in MATLAB -- a function that takes no arguments.
+# To test what kind of thing something is, you can use the MATLAB 'exist'
+# function.  E.g.,:
+#   exist('pi', 'builtin')
+# The following page describes the meaning of the return values:
+# http://www.mathworks.com/help/matlab/ref/exist.html
+#
+# 0 - name does not exist.
+# 1 - name is a variable in the workspace.
+# 2 - One of the following is true:
+#     name exists on your MATLAB search path as a file with extension .m.
+#     name is the name of an ordinary file on your MATLAB search path.
+#     name is the full pathname to any file.
+# 3 - name exists as a MEX-file on your MATLAB search path.
+# 4 - name exists as a Simulink model or library file on your MATLAB search path.
+# 5 - name is a built-in MATLAB function.
+# 6 - name is a P-file on your MATLAB search path.
+# 7 - name is a folder.
+# 8 - name is a class.
+#     (exist returns 0 for Java classes if you start MATLAB with the -nojvm option.)
+
 matlab_symbols = {
     'abs': 1,
     'accumarray': 1,
