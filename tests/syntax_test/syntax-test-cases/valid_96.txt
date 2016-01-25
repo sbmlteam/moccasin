@@ -1,0 +1,5 @@
+[
+Assignment(lhs=Identifier(name='b'), rhs=Number(value='1'))
+Assignment(lhs=Identifier(name='a'), rhs=Number(value='20'))
+Assignment(lhs=Identifier(name='x'), rhs=BinaryOp(op='&&', left=BinaryOp(op='~=', left=Identifier(name='b'), right=Number(value='0')), right=BinaryOp(op='>', left=BinaryOp(op='/', left=Identifier(name='a'), right=Identifier(name='b')), right=Number(value='18.5'))))
+]

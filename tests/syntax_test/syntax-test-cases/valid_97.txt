@@ -1,0 +1,3 @@
+[
+Assignment(lhs=Identifier(name='x'), rhs=Transpose(op=''', operand=Array(is_cell=False, rows=[[Number(value='1.3'), Number(value='-3.56'), Number(value='8.23'), Number(value='-5'), Number(value='-0.01')]])))
+]

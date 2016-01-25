@@ -1,0 +1,5 @@
+[
+Assignment(lhs=Identifier(name='A2'), rhs=FunCall(name=Identifier(name='accumarray'), args=[Identifier(name='subs'), Identifier(name='val'), Array(is_cell=False, rows=[]), AnonFun(args=[Identifier(name='x')], body=FunCall(name=Identifier(name='var'), args=[Identifier(name='x'), Number(value='1')]))]))
+Assignment(lhs=Identifier(name='A'), rhs=FunCall(name=Identifier(name='accumarray'), args=[Identifier(name='subs'), Identifier(name='val'), Array(is_cell=False, rows=[]), AnonFun(args=[Identifier(name='x')], body=FunCall(name=Identifier(name='sum'), args=[Identifier(name='x'), String(value='native')]))]))
+Assignment(lhs=Identifier(name='A'), rhs=FunCall(name=Identifier(name='accumarray'), args=[Identifier(name='subs'), Identifier(name='val'), Array(is_cell=False, rows=[]), AnonFun(args=[Identifier(name='x')], body=Array(is_cell=True, rows=[[Identifier(name='x')]]))]))
+]
