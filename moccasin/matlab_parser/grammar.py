@@ -998,10 +998,17 @@ class MatlabGrammar:
 
     _EOL        = LineEnd().suppress()
     _SOL        = LineStart().suppress()
+    _WHITE      = White(ws=' \t').suppress()
+
+    # Note: For MATLAB, we often need to control where line breaks are
+    # allowed.  In PyParsing, the whitespace property is attached to term
+    # definitions and not to definitions that only combine the terms; i.e.,
+    # when using the "^" or "|" operators to combine terms, it doesn't matter
+    # if you precede that with setDefaultWhitespaceChars settings.  You have
+    # to set the value for the individual term expressions.  That's why some
+    # of the following primitives are wrapped with setDefaultWhitespaceChars.
 
     ParserElement.setDefaultWhitespaceChars(' \t')
-    _WHITE      = White(ws=' \t').suppress()
-    ParserElement.setDefaultWhitespaceChars(' \t\n\r')
 
     _SEMI       = Literal(';').suppress()
     _COMMA      = Literal(',').suppress()
@@ -1014,6 +1021,8 @@ class MatlabGrammar:
     _EQUALS     = Literal('=').suppress()
     _DOT        = Literal('.').suppress()
     _ELLIPSIS   = Literal('...')
+
+    ParserElement.setDefaultWhitespaceChars(' \t\n\r')
 
     # This definition of numbers knowingly ignores imaginary numbers because
     # they're not used in our domain.
@@ -1035,6 +1044,8 @@ class MatlabGrammar:
     _STRING     = QuotedString("'", escQuote="''")    ('string')
 
     _TILDE      = Literal('~')                        ('tilde')
+
+    ParserElement.setDefaultWhitespaceChars(' \t')
 
     _UMINUS     = Literal('-')                        ('unary operator')
     _UPLUS      = Literal('+')                        ('unary operator')
@@ -1065,6 +1076,8 @@ class MatlabGrammar:
     _COLON      = Literal(':')
     _NC_TRANSP  = Literal(".'")
     _CC_TRANSP  = Literal("'")
+
+    ParserElement.setDefaultWhitespaceChars(' \t\n\r')
 
     # Keywords.  This list is based on what the command 'iskeyword' returns
     # in MATLAB 2014b.  Note that 'end' as an operator is defined again below.
@@ -1156,14 +1169,15 @@ class MatlabGrammar:
     # character. However, sometimes Matlab syntax requires special care with
     # EOL, so in those cases, EOL is handled explicitly.
 
-    _delimiter     = _COMMA | _SEMI
-
     _line_c_start  = Literal('%').suppress()
     _block_c_start = Literal('%{').suppress()
     _block_c_end   = Literal('%}').suppress()
     _line_comment  = Group(_line_c_start + restOfLine + _EOL)
     _block_comment = Group(_block_c_start + SkipTo(_block_c_end, include=True))
     _comment       = Group(_block_comment('comment') | _line_comment('comment'))
+
+    _delimiter     = _COMMA | _SEMI
+    _noncontent    = _delimiter | _comment | _EOL
 
     # Comma-separated arguments to matrix/array/cell arrays can have ':'
     # in arguments, but arguments to function calls can't.  Parameter lists in
@@ -1319,7 +1333,7 @@ class MatlabGrammar:
     _fun_access         = Group(_cell_access('cell array')) \
                           ^ Group(_simple_struct) \
                           ^ Group(_id)
-    _funcall_or_array  << Group(_fun_access('name')
+    _funcall_or_array <<= Group(_fun_access('name')
                                 + _LPAR + _opt_arglist + _RPAR
                                ).setResultsName('array or function')  # noqa
 
@@ -1362,8 +1376,7 @@ class MatlabGrammar:
                                ^ _LE ^ _GE ^ _NE ^ _LT ^ _GT ^ _EQ)
     _noncmd_arg_start  = _EQUALS | _LPAR | _operators | _delimiter | _comment
     _fun_cmd_arg       = _STRING | CharsNotIn(" ,;\t\n\r")
-    _fun_cmd_end       = _delimiter | _comment | _EOL
-    _fun_cmd_arglist   = _fun_cmd_arg + ZeroOrMore(NotAny(_fun_cmd_end)
+    _fun_cmd_arglist   = _fun_cmd_arg + ZeroOrMore(NotAny(_noncontent)
                                                    + _WHITE
                                                    + _fun_cmd_arg)
     _funcall_cmd_style = Group(_name + _WHITE + NotAny(_noncmd_arg_start)
@@ -1414,7 +1427,8 @@ class MatlabGrammar:
     # Problem is this is a left-recursive grammar, which a simple
     # recursive-descent parser like Pyparsing can't handle.
     # http://stackoverflow.com/a/14420388/743730
-    # Need to turn it around somehow
+    # Need to turn it around somehow.
+    # Also try using Combine(...)
 
 
     _paren_expr    = _LPAR + Optional(_WHITE) + _expr \
@@ -1456,9 +1470,9 @@ class MatlabGrammar:
     # http://www.mathworks.com/help/matlab/matlab_prog/operator-precedence.html
 
     # Note: colon operator for 3 arguments is not implemented with the code
-    # below, because it looks like PyParsing won't allow a ternary operator
-    # in infixNotation().  So, here we define the colon operators as binary,
-    # and then we fix it in post-processing in NodeTransformer.
+    # below, because I couldn't seem to make the infixNotation ternary case
+    # work.  So, here the colon op is defined as binary, and then it's fixed
+    # up in post-processing in NodeTransformer.
 
     _uplusminusneg = _UMINUS ^ _UPLUS ^ _UNOT
     _plusminus     = _PLUS ^ _MINUS
@@ -1467,7 +1481,7 @@ class MatlabGrammar:
     _logical_op    = _LE ^ _GE ^ _NE ^ _LT ^ _GT ^ _EQ
     _colon_op      = _COLON('colon operator')
 
-    _expr          << infixNotation(_operand, [
+    _expr        <<= infixNotation(_operand, [
         (Group(_uplusminusneg), 1, opAssoc.RIGHT),
         (Group(_power),         2, opAssoc.LEFT, makeLRlike(2)),
         (Group(_timesdiv),      2, opAssoc.LEFT, makeLRlike(2)),
@@ -1507,7 +1521,7 @@ class MatlabGrammar:
 
     _operand_in_array = Group(_end_op | _operand_basic).leaveWhitespace()
 
-    _expr_in_array << infixNotation(_operand_in_array, [
+    _expr_in_array <<= infixNotation(_operand_in_array, [
         (Group(_uplusminusneg), 1, opAssoc.RIGHT),
         (Group(_power),         2, opAssoc.LEFT, makeLRlike(2)),
         (Group(_timesdiv),      2, opAssoc.LEFT, makeLRlike(2)),
@@ -1544,7 +1558,7 @@ class MatlabGrammar:
     _control_stmt   = Forward()
     _stmt_list      = Forward()
 
-    _single_expr    = _expr('expression') + FollowedBy(_delimiter | _comment | _EOL)
+    _single_expr    = _expr('expression') + FollowedBy(_noncontent)
     _test_expr      = _single_expr
     _body           = Group(_stmt_list)                    ('body')
     _break_stmt     = _BREAK                               ('break statement')
@@ -1566,7 +1580,6 @@ class MatlabGrammar:
 
     _catch_var      = Group(_id)                           ('catch variable')
     ParserElement.setDefaultWhitespaceChars(' \t')
-    _noncontent     = _delimiter | _comment | _EOL
     _catch_term     = _CATCH + Optional(NotAny(_noncontent) + _catch_var) + _noncontent
     ParserElement.setDefaultWhitespaceChars(' \t\n\r')
     _catch_body     = Group(_stmt_list)                    ('catch body')
@@ -1591,7 +1604,7 @@ class MatlabGrammar:
                             + Optional(_switch_other)
                             + _END)                        ('switch statement')
 
-    _control_stmt   << Group(_while_stmt
+    _control_stmt  <<= Group(_while_stmt
                              | _if_stmt
                              | _switch_stmt
                              | _for_stmt
@@ -1615,8 +1628,9 @@ class MatlabGrammar:
     # If an expression is written on a line outside of another construct,
     # it needs to be separated from other expressions by commas or newlines.
 
-    _standalone_expr = _expr('standalone expression') \
-                       + FollowedBy(_delimiter | _comment | _EOL)
+    ParserElement.setDefaultWhitespaceChars(' \t')
+    _standalone_expr = _expr('standalone expression') + FollowedBy(_noncontent)
+    ParserElement.setDefaultWhitespaceChars(' \t\n\r')
 
     # Statements.
     #
@@ -1631,7 +1645,10 @@ class MatlabGrammar:
                   | _standalone_expr)
     _stmt.ignore(_continuation)
 
-    _stmt_list << ZeroOrMore(_stmt ^ _shell_cmd ^ _delimiter ^ _comment)
+    # Statement lists are almost the full _matlab_syntax, except that
+    # they don't include function definitions.
+
+    _stmt_list <<= ZeroOrMore(_stmt ^ _shell_cmd ^ _noncontent)
 
     # Function definitions.
     #
@@ -1672,8 +1689,7 @@ class MatlabGrammar:
     #    (aside from comments), then the 'end' may be omitted.  Our syntax
     #    always only has it as optional.
 
-    _matlab_syntax << ZeroOrMore(_fun_def_stmt ^ _stmt ^ _shell_cmd
-                                 ^ _delimiter ^ _comment)
+    _matlab_syntax <<= ZeroOrMore(_fun_def_stmt ^ _stmt ^ _shell_cmd ^ _noncontent)
 
 
     # Generator for final MatlabNode-based output representation.
@@ -1825,7 +1841,8 @@ class MatlabGrammar:
                  _simple_assign, _simple_struct, _simple_struct_base,
                  _single_expr, _single_value, _space_subs, _space_values,
                  _stmt, _stmt_list, _struct_access, _struct_base,
-                 _struct_field, _switch_other, _switch_stmt, _timesdiv,
+                 _standalone_expr, _struct_field, _switch_other,
+                 _switch_stmt, _timesdiv,
                  _transp_op, _transp_what, _transpose, _try_stmt,
                  _uplusminusneg, _while_stmt ]
 
