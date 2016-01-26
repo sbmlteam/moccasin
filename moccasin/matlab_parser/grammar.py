@@ -1370,11 +1370,23 @@ class MatlabGrammar:
     # looks like a unary operator (especially minus or logical not), we don't
     # want to fail to treat it as a possible first argument to a
     # command-style funcall.  (E.g., "print -dpng foo.png")
+    #
+    # FIXME: This has "+" as an operator it tests against, because it is rare
+    # that people use unary plus as the first argument to a command and so
+    # putting it here prevents a statement like "a + b" from being mistakenly
+    # parsed as command "a" with arguments "+ b".  However, this is still
+    # wrong because the current grammar will parse the standalone statement
+    # "a - b" as a function call.  It's impossible to fix purely by regexps
+    # here: we must determine if the first item is a known function and act
+    # accordingly.  (And that's what MATLAB seems to do, because it will act
+    # different for "A +1" depending on whether "A" is known to be a function
+    # or not.)
 
-    _operators         = Group(_PLUS ^ _TIMES ^ _ELTIMES ^ _MLDIVIDE
-                               ^ _RDIVIDE ^ _LDIVIDE ^ _MPOWER ^ _ELPOWER
-                               ^ _LE ^ _GE ^ _NE ^ _LT ^ _GT ^ _EQ)
-    _noncmd_arg_start  = _EQUALS | _LPAR | _operators | _delimiter | _comment
+    _most_ops          = Group(_TIMES ^ _ELTIMES ^ _MLDIVIDE ^ _RDIVIDE ^
+                               _LDIVIDE ^ _PLUS ^ _MPOWER ^ _ELPOWER ^ _LE ^
+                               _GE ^ _NE ^ _LT ^ _GT ^ _EQ ^ _AND ^ _OR ^
+                               _SHORT_AND ^ _SHORT_OR ^ _COLON ^ _NC_TRANSP)
+    _noncmd_arg_start  = _EQUALS | _LPAR | _most_ops | _delimiter | _comment
     _fun_cmd_arg       = _STRING | CharsNotIn(" ,;\t\n\r")
     _fun_cmd_arglist   = _fun_cmd_arg + ZeroOrMore(NotAny(_noncontent)
                                                    + _WHITE
