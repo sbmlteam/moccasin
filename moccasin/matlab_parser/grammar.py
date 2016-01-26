@@ -1482,8 +1482,8 @@ class MatlabGrammar:
     _colon_op      = _COLON('colon operator')
 
     _expr        <<= infixNotation(_operand, [
-        (Group(_uplusminusneg), 1, opAssoc.RIGHT),
         (Group(_power),         2, opAssoc.LEFT, makeLRlike(2)),
+        (Group(_uplusminusneg), 1, opAssoc.RIGHT),
         (Group(_timesdiv),      2, opAssoc.LEFT, makeLRlike(2)),
         (Group(_plusminus),     2, opAssoc.LEFT, makeLRlike(2)),
         (Group(_colon_op),      2, opAssoc.LEFT, makeLRlike(2)),
