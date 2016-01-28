@@ -419,7 +419,11 @@ class ParseResultsTransformer:
 #        pdb.set_trace()
         if len(pr) > 1 and empty_dict(pr):
             # It's an expression.  We deconstruct the infix notation.
-            if len(pr) == 2 and 'unary operator' in pr[0].keys():
+            if pr[1].get('transpose'):
+                # Process the first part and revisit the rest, in case we
+                # have more than one operator applied to the lead item.
+                return self.visit_transpose(pr)
+            elif len(pr) == 2 and 'unary operator' in pr[0].keys():
                 return self.visit_unary_operator(pr)
             elif len(pr) == 3:
                 if 'binary operator' in pr[1].keys():
@@ -513,10 +517,9 @@ class ParseResultsTransformer:
 
 
     def visit_transpose(self, pr):
-        content = pr['transpose']
-        the_op = content['operator']
-        the_operand = self.visit(content['operand'])
-        return Transpose(op=the_op, operand=the_operand)
+        operand=self.visit(pr[0])
+        op = pr[1]['transpose']
+        return Transpose(op=op, operand=operand)
 
 
     def visit_standalone_expression(self, pr):
@@ -1076,8 +1079,8 @@ class MatlabGrammar:
     # Operators that have special-case handling.
 
     _COLON      = Literal(':')
-    _NC_TRANSP  = Literal(".'")
-    _CC_TRANSP  = Literal("'")
+    _NC_TRANSP  = Literal(".'")                       ('transpose')
+    _CC_TRANSP  = Literal("'")                        ('transpose')
 
     ParserElement.setDefaultWhitespaceChars(' \t\n\r')
 
@@ -1423,50 +1426,6 @@ class MatlabGrammar:
 
     _funcall_or_id = _id('funcall or id')
 
-    # Transpose operators.  The operator must immediately follow the thing
-    # being transposed, without whitespace.
-    #
-    # FIXME: this grammar for transpose is hacky and incomplete.  In MATLAB
-    # you can actually apply transpose to full expressions, but I haven't
-    # been able to write a proper grammar that doesn't lead to infinite
-    # recursion.  This hacky thing is a partial solution.  The basic idea is
-    # to avoid writing what would be the natural definition, namely
-    # _expr.leaveWhitespace() + NotAny(_WHITE) + _transp_op('operator') and
-    # replace _expr with a limited subset of allowed expressions.  The
-    # specific subset and their order inside the Group() inside _trans_what
-    # was determined by trial and error.  BE VERY CAREFUL about the ordering,
-    # even though it is not the same as _operand_basic.  A change to the order
-    # can lead to infinite recursion on some inputs.  The current order was
-    # determined by trial and error to work on our various test cases.
-    #
-    # The part involving _paren_expr is because it turns out you don't get
-    # infinite recursion for cases when the expression is inside parens, so
-    # at least we can handle that much (though handling _expr completely
-    # would be more correct).
-
-
-    # 2016-01-23 still doesn't work for nested transposes.
-    # Problem is this is a left-recursive grammar, which a simple
-    # recursive-descent parser like Pyparsing can't handle.
-    # http://stackoverflow.com/a/14420388/743730
-    # Need to turn it around somehow.
-    # Also try using Combine(...)
-
-
-    _paren_expr    = _LPAR + Optional(_WHITE) + _expr \
-                     + Optional(_WHITE) + _RPAR
-    _transp_op     = _NC_TRANSP ^ _CC_TRANSP
-    _transp_what   = _paren_expr ^ Group(_funcall_or_array
-                                         | _cell_array
-                                         | _bare_array
-                                         | _array_access
-                                         | _fun_handle
-                                         | _funcall_or_id
-                                         | _NUMBER)
-    _transpose     = Group(_transp_what('operand').leaveWhitespace()
-                           + _transp_op('operator').leaveWhitespace()
-                          ).setResultsName('transpose')  # noqa
-
     # And now, general expressions and operators.  Here we have a bit of
     # ugliness, in that we need to allow the keyword 'end' in expressions
     # that involve array subscripts, but 'end' is generally not permitted
@@ -1475,8 +1434,7 @@ class MatlabGrammar:
     # allow it everywhere, and again rely on the principle that the input is
     # already valid MATLAB, so it won't contain 'end' where it's not allowed.
 
-    _operand_basic = _transpose          \
-                     | _funcall_or_array \
+    _operand_basic = _funcall_or_array \
                      | _struct_access    \
                      | _array_access     \
                      | _cell_array       \
@@ -1496,6 +1454,16 @@ class MatlabGrammar:
     # work.  So, here the colon op is defined as binary, and then it's fixed
     # up in post-processing in NodeTransformer.
 
+    # FIXME: this grammar does not capture exactly the correct precedence
+    # ordering for transpose and exponentiation/power operators.  In MATLAB,
+    # they have the same precedence, but here, transpose will be matched
+    # first.  This is caused by having to define transpose as a unary
+    # operator and power as a binary operator in the call to infixNotation().
+    # I don't know of a way to fix that other than by writing out the
+    # necessary grammar rules by hand instead of using PyParsing's
+    # infixNotation() function.
+
+    _transp_op     = NotAny(_WHITE) + _NC_TRANSP ^ NotAny(_WHITE) + _CC_TRANSP
     _uplusminusneg = _UMINUS ^ _UPLUS ^ _UNOT
     _plusminus     = _PLUS ^ _MINUS
     _timesdiv      = _TIMES ^ _ELTIMES ^ _MRDIVIDE ^ _MLDIVIDE ^ _RDIVIDE ^ _LDIVIDE
@@ -1504,6 +1472,7 @@ class MatlabGrammar:
     _colon_op      = _COLON('colon operator')
 
     _expr        <<= infixNotation(_operand, [
+        (Group(_transp_op),     1, opAssoc.LEFT, makeLRlike(1)),
         (Group(_power),         2, opAssoc.LEFT, makeLRlike(2)),
         (Group(_uplusminusneg), 1, opAssoc.RIGHT),
         (Group(_timesdiv),      2, opAssoc.LEFT, makeLRlike(2)),
@@ -1544,8 +1513,9 @@ class MatlabGrammar:
     _operand_in_array = Group(_end_op | _operand_basic).leaveWhitespace()
 
     _expr_in_array <<= infixNotation(_operand_in_array, [
-        (Group(_uplusminusneg), 1, opAssoc.RIGHT),
+        (Group(_transp_op),     1, opAssoc.LEFT, makeLRlike(1)),
         (Group(_power),         2, opAssoc.LEFT, makeLRlike(2)),
+        (Group(_uplusminusneg), 1, opAssoc.RIGHT),
         (Group(_timesdiv),      2, opAssoc.LEFT, makeLRlike(2)),
         (Group(_plusminus_array),     2, opAssoc.LEFT, makeLRlike(2)),
         (Group(_colon_op),      2, opAssoc.LEFT, makeLRlike(2)),
@@ -1857,7 +1827,7 @@ class MatlabGrammar:
                  _loop_var, _matlab_syntax, _multi_values, _named_handle,
                  _noncmd_arg_start, _noncontent, _one_row, _one_sub,
                  _operand, _operand_basic, _operand_in_array, _opt_arglist,
-                 _other_assign, _paren_expr, _plusminus, _power, _reserved,
+                 _other_assign, _plusminus, _power, _reserved,
                  _return_stmt, _row_sep, _rows, _scope_args, _scope_stmt,
                  _scope_type, _scope_var_list, _shell_cmd, _shell_cmd_cmd,
                  _simple_assign, _simple_struct, _simple_struct_base,
@@ -1865,7 +1835,7 @@ class MatlabGrammar:
                  _stmt, _stmt_list, _struct_access, _struct_base,
                  _standalone_expr, _struct_field, _switch_other,
                  _switch_stmt, _timesdiv,
-                 _transp_op, _transp_what, _transpose, _try_stmt,
+                 _transp_op, _try_stmt,
                  _uplusminusneg, _while_stmt ]
 
     def _object_name(self, obj):
