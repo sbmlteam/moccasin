@@ -1372,25 +1372,6 @@ class MatlabGrammar:
     # The grammar below for command-style syntax is not fully compliant.  One
     # known failure: it requires an argument.  We deal with command-syntax
     # function calls *without* arguments separately in post-processing.
-    #
-    # We try to avoid mistakenly parsing an expression like "x > [1 2]" alone
-    # on a line as a command-style function call.  Here it's done with a
-    # negative lookahead test against many operators.  However, the list in
-    # _operators is not all possible operators, on purpose: if something
-    # looks like a unary operator (especially minus or logical not), we don't
-    # want to fail to treat it as a possible first argument to a
-    # command-style funcall.  (E.g., "print -dpng foo.png")
-    #
-    # FIXME: This has "+" as an operator it tests against, because it is rare
-    # that people use unary plus as the first argument to a command and so
-    # putting it here prevents a statement like "a + b" from being mistakenly
-    # parsed as command "a" with arguments "+ b".  However, this is still
-    # wrong because the current grammar will parse the standalone statement
-    # "a - b" as a function call.  It's impossible to fix purely by regexps
-    # here: we must determine if the first item is a known function and act
-    # accordingly.  (And that's what MATLAB seems to do, because it will act
-    # different for "A +1" depending on whether "A" is known to be a function
-    # or not.)
 
     _most_ops          = Group(_PLUS ^ _MINUS ^ _TIMES ^ _ELTIMES
                                ^ _MRDIVIDE ^ _MLDIVIDE ^ _RDIVIDE ^ _LDIVIDE
@@ -1402,7 +1383,7 @@ class MatlabGrammar:
     _dash_term         = Combine(Literal('-') + Word(alphas, alphanums + '_'))
     _fun_cmd_arg       = _STRING | _dash_term | CharsNotIn(" ,;\t\n\r")
     _fun_cmd_arglist   = _fun_cmd_arg + ZeroOrMore(NotAny(_noncontent)
-                                                   + _WHITE
+                                                   + Optional(_WHITE)
                                                    + _fun_cmd_arg)
     _funcall_cmd_style = Group(_name + _WHITE + NotAny(_noncmd_arg_start)
                                + _fun_cmd_arglist('arguments')
