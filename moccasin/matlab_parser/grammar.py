@@ -633,7 +633,6 @@ class ParseResultsTransformer:
 
 
     def visit_funcall_or_id(self, pr):
-#        pdb.set_trace()
         content = pr['funcall or id']
         name = content[0]
         if matlab_function_or_command(name):
@@ -775,7 +774,10 @@ class ParseResultsTransformer:
 
 
     def _convert_rows(self, rowlist):
-        return [self._convert_list(row['subscript list']) for row in rowlist]
+        # MATLAB doesn't keep blank rows.
+        nodelist = [self._convert_list(row['subscript list']) for row in rowlist
+                    if 'subscript list' in row]
+        return [node for node in nodelist if node]
 
 
 # NodeTransformer
@@ -1149,9 +1151,13 @@ class MatlabGrammar:
     # Continuations.
     #
     # This is used later in the definition of some types of statements that
-    # allow continuations.  Most do not.
+    # allow continuations.  Most do not.  Note that MATLAB allows you to type
+    # text after the '...' and it ignores it (much like a comment).  The
+    # ellipsis is treated as a space by MATLAB.
 
-    _continuation  = Combine(_ELLIPSIS.leaveWhitespace() + _EOL + _SOL)
+    _continuation  = Combine(_ELLIPSIS.leaveWhitespace()
+                             + Optional(CharsNotIn('\n\r')('comment'))
+                             + _EOL + _SOL)
 
     # The 'end' keyword is special because of its many meanings.  One applies
     # when indexing arrays.  This next definition is so we can detect that.
@@ -1207,7 +1213,8 @@ class MatlabGrammar:
     ParserElement.setDefaultWhitespaceChars(' \t')
 
     _one_sub       = Group(_COLON('colon')) | _expr_in_array
-    _comma_subs    = _one_sub + ZeroOrMore(Optional(_WHITE) + _COMMA + Optional(_WHITE) + _one_sub)
+    _comma_subs    = Optional(_one_sub) \
+                     + ZeroOrMore(Optional(_WHITE) + _COMMA + Optional(_WHITE) + Optional(_one_sub))
     _space_subs    = _one_sub + ZeroOrMore(OneOrMore(_WHITE) + _one_sub)
 
     _call_args     = delimitedList(_expr)
@@ -1217,11 +1224,12 @@ class MatlabGrammar:
     # element contents have the same data type.  But again, since we expect our
     # input to be valid Matlab, we don't expect to have to verify that property.
 
-    _row_sep       = Optional(_WHITE) + _SEMI | Optional(_WHITE) + _comment.suppress() | _EOL
+    _row_sep       = Optional(_WHITE) + _SEMI + Optional(_WHITE) + Optional(_comment) \
+                     | Optional(_WHITE) + _comment | _EOL
     _one_row       = _comma_subs('subscript list') ^ _space_subs('subscript list')
-    _rows          = Group(_one_row) + ZeroOrMore(_row_sep + Optional(_WHITE) + Group(_one_row))
-    _bare_array    = Group(_LBRACKET + Optional(_rows('row list')) + _RBRACKET
-                             ).setResultsName('array')  # noqa
+    _rows          = Optional(Group(_one_row.leaveWhitespace())) \
+                     + ZeroOrMore(_row_sep + Optional(Group(_one_row)))
+    _bare_array    = Group(_LBRACKET + _rows('row list') + _RBRACKET)('array')
 
     ParserElement.setDefaultWhitespaceChars(' \t\n\r')
 
@@ -1241,8 +1249,7 @@ class MatlabGrammar:
     # - The following parses as a function call:         a {1}
     # - The following parses as an array of 3 elements:  [a {1} a]
 
-    _bare_cell     = Group(_LBRACE + ZeroOrMore(_rows('row list')) + _RBRACE
-                             ).setResultsName('cell array')  # noqa
+    _bare_cell     = Group(_LBRACE + _rows('row list') + _RBRACE)('cell array')
     _cell_args     = Group(_comma_subs)
     _cell_access   = Group(_name + _LBRACE.leaveWhitespace()
                               + _cell_args('subscript list') + _RBRACE
@@ -1287,7 +1294,7 @@ class MatlabGrammar:
     _struct_field       = _id('static field') | _LPAR + _expr('dynamic field') + _RPAR
     _simple_struct_base = Group(_array_access | _id)
     _simple_struct      = Group(_simple_struct_base('struct base')
-                                + _DOT.leaveWhitespace()
+                                + _DOT
                                 + _struct_field)('struct')
     _struct_base        = Group(_simple_struct + FollowedBy(_DOT)
                                 ^ _fun_handle
@@ -1296,7 +1303,7 @@ class MatlabGrammar:
                                 ^ _array_access
                                 ^ _id)
     _struct_access      = Group(_struct_base('struct base')
-                                + _DOT.leaveWhitespace()
+                                + _DOT
                                 + _struct_field)('struct')
 
     # "Function syntax" function calls.
@@ -1382,12 +1389,15 @@ class MatlabGrammar:
     # different for "A +1" depending on whether "A" is known to be a function
     # or not.)
 
-    _most_ops          = Group(_TIMES ^ _ELTIMES ^ _MLDIVIDE ^ _RDIVIDE ^
-                               _LDIVIDE ^ _PLUS ^ _MPOWER ^ _ELPOWER ^ _LE ^
-                               _GE ^ _NE ^ _LT ^ _GT ^ _EQ ^ _AND ^ _OR ^
-                               _SHORT_AND ^ _SHORT_OR ^ _COLON ^ _NC_TRANSP)
-    _noncmd_arg_start  = _EQUALS | _LPAR | _most_ops | _delimiter | _comment
-    _fun_cmd_arg       = _STRING | CharsNotIn(" ,;\t\n\r")
+    _most_ops          = Group(_PLUS ^ _MINUS ^ _TIMES ^ _ELTIMES
+                               ^ _MRDIVIDE ^ _MLDIVIDE ^ _RDIVIDE ^ _LDIVIDE
+                               ^ _MPOWER ^ _ELPOWER
+                               ^ _LT ^ _LE ^ _GT ^ _GE ^ _EQ ^ _NE
+                               ^ _AND ^ _OR ^ _SHORT_AND ^ _SHORT_OR
+                               ^ _COLON ^ _NC_TRANSP)
+    _noncmd_arg_start  = _EQUALS | _LPAR | _most_ops + _WHITE | _delimiter | _comment
+    _dash_term         = Combine(Literal('-') + Word(alphas, alphanums + '_'))
+    _fun_cmd_arg       = _STRING | _dash_term | CharsNotIn(" ,;\t\n\r")
     _fun_cmd_arglist   = _fun_cmd_arg + ZeroOrMore(NotAny(_noncontent)
                                                    + _WHITE
                                                    + _fun_cmd_arg)
