@@ -1215,10 +1215,10 @@ class MatlabGrammar:
     # considered redundant, *except* that in order to deal with some other
     # problems with array parsing, the definition of expressions used as
     # array contents explicitly turn off the regular whitespace rules.  This
-    # is why whitespace appears in the next few terms.  So, if you find
+    # is why whitespace appears in the next several terms.  So, if you find
     # yourself looking at these and thinking that the business involving
     # Optional(_WHITE) and so on is useless and can be removed: no, they have
-    # to stay to make later definitions work.
+    # to stay in order to work properly inside other definitions later.
 
     ParserElement.setDefaultWhitespaceChars(' \t')
 
@@ -1254,7 +1254,7 @@ class MatlabGrammar:
 
     _bare_cell     = Group(_LBRACE + Optional(_WHITE) + _rows('row list')
                            + Optional(_WHITE) + _RBRACE)('cell array')
-    _cell_args     = Group(_comma_subs)('subscript list')
+    _cell_args     = Optional(_WHITE) + Group(_comma_subs)('subscript list') + Optional(_WHITE)
     _cell_base     = Group(_name + _LBRACE + _cell_args + _RBRACE)('cell array')
     _cell_nested   = Group(Group(_cell_base)('cell array')
                            + _LBRACE + _cell_args + _RBRACE)('cell array')
@@ -1308,16 +1308,16 @@ class MatlabGrammar:
     _struct_field       = _id('static field') | _LPAR + _expr('dynamic field') + _RPAR
     _simple_struct_base = Group(_array_access | _id)
     _simple_struct      = Group(_simple_struct_base('struct base')
-                                + _DOT
+                                + Optional(_WHITE) + _DOT + Optional(_WHITE) 
                                 + _struct_field)('struct')
-    _struct_base        = Group(_simple_struct + FollowedBy(_DOT)
+    _struct_base        = Group(_simple_struct + Optional(_WHITE) + FollowedBy(_DOT)
                                 ^ _fun_handle
                                 ^ _funcall_or_array
                                 ^ _cell_access
                                 ^ _array_access
                                 ^ _id)
     _struct_access      = Group(_struct_base('struct base')
-                                + _DOT
+                                + Optional(_WHITE) + _DOT + Optional(_WHITE)
                                 + _struct_field)('struct')
 
     # "Function syntax" function calls.
