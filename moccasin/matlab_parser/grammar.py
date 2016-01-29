@@ -539,13 +539,16 @@ class ParseResultsTransformer:
         content = pr['array']
         # Two kinds of array situations: a bare array, and one where we
         # managed to determine it's an array access (and not the more
-        # ambiguous function call or array access).  If we have a name, it's
-        # the latter; if we have a row list, it's the former.
-        if 'name' in content:
-            # Array reference.
-            the_name = self.visit(content['name'])
-            the_subscripts = self._convert_list(content['subscript list'])
-            return ArrayRef(name=the_name, args=the_subscripts, is_cell=False)
+        # ambiguous function call or array access).  If we have an 'array
+        # base' part, it's the latter; if we have a row list, it's the former.
+        if 'array base' in content:
+            base = content['array base']
+            if 'name' in base:
+                name = self.visit(base['name'])
+            else:
+                name = self.visit(base)
+            subscripts = self._convert_list(content['subscript list'])
+            return ArrayRef(name=name, args=subscripts, is_cell=False)
         elif 'row list' in content:
             # Bare array.
             return Array(rows=self._convert_rows(content['row list']), is_cell=False)
@@ -1240,14 +1243,6 @@ class MatlabGrammar:
 
     ParserElement.setDefaultWhitespaceChars(' \t\n\r')
 
-    # Named array references.  Note: this interacts with the definition of
-    # function calls later below.  (See _funcall_or_array.)
-
-    _array_args    = Group(_comma_subs)
-    _array_access  = Group(_name
-                           + _LPAR + _array_args('subscript list') + _RPAR
-                          ).setResultsName('array')  # noqa
-
     # Cell arrays.  You can write {} by itself, but a reference has to have at
     # least one subscript: "somearray{}" is not valid.  Newlines don't
     # seem to be allowed in args to references, but a bare ':' is allowed.
@@ -1265,6 +1260,15 @@ class MatlabGrammar:
                            + _LBRACE + _cell_args + _RBRACE)('cell array')
     _cell_access   = _cell_nested | _cell_base
     _cell_array    = _cell_access | _bare_cell
+
+    # Named array references.  Note: this interacts with the definition of
+    # function calls later below.  (See _funcall_or_array.)
+
+    _array_args    = Group(_comma_subs)
+    _array_base    = Group(_cell_access | _name)('array base')
+    _array_access  = Group(_array_base
+                           + _LPAR + _array_args('subscript list') + _RPAR
+                          ).setResultsName('array')  # noqa
 
     # Function handles.
     #
@@ -1515,7 +1519,7 @@ class MatlabGrammar:
 
     _lhs_var        = Group(_id)
     _simple_assign  = Group(_lhs_var('lhs') + _EQUALS + _expr('rhs'))
-    _lhs_array      = Group(_struct_access | _array_access | _bare_array | _cell_array)
+    _lhs_array      = Group(_struct_access | _array_access | _cell_access | _bare_array)
     _other_assign   = Group(_lhs_array('lhs') + _EQUALS + _expr('rhs'))
     _assignment     = (_other_assign | _simple_assign).setResultsName('assignment')
 
