@@ -1257,7 +1257,8 @@ class MatlabGrammar:
     # - The following parses as an array of 3 elements:  [a {1} a]
     # - Cell array references can be nested: a{2}{3}
 
-    _bare_cell     = Group(_LBRACE + _rows('row list') + _RBRACE)('cell array')
+    _bare_cell     = Group(_LBRACE + Optional(_WHITE) + _rows('row list')
+                           + Optional(_WHITE) + _RBRACE)('cell array')
     _cell_args     = Group(_comma_subs)('subscript list')
     _cell_base     = Group(_name + _LBRACE + _cell_args + _RBRACE)('cell array')
     _cell_nested   = Group(Group(_cell_base)('cell array')
@@ -1413,13 +1414,7 @@ class MatlabGrammar:
 
     _funcall_or_id = _id('funcall or id')
 
-    # And now, general expressions and operators.  Here we have a bit of
-    # ugliness, in that we need to allow the keyword 'end' in expressions
-    # that involve array subscripts, but 'end' is generally not permitted
-    # in other expression contexts.  (There's some question about what is
-    # permitted -- see http://stackoverflow.com/a/23017087/743730).  We
-    # allow it everywhere, and again rely on the principle that the input is
-    # already valid MATLAB, so it won't contain 'end' where it's not allowed.
+    # And now, general expressions and operators outside of arrays.
 
     _operand_basic = _funcall_or_array \
                      | _struct_access    \
@@ -1537,7 +1532,7 @@ class MatlabGrammar:
     _control_stmt   = Forward()
     _stmt_list      = Forward()
 
-    _single_expr    = _expr('expression') + FollowedBy(_noncontent)
+    _single_expr    = _expr('expression') + Optional(FollowedBy(_noncontent))
     _test_expr      = _single_expr
     _body           = Group(_stmt_list)                    ('body')
     _break_stmt     = _BREAK                               ('break statement')
