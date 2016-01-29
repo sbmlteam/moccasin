@@ -1237,8 +1237,8 @@ class MatlabGrammar:
     _row_sep       = Optional(_WHITE) + _SEMI + Optional(_WHITE) + Optional(_comment) \
                      | Optional(_WHITE) + _comment | _EOL
     _one_row       = _comma_subs('subscript list') ^ _space_subs('subscript list')
-    _rows          = Optional(Group(_one_row.leaveWhitespace())) \
-                     + ZeroOrMore(_row_sep + Optional(Group(_one_row)))
+    _rows          = Optional(_WHITE) + Optional(Group(_one_row.leaveWhitespace())) \
+                     + ZeroOrMore(_row_sep + Optional(Group(_one_row))) + Optional(_WHITE)
     _bare_array    = Group(_LBRACKET + _rows('row list') + _RBRACKET)('array')
 
     ParserElement.setDefaultWhitespaceChars(' \t\n\r')
