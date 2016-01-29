@@ -556,18 +556,22 @@ class ParseResultsTransformer:
 
     def visit_cell_array(self, pr):
         content = pr['cell array']
-        # This is basically like regular arrays.  Again, two kinds of
-        # situations: a bare cell array, and one where we managed to
-        # determine it's an array access.  If we have a name, it's the
-        # latter; if we have a row list, it's the former.
-        if 'name' in content:
-            # Array reference.
-            the_name = self.visit(content['name'])
-            the_subscripts = self._convert_list(content['subscript list'])
-            return ArrayRef(name=the_name, args=the_subscripts, is_cell=True)
-        elif 'row list' in content:
+        # Two kinds of situations: a bare cell array, and one where we
+        # managed to determine it's an array access.  If we have 'row list'
+        # in the keys, it's the former.
+        if 'row list' in content:
             # Bare array.
             return Array(rows=self._convert_rows(content['row list']), is_cell=True)
+        elif 'cell array' in content:
+            # Nested reference.
+            base = self.visit(content['cell array'])
+            subscripts = self._convert_list(content['subscript list'])
+            return ArrayRef(name=base, args=subscripts, is_cell=True)
+        elif 'name' in content:
+            # Basic array reference.
+            name = self.visit(content['name'])
+            subscripts = self._convert_list(content['subscript list'])
+            return ArrayRef(name=name, args=subscripts, is_cell=True)
         else:
             # No row list or subscript list => empty array.
             return Array(rows=[], is_cell=True)
@@ -1247,16 +1251,18 @@ class MatlabGrammar:
     # Cell arrays.  You can write {} by itself, but a reference has to have at
     # least one subscript: "somearray{}" is not valid.  Newlines don't
     # seem to be allowed in args to references, but a bare ':' is allowed.
-    # Now the hard parts:
+    # Some tricky parts:
     # - The following parses as a cell reference:        a{1}
     # - The following parses as a function call:         a {1}
     # - The following parses as an array of 3 elements:  [a {1} a]
+    # - Cell array references can be nested: a{2}{3}
 
     _bare_cell     = Group(_LBRACE + _rows('row list') + _RBRACE)('cell array')
-    _cell_args     = Group(_comma_subs)
-    _cell_access   = Group(_name + _LBRACE.leaveWhitespace()
-                              + _cell_args('subscript list') + _RBRACE
-                             ).setResultsName('cell array')  # noqa
+    _cell_args     = Group(_comma_subs)('subscript list')
+    _cell_base     = Group(_name + _LBRACE + _cell_args + _RBRACE)('cell array')
+    _cell_nested   = Group(Group(_cell_base)('cell array')
+                           + _LBRACE + _cell_args + _RBRACE)('cell array')
+    _cell_access   = _cell_nested | _cell_base
     _cell_array    = _cell_access | _bare_cell
 
     # Function handles.
@@ -1785,22 +1791,22 @@ class MatlabGrammar:
     # Name each grammar object after itself, so that when PyParsing prints
     # debugging output, it uses the name rather than a generic regexp term.
 
-    _to_name = [ _AND, _CC_TRANSP, _COLON, _COMMA, _DOT, _ELLIPSIS,
-                 _ELPOWER, _ELTIMES, _EOL, _EQ, _EQUALS, _EXPONENT, _FLOAT,
-                 _GE, _GT, _INTEGER, _LBRACE, _LBRACKET, _LDIVIDE, _LE,
-                 _LPAR, _LT, _MINUS, _MLDIVIDE, _MPOWER, _MRDIVIDE,
-                 _NC_TRANSP, _NE, _NUMBER, _OR, _PLUS, _RBRACE, _RBRACKET,
-                 _RDIVIDE, _RPAR, _SEMI, _SHORT_AND, _SHORT_OR, _SOL,
-                 _STRING, _TILDE, _TIMES, _UMINUS, _UNOT, _UPLUS, _WHITE,
-                 _anon_handle, _array_access, _array_args, _assignment,
-                 _bare_array, _bare_cell, _block_c_end, _block_c_start,
-                 _block_comment, _body, _break_stmt, _call_args, _catch_body,
-                 _catch_term, _catch_var, _cell_access, _cell_args,
-                 _cell_array, _colon_op, _comma_subs, _comma_values,
-                 _comment, _continuation, _continue_stmt, _control_stmt,
-                 _delimiter, _else_stmt, _elseif_stmt, _end_op, _expr,
-                 _expr_in_array, _for_stmt, _for_version1, _for_version2,
-                 _fun_access, _fun_cmd_arg, _fun_cmd_arglist,
+    _to_name = [ _AND, _CC_TRANSP, _COLON, _COMMA, _DOT, _ELLIPSIS, _ELPOWER,
+                 _ELTIMES, _EOL, _EQ, _EQUALS, _EXPONENT, _FLOAT, _GE, _GT,
+                 _INTEGER, _LBRACE, _LBRACKET, _LDIVIDE, _LE, _LPAR, _LT,
+                 _MINUS, _MLDIVIDE, _MPOWER, _MRDIVIDE, _NC_TRANSP, _NE,
+                 _NUMBER, _OR, _PLUS, _RBRACE, _RBRACKET, _RDIVIDE, _RPAR,
+                 _SEMI, _SHORT_AND, _SHORT_OR, _SOL, _STRING, _TILDE, _TIMES,
+                 _UMINUS, _UNOT, _UPLUS, _WHITE, _anon_handle, _array_access,
+                 _array_args, _assignment, _bare_array, _bare_cell,
+                 _block_c_end, _block_c_start, _block_comment, _body,
+                 _break_stmt, _call_args, _catch_body, _catch_term,
+                 _catch_var, _cell_access, _cell_args, _cell_array,
+                 _cell_base, _cell_nested, _colon_op, _comma_subs,
+                 _comma_values, _comment, _continuation, _continue_stmt,
+                 _control_stmt, _delimiter, _else_stmt, _elseif_stmt,
+                 _end_op, _expr, _expr_in_array, _for_stmt, _for_version1,
+                 _for_version2, _fun_access, _fun_cmd_arg, _fun_cmd_arglist,
                  _funcall_cmd_style, _fun_def_stmt, _funcall_or_id,
                  _fun_handle, _fun_outputs, _fun_params, _fun_paramslist,
                  _funcall_or_array, _id, _identifier, _if_stmt, _lhs_array,
@@ -1808,16 +1814,14 @@ class MatlabGrammar:
                  _loop_var, _matlab_syntax, _multi_values, _named_handle,
                  _noncmd_arg_start, _noncontent, _one_row, _one_sub,
                  _operand, _operand_basic, _operand_in_array, _opt_arglist,
-                 _other_assign, _plusminus, _power, _reserved,
-                 _return_stmt, _row_sep, _rows, _scope_args, _scope_stmt,
-                 _scope_type, _scope_var_list, _shell_cmd, _shell_cmd_cmd,
-                 _simple_assign, _simple_struct, _simple_struct_base,
-                 _single_expr, _single_value, _space_subs, _space_values,
-                 _stmt, _stmt_list, _struct_access, _struct_base,
-                 _standalone_expr, _struct_field, _switch_other,
-                 _switch_stmt, _timesdiv,
-                 _transp_op, _try_stmt,
-                 _uplusminusneg, _while_stmt ]
+                 _other_assign, _plusminus, _power, _reserved, _return_stmt,
+                 _row_sep, _rows, _scope_args, _scope_stmt, _scope_type,
+                 _scope_var_list, _shell_cmd, _shell_cmd_cmd, _simple_assign,
+                 _simple_struct, _simple_struct_base, _single_expr,
+                 _single_value, _space_subs, _space_values, _stmt,
+                 _stmt_list, _struct_access, _struct_base, _standalone_expr,
+                 _struct_field, _switch_other, _switch_stmt, _timesdiv,
+                 _transp_op, _try_stmt, _uplusminusneg, _while_stmt ]
 
     def _object_name(self, obj):
         """Returns the name of a given object."""
