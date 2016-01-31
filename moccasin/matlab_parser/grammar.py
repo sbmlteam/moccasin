@@ -1158,17 +1158,6 @@ class MatlabGrammar:
     _expr          = Forward()
     _expr_in_array = Forward()
 
-    # Continuations.
-    #
-    # This is used later in the definition of some types of statements that
-    # allow continuations.  Most do not.  Note that MATLAB allows you to type
-    # text after the '...' and it ignores it (much like a comment).  The
-    # ellipsis is treated as a space by MATLAB.
-
-    _continuation  = Combine(_ELLIPSIS.leaveWhitespace()
-                             + Optional(CharsNotIn('\n\r')('comment'))
-                             + _EOL + _SOL)
-
     # The 'end' keyword is special because of its many meanings.  One applies
     # when indexing arrays.  This next definition is so we can detect that.
 
@@ -1628,30 +1617,23 @@ class MatlabGrammar:
     _standalone_expr = _expr('standalone expression') + FollowedBy(_noncontent)
     ParserElement.setDefaultWhitespaceChars(' \t\n\r')
 
-    # Statements.
+    # Statements and statement lists.
     #
-    # The definition of _stmt puts all statement types except _shell_cmd
-    # together and sets them up to allow ellipsis continuations.
-    # (Continuations don't work in shell commands.)
-
-    _stmt = Group(_control_stmt
-                  | _scope_stmt
-                  | _assignment
-                  | _funcall_cmd_style
-                  | _standalone_expr)
-    _stmt.ignore(_continuation)
-
     # Statement lists are almost the full _matlab_syntax, except that
     # they don't include function definitions.
 
-    _stmt_list <<= ZeroOrMore(_stmt ^ _shell_cmd ^ _noncontent)
+    _stmt           = Group(_control_stmt
+                            | _scope_stmt
+                            | _assignment
+                            | _funcall_cmd_style
+                            | _standalone_expr)
+    _stmt_list    <<= ZeroOrMore(_stmt ^ _shell_cmd ^ _noncontent)
 
     # Function definitions.
     #
     # When a function returns multiple values and the LHS is an array
     # expression in square brackets, a bare tilde can be put in place of an
-    # argument value to indicate that the value is to be ignored.  Function
-    # definitions also allow ellipsis continuations.
+    # argument value to indicate that the value is to be ignored.
 
     _matlab_syntax  = Forward()
 
@@ -1671,7 +1653,6 @@ class MatlabGrammar:
                            ).setResultsName('function definition')
 
     _fun_def_stmt   = Group(_fun_def)
-    _fun_def_stmt.ignore(_continuation)
 
     # The overall MATLAB syntax definition.
     #
@@ -1686,6 +1667,56 @@ class MatlabGrammar:
     #    always only has it as optional.
 
     _matlab_syntax <<= ZeroOrMore(_fun_def_stmt ^ _stmt ^ _shell_cmd ^ _noncontent)
+
+
+    # Preprocessor.
+    # .........................................................................
+    # This is used to process the input before it is handed to the actual
+    # parser defined by the grammar above.  We do this to overcome
+    # limitations in our PyParsing-based grammar.
+    #
+    # Notes about continuation processing.  Continuations in MATLAB can
+    # appear anywhere, including in the middle of expressions.  However,
+    # continuations in MATLAB are not recognized inside (1) strings and (2)
+    # shell command lines, where the ellipsis sequence "..." is left intact.
+    # In a sense, continuations are almost like PyParsing's notion of ignored
+    # expressions, except that they need to be interpreted as spaces.  It
+    # could have been handled using PyParsing ignore() facility, if that
+    # facility supported parse actions, but it turns out that something set
+    # as ignored in PyParsing is truly ignored -- the associated parse
+    # actions are also ignored, so we have no way of doing the replacement.
+    # I previously did implement continuations as ignored expressions, and
+    # then discovered this is wrong in cases such as this:
+    #     [a...
+    #     b]
+    # This is wrong because if you simply ignore the ellipsis, this turns into
+    #     [a
+    #     b]
+    # which gets parsed as a column vector, whereas what MATLAB actually does
+    # in this case is parse it as a row vector:
+    #     [a b]
+    # MATLAB does this because the ellipsis sequence is turned into a space;
+    # which is not the same as ignoring it completely.
+    #
+    # Currently, MOCCASIN does not handle continuations well: it always
+    # replaces them, even inside strings and shell commands, because in our
+    # application we don't do anything with strings and shell commands
+    # anyway.  We can afford to munge them.  We use this cheap approach
+    # because it's difficult to avoid matching inside strings and shell
+    # commands.  A better approach would be something like the following: (1)
+    # preprocess the input to store all strings and shell commands and
+    # replace them in the input with temporary markers, (2) do the
+    # continuation replacements, (3) go back and replace the markers with the
+    # stored strings and shell commands.
+
+    _continuation  = Combine(_ELLIPSIS.leaveWhitespace()
+                             + Optional(CharsNotIn('\n\r')('comment'))
+                             + _EOL + _SOL)
+
+    _continuation.setParseAction(lambda t: ' ')
+
+    def _preprocess(self, input):
+        return self._continuation.transformString(input)
 
 
     # Generator for final MatlabNode-based output representation.
@@ -1905,7 +1936,8 @@ class MatlabGrammar:
         self._reset()
         try:
             self._print_debug(print_debug)
-            pr = self._matlab_syntax.parseString(input, parseAll=True)
+            preprocessed = self._preprocess(input)
+            pr = self._matlab_syntax.parseString(preprocessed, parseAll=True)
             top_context = self._generate_nodes_and_contexts(pr)
             if print_results:
                 self.print_parse_results(top_context)
@@ -1937,7 +1969,8 @@ class MatlabGrammar:
             file = open(path, 'r')
             contents = file.read()
             self._print_debug(print_debug)
-            pr = self._matlab_syntax.parseString(contents, parseAll=True)
+            preprocessed = self._preprocess(contents)
+            pr = self._matlab_syntax.parseString(preprocessed, parseAll=True)
             top_context = self._generate_nodes_and_contexts(pr)
             top_context.file = path
             file.close()
