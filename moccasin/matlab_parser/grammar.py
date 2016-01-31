@@ -1206,12 +1206,38 @@ class MatlabGrammar:
     # array contents explicitly turn off the regular whitespace rules.  This
     # is why whitespace appears in the next several terms.  So, if you find
     # yourself looking at these and thinking that the business involving
-    # Optional(_WHITE) and so on is useless and can be removed: no, they have
-    # to stay in order to work properly inside other definitions later.
+    # Optional(_WHITE) is useless and can be removed: no, they have to stay
+    # in order to work properly inside other definitions later.
+    #
+    # The handling of whitespace inside arrays is extremely challenging in this
+    # parsing framework.  Here are examples of MATLAB cases to be dealt with.
+    # Suppose that "a" is an array of one item.
+    #
+    #    a(1)        => one item, the value inside the array "a" at location 1
+    #    a (1)       => one item, the value inside the array "a" at location 1
+    #    [a (1)]     => an array of TWO items, a and 1
+    #    [(a (1))]   => an array of ONE item, a(1)
+    #
+    # Notice how in the 3rd case, the handling of whitespace changes inside
+    # the array context, yet wrapping the same expression in parentheses once
+    # again reverts the behavior of whitespace handling to how it is outside
+    # the array context.  (Aside: WTF!?)  The solution implemented here is
+    # rooted in the definition of _one_sub below, which references two
+    # different expression grammar terms.  The first one, _expr_in_array,
+    # handles the third example above.  The definition of _expr_in_array is a
+    # variant of _expr that changes whitespace behavior such that whitespace
+    # is not ignored.  This lets us handle the case where "a (1)" is
+    # interpreted as two subscript items in the array context.  But, this
+    # then screws up interpretation of the fourth example above, in which we
+    # now want to revert handling of whitespace to what it is outside of an
+    # array context.  That's the reason for the introduction of the separate
+    # reference to _LPAR + _expr + _RPAR in the definition of _one_sub: it
+    # lets us use the normal _expr to handle whitespace inside parenthesized
+    # expressions as if they were outside the array context.
 
     ParserElement.setDefaultWhitespaceChars(' \t')
 
-    _one_sub       = Group(_COLON('colon')) | _expr_in_array
+    _one_sub       = Group(_COLON('colon')) | _expr_in_array | _LPAR + _expr + _RPAR
     _comma_subs    = Optional(_one_sub) \
                      + ZeroOrMore(Optional(_WHITE) + _COMMA + Optional(_WHITE) + Optional(_one_sub))
     _space_subs    = _one_sub + ZeroOrMore(OneOrMore(_WHITE) + _one_sub)
