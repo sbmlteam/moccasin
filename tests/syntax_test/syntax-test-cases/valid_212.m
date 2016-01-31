@@ -5,8 +5,6 @@
 -3
 --3
 M'
-% FIXME failure:
-% M''
+M''
 N.'
-% FIXME failure:
-% N.'.'
+N.'.'
