@@ -1440,25 +1440,42 @@ class MatlabGrammar:
     # work.  So, here the colon op is defined as binary, and then it's fixed
     # up in post-processing in NodeTransformer.
 
-    # FIXME: this grammar does not capture exactly the correct precedence
-    # ordering for transpose and exponentiation/power operators.  In MATLAB,
-    # they have the same precedence, but here, transpose will be matched
-    # first.  This is caused by having to define transpose as a unary
-    # operator and power as a binary operator in the call to infixNotation().
-    # I don't know of a way to fix that other than by writing out the
-    # necessary grammar rules by hand instead of using PyParsing's
-    # infixNotation() function.
-
     _transp_op     = NotAny(_WHITE) + _NC_TRANSP ^ NotAny(_WHITE) + _CC_TRANSP
-    _uplusminusneg = _UMINUS ^ _UPLUS ^ _UNOT
+    _uplusminusneg = _UPLUS ^ _UMINUS ^ _UNOT
     _plusminus     = _PLUS ^ _MINUS
     _timesdiv      = _TIMES ^ _ELTIMES ^ _MRDIVIDE ^ _MLDIVIDE ^ _RDIVIDE ^ _LDIVIDE
     _power         = _MPOWER ^ _ELPOWER
     _logical_op    = _LE ^ _GE ^ _NE ^ _LT ^ _GT ^ _EQ
     _colon_op      = _COLON('colon operator')
 
+    # This next hack solves a problem in correctly matching expressions in
+    # which a unary operator comes immediately after another operator,
+    # particularly the _power operators.  It happens because of how
+    # infixNotation() constructs the matching expression left-to-right as it
+    # goes down the list of arguments in the order given.  In the MATLAB
+    # grammar, _power is unique in having higher precedence than the unary
+    # operators, and the unary operators are unique in being
+    # right-associative.  For reasons that are not 100% clear, if the first
+    # few terms are in the following (intuitive, natural) order,
+    #
+    #   _expr <<= infixNotation(_operand, [
+    #        (Group(_transp_op),     1, opAssoc.LEFT, makeLRlike(1)),
+    #        (Group(_power),         2, opAssoc.LEFT, makeLRlike(2)),
+    #        (Group(_uplusminusneg), 1, opAssoc.RIGHT),
+    #       ...
+    #
+    # an expression such as 2^-3 does not match.  The following hack provides
+    # a second expression for matching the unary operators if and only if they
+    # appear in the second operand of a binary operator.
+
+    _not_unary = _transp_op ^ _plusminus ^ _timesdiv ^ _power ^ _logical_op ^ _COLON
+    _uplusminusneg_after = FollowedBy(_not_unary) + _UPLUS \
+                           ^ FollowedBy(_not_unary) + _UMINUS \
+                           ^ FollowedBy(_not_unary) + _UNOT
+
     _expr        <<= infixNotation(_operand, [
         (Group(_transp_op),     1, opAssoc.LEFT, makeLRlike(1)),
+        (Group(_uplusminusneg_after), 1, opAssoc.RIGHT),
         (Group(_power),         2, opAssoc.LEFT, makeLRlike(2)),
         (Group(_uplusminusneg), 1, opAssoc.RIGHT),
         (Group(_timesdiv),      2, opAssoc.LEFT, makeLRlike(2)),
@@ -1500,6 +1517,7 @@ class MatlabGrammar:
 
     _expr_in_array <<= infixNotation(_operand_in_array, [
         (Group(_transp_op),     1, opAssoc.LEFT, makeLRlike(1)),
+        (Group(_uplusminusneg_after), 1, opAssoc.RIGHT),
         (Group(_power),         2, opAssoc.LEFT, makeLRlike(2)),
         (Group(_uplusminusneg), 1, opAssoc.RIGHT),
         (Group(_timesdiv),      2, opAssoc.LEFT, makeLRlike(2)),
