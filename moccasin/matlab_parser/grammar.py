@@ -430,6 +430,8 @@ class ParseResultsTransformer:
                     return self.visit_binary_operator(pr)
                 elif 'colon operator' in pr[1].keys():
                     return self.visit_colon_operator(pr)
+            elif len(pr) == 5 and 'colon operator' in pr[1].keys():
+                return self.visit_colon_operator(pr)
 
         # Not an expression, but an individual, single parse result.
         # We dispatch to the appropriate transformer by building the name.
@@ -504,15 +506,14 @@ class ParseResultsTransformer:
         # expression context, which in turn leads to a ternary ':' expression
         # becoming a nested list of two binary operators.  FIXME: ask the
         # PyParsing developer for a way to do ternary operators properly.
-        if empty_dict(pr[0]) and len(pr[0]) == 3 \
-           and 'colon operator' in pr[0][1].keys():
-            left=self.visit(pr[0][0])
-            middle=self.visit(pr[0][2])
-            right=self.visit(pr[2])
-        else:
+        if len(pr) == 3:
             left=self.visit(pr[0])
             middle=None
             right=self.visit(pr[2])
+        elif len(pr) == 5:
+            left=self.visit(pr[0])
+            middle=self.visit(pr[2])
+            right=self.visit(pr[4])
         return ColonOp(left=left, middle=middle, right=right)
 
 
@@ -1450,11 +1451,6 @@ class MatlabGrammar:
     # The operator precedence rules in Matlab are listed here:
     # http://www.mathworks.com/help/matlab/matlab_prog/operator-precedence.html
 
-    # Note: colon operator for 3 arguments is not implemented with the code
-    # below, because I couldn't seem to make the infixNotation ternary case
-    # work.  So, here the colon op is defined as binary, and then it's fixed
-    # up in post-processing in NodeTransformer.
-
     _transp_op     = NotAny(_WHITE) + _NC_TRANSP ^ NotAny(_WHITE) + _CC_TRANSP
     _uplusminusneg = _UPLUS ^ _UMINUS ^ _UNOT
     _plusminus     = _PLUS ^ _MINUS
@@ -1495,6 +1491,7 @@ class MatlabGrammar:
         (Group(_uplusminusneg), 1, opAssoc.RIGHT),
         (Group(_timesdiv),      2, opAssoc.LEFT, makeLRlike(2)),
         (Group(_plusminus),     2, opAssoc.LEFT, makeLRlike(2)),
+        ((Group(_colon_op), Group(_colon_op)), 3, opAssoc.LEFT, makeLRlike(3)),
         (Group(_colon_op),      2, opAssoc.LEFT, makeLRlike(2)),
         (Group(_logical_op),    2, opAssoc.LEFT, makeLRlike(2)),
         (Group(_AND),           2, opAssoc.LEFT, makeLRlike(2)),
@@ -1537,6 +1534,7 @@ class MatlabGrammar:
         (Group(_uplusminusneg), 1, opAssoc.RIGHT),
         (Group(_timesdiv),      2, opAssoc.LEFT, makeLRlike(2)),
         (Group(_plusminus_array),     2, opAssoc.LEFT, makeLRlike(2)),
+        ((Group(_colon_op), Group(_colon_op)), 3, opAssoc.LEFT, makeLRlike(3)),
         (Group(_colon_op),      2, opAssoc.LEFT, makeLRlike(2)),
         (Group(_logical_op),    2, opAssoc.LEFT, makeLRlike(2)),
         (Group(_AND),           2, opAssoc.LEFT, makeLRlike(2)),
