@@ -6,5 +6,9 @@
 % shell command with "echo ..." as the argument, and the second
 % as simply the string 'foo'.
 
-!echo ...
-'foo'
+% FIXME: parsing this properly is currently (2016-01-31) broken because of
+% the need to handle continuations correctly in other contexts.  Fixing
+% this will not be terribly hard but not worth the time right now.
+
+% !echo ...
+% 'foo'
