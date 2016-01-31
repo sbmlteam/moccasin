@@ -1961,8 +1961,8 @@ class MatlabGrammar:
         '''
         self._reset()
         try:
-            self._print_debug(print_debug)
             preprocessed = self._preprocess(input)
+            self._print_debug(print_debug)
             pr = self._matlab_syntax.parseString(preprocessed, parseAll=True)
             top_context = self._generate_nodes_and_contexts(pr)
             if print_results:
@@ -1994,8 +1994,8 @@ class MatlabGrammar:
         try:
             file = open(path, 'r')
             contents = file.read()
-            self._print_debug(print_debug)
             preprocessed = self._preprocess(contents)
+            self._print_debug(print_debug)
             pr = self._matlab_syntax.parseString(preprocessed, parseAll=True)
             top_context = self._generate_nodes_and_contexts(pr)
             top_context.file = path
