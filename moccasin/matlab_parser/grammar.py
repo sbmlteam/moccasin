@@ -1142,11 +1142,11 @@ class MatlabGrammar:
     #             _foo = Group(_bar('bar') | _biff('biff'))
     # then _bar and _biff never actually get invoked when _foo is invoked;
     # what get invoked are copies of _bar and _biff, because that's what gets
-    # stored in _foo.  This has implications for our use of _store_stmt()
-    # further below: setting a name on _bar & _biff as above causes copies of
-    # _bar and _biff to be used in _foo, which means _bar and _biff never get
-    # called, which means _store_stmt() is never called either.  This leads
-    # to subtle and frustrating rounds of bug-chasing.
+    # stored in _foo.  This has implications for using parse actions and also
+    # debug tracing.  Right now, we no longer use parse actions, but beware
+    # that if parse actions are ever attached to _bar & _biff, they are not
+    # actually called when _foo is invoked because _foo uses copies of _bar
+    # and _biff.  This leads to subtle and frustrating rounds of bug-chasing.
     #
     # 2) The grammar below is sometimes designed with the assumption that the
     # input is valid Matlab.  This fits our purpose, which is to parse valid
@@ -1210,16 +1210,17 @@ class MatlabGrammar:
     # Optional(_WHITE) is useless and can be removed: no, they have to stay
     # in order to work properly inside other definitions later.
     #
-    # The handling of whitespace inside arrays is extremely challenging in this
-    # parsing framework.  Here are examples of MATLAB cases to be dealt with.
-    # Suppose that "a" is an array of one item.
+    # Important note about _one_sub: handling MATLAB whitespace behavior
+    # inside and outside of arrays is extremely challenging in this parsing
+    # framework.  Here are examples of cases to be dealt with.  Suppose that
+    # "a" is an array of one item:
     #
     #    a(1)        => one item, the value inside the array "a" at location 1
     #    a (1)       => one item, the value inside the array "a" at location 1
     #    [a (1)]     => an array of TWO items, a and 1
     #    [(a (1))]   => an array of ONE item, a(1)
     #
-    # Notice how in the 3rd case, the handling of whitespace changes inside
+    # Notice how in the 3rd example, the handling of whitespace changes inside
     # the array context, yet wrapping the same expression in parentheses once
     # again reverts the behavior of whitespace handling to how it is outside
     # the array context.  (Aside: WTF!?)  The solution implemented here is
@@ -1485,19 +1486,19 @@ class MatlabGrammar:
                            ^ FollowedBy(_not_unary) + _UNOT
 
     _expr        <<= infixNotation(_operand, [
-        (Group(_transp_op),     1, opAssoc.LEFT, makeLRlike(1)),
-        (Group(_uplusminusneg_after), 1, opAssoc.RIGHT),
-        (Group(_power),         2, opAssoc.LEFT, makeLRlike(2)),
-        (Group(_uplusminusneg), 1, opAssoc.RIGHT),
-        (Group(_timesdiv),      2, opAssoc.LEFT, makeLRlike(2)),
-        (Group(_plusminus),     2, opAssoc.LEFT, makeLRlike(2)),
+        (Group(_transp_op),                    1, opAssoc.LEFT, makeLRlike(1)),
+        (Group(_uplusminusneg_after),          1, opAssoc.RIGHT),
+        (Group(_power),                        2, opAssoc.LEFT, makeLRlike(2)),
+        (Group(_uplusminusneg),                1, opAssoc.RIGHT),
+        (Group(_timesdiv),                     2, opAssoc.LEFT, makeLRlike(2)),
+        (Group(_plusminus),                    2, opAssoc.LEFT, makeLRlike(2)),
         ((Group(_colon_op), Group(_colon_op)), 3, opAssoc.LEFT, makeLRlike(3)),
-        (Group(_colon_op),      2, opAssoc.LEFT, makeLRlike(2)),
-        (Group(_logical_op),    2, opAssoc.LEFT, makeLRlike(2)),
-        (Group(_AND),           2, opAssoc.LEFT, makeLRlike(2)),
-        (Group(_OR),            2, opAssoc.LEFT, makeLRlike(2)),
-        (Group(_SHORT_AND),     2, opAssoc.LEFT, makeLRlike(2)),
-        (Group(_SHORT_OR),      2, opAssoc.LEFT, makeLRlike(2)),
+        (Group(_colon_op),                     2, opAssoc.LEFT, makeLRlike(2)),
+        (Group(_logical_op),                   2, opAssoc.LEFT, makeLRlike(2)),
+        (Group(_AND),                          2, opAssoc.LEFT, makeLRlike(2)),
+        (Group(_OR),                           2, opAssoc.LEFT, makeLRlike(2)),
+        (Group(_SHORT_AND),                    2, opAssoc.LEFT, makeLRlike(2)),
+        (Group(_SHORT_OR),                     2, opAssoc.LEFT, makeLRlike(2)),
     ])
 
     # MATLAB does something evil: the parsing behavior changes inside array
@@ -1528,19 +1529,19 @@ class MatlabGrammar:
     _operand_in_array = Group(_end_op | _operand_basic).leaveWhitespace()
 
     _expr_in_array <<= infixNotation(_operand_in_array, [
-        (Group(_transp_op),     1, opAssoc.LEFT, makeLRlike(1)),
-        (Group(_uplusminusneg_after), 1, opAssoc.RIGHT),
-        (Group(_power),         2, opAssoc.LEFT, makeLRlike(2)),
-        (Group(_uplusminusneg), 1, opAssoc.RIGHT),
-        (Group(_timesdiv),      2, opAssoc.LEFT, makeLRlike(2)),
-        (Group(_plusminus_array),     2, opAssoc.LEFT, makeLRlike(2)),
+        (Group(_transp_op),                    1, opAssoc.LEFT, makeLRlike(1)),
+        (Group(_uplusminusneg_after),          1, opAssoc.RIGHT),
+        (Group(_power),                        2, opAssoc.LEFT, makeLRlike(2)),
+        (Group(_uplusminusneg),                1, opAssoc.RIGHT),
+        (Group(_timesdiv),                     2, opAssoc.LEFT, makeLRlike(2)),
+        (Group(_plusminus_array),              2, opAssoc.LEFT, makeLRlike(2)),
         ((Group(_colon_op), Group(_colon_op)), 3, opAssoc.LEFT, makeLRlike(3)),
-        (Group(_colon_op),      2, opAssoc.LEFT, makeLRlike(2)),
-        (Group(_logical_op),    2, opAssoc.LEFT, makeLRlike(2)),
-        (Group(_AND),           2, opAssoc.LEFT, makeLRlike(2)),
-        (Group(_OR),            2, opAssoc.LEFT, makeLRlike(2)),
-        (Group(_SHORT_AND),     2, opAssoc.LEFT, makeLRlike(2)),
-        (Group(_SHORT_OR),      2, opAssoc.LEFT, makeLRlike(2)),
+        (Group(_colon_op),                     2, opAssoc.LEFT, makeLRlike(2)),
+        (Group(_logical_op),                   2, opAssoc.LEFT, makeLRlike(2)),
+        (Group(_AND),                          2, opAssoc.LEFT, makeLRlike(2)),
+        (Group(_OR),                           2, opAssoc.LEFT, makeLRlike(2)),
+        (Group(_SHORT_AND),                    2, opAssoc.LEFT, makeLRlike(2)),
+        (Group(_SHORT_OR),                     2, opAssoc.LEFT, makeLRlike(2)),
     ])
 
     # Assignments.
