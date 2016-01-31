@@ -1,0 +1,14 @@
+[
+UnaryOp(op='~', operand=FunCall(name=Identifier(name='true'), args=[]))
+UnaryOp(op='~', operand=UnaryOp(op='~', operand=FunCall(name=Identifier(name='true'), args=[])))
+Number(value='2')
+Number(value='2')
+Number(value='-3')
+Number(value='3')
+Transpose(op=''', operand=Identifier(name='M'))
+Comment(content=' FIXME failure:')
+Comment(content=" M''")
+Transpose(op='.'', operand=Identifier(name='N'))
+Comment(content=' FIXME failure:')
+Comment(content=" N.'.'")
+]

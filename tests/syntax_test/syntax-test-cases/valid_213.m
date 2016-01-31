@@ -1,0 +1,2 @@
+while ~feof(fid)  
+end

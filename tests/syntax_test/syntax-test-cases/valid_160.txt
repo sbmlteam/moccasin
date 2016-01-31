@@ -1,0 +1,11 @@
+[
+Comment(content='comment1')
+Comment(content='comment2 ')
+FunDef(name=Identifier(name='a'), parameters=None, output=None, body=[])
+Comment(content='comment3')
+Comment(content='comment4 ')
+FunDef(name=Identifier(name='b'), parameters=None, output=None, body=[])
+Comment(content='comment5')
+Comment(content='comment6 ')
+FunDef(name=Identifier(name='c'), parameters=None, output=None, body=[])
+]

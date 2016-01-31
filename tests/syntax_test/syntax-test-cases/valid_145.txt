@@ -1,0 +1,14 @@
+[
+Number(value='2')
+Number(value='2')
+Array(is_cell=False, rows=[[Number(value='2'), Number(value='1')]])
+Array(is_cell=False, rows=[[Number(value='2')]])
+Array(is_cell=False, rows=[[Number(value='2')]])
+Array(is_cell=False, rows=[[Number(value='1'), Number(value='2')]])
+Array(is_cell=False, rows=[[Number(value='1'), Number(value='2')]])
+Array(is_cell=False, rows=[[Number(value='1'), Number(value='2')]])
+Array(is_cell=False, rows=[[BinaryOp(op='+', left=Number(value='1'), right=Number(value='2'))]])
+Array(is_cell=False, rows=[[Number(value='1'), Number(value='2')]])
+Array(is_cell=False, rows=[[BinaryOp(op='+', left=Number(value='1'), right=Number(value='2'))]])
+Array(is_cell=False, rows=[[BinaryOp(op='+', left=Number(value='1'), right=Number(value='2'))]])
+]

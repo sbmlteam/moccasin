@@ -1,0 +1,3 @@
+[
+Switch(cond=Identifier(name='a'), case_tuples=[], otherwise=[])
+]

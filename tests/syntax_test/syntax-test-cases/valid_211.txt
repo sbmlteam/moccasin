@@ -1,0 +1,3 @@
+[
+Try(body=[Assignment(lhs=Identifier(name='A'), rhs=BinaryOp(op='/', left=Identifier(name='B'), right=Identifier(name='C')))], catch_var=None, catch_body=[Assignment(lhs=Identifier(name='A'), rhs=Identifier(name='B'))])
+]

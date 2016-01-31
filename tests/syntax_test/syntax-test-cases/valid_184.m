@@ -1,0 +1,5 @@
+a(end)
+a(end + 1)
+a(end : -1 : 1)
+a(end, 1)
+a(ending)

@@ -1,0 +1,3 @@
+[
+While(cond=UnaryOp(op='~', operand=FunCall(name=Identifier(name='feof'), args=[Identifier(name='fid')])), body=[])
+]

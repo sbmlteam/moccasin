@@ -1,0 +1,4 @@
+[
+FunCall(name=Identifier(name='cmd'), args=[String(value='a'), String(value='b'), String(value='c')])
+FunCall(name=Identifier(name='cmd'), args=[String(value='a'), String(value='b'), String(value='c')])
+]

@@ -1,0 +1,6 @@
+[
+FunDef(name=Identifier(name='a'), parameters=None, output=None, body=[])
+FunDef(name=Identifier(name='b'), parameters=None, output=None, body=[])
+FunDef(name=Identifier(name='c'), parameters=None, output=None, body=[])
+FunDef(name=Identifier(name='d'), parameters=None, output=None, body=[])
+]

@@ -1,0 +1,3 @@
+[
+Assignment(lhs=Identifier(name='e'), rhs=Array(is_cell=True, rows=[[Number(value='1'), Number(value='2')], [Number(value='3'), Number(value='4')]]))
+]

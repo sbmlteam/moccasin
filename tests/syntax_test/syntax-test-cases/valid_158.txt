@@ -1,0 +1,5 @@
+[
+Comment(content='comment1')
+Comment(content='comment2 ')
+FunDef(name=Identifier(name='a'), parameters=None, output=None, body=[])
+]
