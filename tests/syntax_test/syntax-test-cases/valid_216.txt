@@ -1,0 +1,3 @@
+[
+Array(is_cell=True, rows=[[String(value='0'), String(value=''), String(value=''), String(value='6'), String(value=''), String(value=''), String(value='12'), String(value='')]])
+]
