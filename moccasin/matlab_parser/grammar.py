@@ -416,8 +416,8 @@ class ParseResultsTransformer:
             # It's a terminal element, so we don't do anything more.
             return pr
 
-#        pdb.set_trace()
-        if len(pr) > 1 and empty_dict(pr):
+        length = len(pr)
+        if length > 1 and empty_dict(pr):
             # It's an expression.  We deconstruct the infix notation.
             if pr[1].get('transpose'):
                 # Process the first part and revisit the rest, in case we
@@ -432,6 +432,11 @@ class ParseResultsTransformer:
                     return self.visit_colon_operator(pr)
             elif len(pr) == 5 and 'colon operator' in pr[1].keys():
                 return self.visit_colon_operator(pr)
+        elif length == 1 and pr[0] == '':
+            # An empty string.  This special case handling shoudn't be
+            # needed, but for some reason, empty strings don't get tagged
+            # with the 'string' key like non-empty strings do.
+            return String(value='')
 
         # Not an expression, but an individual, single parse result.
         # We dispatch to the appropriate transformer by building the name.
