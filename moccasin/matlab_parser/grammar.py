@@ -1670,7 +1670,7 @@ class MatlabGrammar:
     _single_value   = Group(_id) | Group(_TILDE)
     _comma_values   = delimitedList(_single_value)
     _space_values   = OneOrMore(_single_value)
-    _multi_values   = _LBRACKET + (_comma_values ^ _space_values) + _RBRACKET
+    _multi_values   = _LBRACKET + Optional(_comma_values ^ _space_values) + _RBRACKET
     _fun_outputs    = Group(_multi_values) | Group(_single_value)
     _fun_params     = delimitedList(Group(_TILDE) | Group(_id))
     _fun_paramslist = _LPAR + Optional(_fun_params) + _RPAR
