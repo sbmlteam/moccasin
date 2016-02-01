@@ -383,6 +383,11 @@ if LooseVersion(pyparsing.__version__) < LooseVersion('2.0.3'):
 
 ParserElement.enablePackrat()
 
+# The inefficient nature of this parser leads to easily exceeding the default
+# recursion stack limit.  Let's increase it:
+
+sys.setrecursionlimit(5000)
+
 
 # Helper classes
 # .............................................................................

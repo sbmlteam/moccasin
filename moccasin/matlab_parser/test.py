@@ -44,7 +44,6 @@ import sys
 import getopt
 from grammar import *
 
-
 def get_filename_and_options(argv):
     '''Helper function for parsing command-line arguments.'''
     try:
