@@ -1526,7 +1526,7 @@ class MatlabGrammar:
     _plusminus_array = (OneOrMore(_WHITE) + (_PLUS ^ _MINUS).leaveWhitespace() + OneOrMore(_WHITE)) \
                        | (NotAny(_WHITE) + (_PLUS ^ _MINUS).leaveWhitespace())
 
-    _operand_in_array = Group(_end_op | _operand_basic).leaveWhitespace()
+    _operand_in_array = Group(_end_op | _TILDE | _operand_basic).leaveWhitespace()
 
     _expr_in_array <<= infixNotation(_operand_in_array, [
         (Group(_transp_op),                    1, opAssoc.LEFT, makeLRlike(1)),
