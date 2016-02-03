@@ -432,7 +432,7 @@ class FlowControl(MatlabNode):
     # FIXME
 
 
-class TryCatch(FlowControl):
+class Try(FlowControl):
     _attr_names = ['body', 'catch_var', 'catch_body']
     _visitable_attr = ['body', 'catch_var', 'catch_body']
 

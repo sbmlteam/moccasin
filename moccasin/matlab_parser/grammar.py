@@ -101,7 +101,7 @@
 # |  +- While
 # |  +- For
 # |  +- Switch
-# |  +- TryCatch
+# |  +- Try
 # |  `- Branch
 # |
 # +--ShellCommand
@@ -768,7 +768,7 @@ class ParseResultsTransformer:
             the_var = self.visit(content['catch variable'])
         if 'catch body' in content:
             the_catch_body = self._convert_list(content['catch body'])
-        return TryCatch(body=the_body, catch_var=the_var, catch_body=the_catch_body)
+        return Try(body=the_body, catch_var=the_var, catch_body=the_catch_body)
 
 
     def visit_scope_declaration(self, pr):
