@@ -78,7 +78,7 @@
 # |  |  |  +- FunHandle     # A function handle, e.g., "@foo"
 # |  |  |  `- AnonFun       # An anonymous function, e.g., "@(x,y)x+y".
 # |  |  |
-# |  |  `- Reference        # Objects that point to values.
+# |  |  `- Reference        # Objects that store or return values.
 # |  |     +- Identifier
 # |  |     +- ArrayOrFunCall
 # |  |     +- FunCall
@@ -388,6 +388,19 @@ ParserElement.enablePackrat()
 
 sys.setrecursionlimit(5000)
 
+
+
+# Exception classes
+# .............................................................................
+
+class MatlabParsingException(Exception):
+    pass
+
+
+class MatlabInternalException(Exception):
+    pass
+
+
 
 # Helper classes
 # .............................................................................
@@ -437,6 +450,11 @@ class ParseResultsTransformer:
                     return self.visit_colon_operator(pr)
             elif len(pr) == 5 and 'colon operator' in pr[1].keys():
                 return self.visit_colon_operator(pr)
+            else:
+                # This should not happen, but maybe someday it will.
+                msg = 'Unexpected expression form encountered in ParseResults.'
+                raise MatlabInternalException(msg)
+
         elif length == 1 and pr[0] == '':
             # An empty string.  This special case handling shoudn't be
             # needed, but for some reason, empty strings don't get tagged
@@ -479,6 +497,8 @@ class ParseResultsTransformer:
         # FIXME this needs to be checked more closely.
         if 'end' in pr['end operator']:
             return Special(value='end')
+        else:
+            raise MatlabInternalException('Failed to parse "end" operator')
 
 
     def visit_unary_operator(self, pr):
@@ -1986,7 +2006,8 @@ class MatlabGrammar:
                 print(msg)
                 return None
             else:
-                raise err
+                msg = 'Failed to parse MATLAB input'
+                raise MatlabParsingException(msg)
 
 
     def parse_file(self, path, print_results=False, print_debug=False,
@@ -2021,7 +2042,8 @@ class MatlabGrammar:
                 print(msg)
                 return None
             else:
-                raise err
+                msg = 'Failed to parse MATLAB input'
+                raise MatlabParsingException(msg)
 
 
     def print_parse_results(self, results, print_raw=False):
