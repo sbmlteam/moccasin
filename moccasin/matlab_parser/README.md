@@ -53,7 +53,7 @@ MatlabNode
 │  │  │  ├─ FunHandle     # A function handle, e.g., "@foo"
 │  │  │  └─ AnonFun       # An anonymous function, e.g., "@(x,y)x├y".
 │  │  │
-│  │  └─ Reference        # Objects that point to values.
+│  │  └─ Reference        # Objects that store or return values.
 │  │     ├─ Identifier
 │  │     ├─ ArrayOrFunCall
 │  │     ├─ FunCall
@@ -76,7 +76,7 @@ MatlabNode
 │  ├─ While
 │  ├─ For
 │  ├─ Switch
-│  ├─ TryCatch
+│  ├─ Try
 │  └─ Branch
 │
 ├──ShellCommand
