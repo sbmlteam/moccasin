@@ -1,40 +1,41 @@
+function thysim_sbml(arg_list)
 % this version is from thysimconst.m and will be used in getplot.cgi
 % modified to allow tspan and ICs to be passed in as parameters
 % Thyroid hormone equations implementation based on 
 % May 10, 2012 equations.
 
 % Clear previous variables, if any
-clc; clear all;
+% clc; clear all;
 
 % Process argument list
-arg_list = argv();
-IC1  = str2num(arg_list{1});
-IC2  = str2num(arg_list{2});
-IC3  = str2num(arg_list{3});
-IC4  = str2num(arg_list{4});
-IC5  = str2num(arg_list{5});
-IC6  = str2num(arg_list{6});
-IC7  = str2num(arg_list{7});
-IC8  = str2num(arg_list{8});
-IC9  = str2num(arg_list{9});
-IC10 = str2num(arg_list{10});
-IC11 = str2num(arg_list{11});
-IC12 = str2num(arg_list{12});
-IC13 = str2num(arg_list{13});
-IC14 = str2num(arg_list{14});
-IC15 = str2num(arg_list{15});
-IC16 = str2num(arg_list{16});
-IC17 = str2num(arg_list{17});
-IC18 = str2num(arg_list{18});
-IC19 = str2num(arg_list{19});
-t1   = str2num(arg_list{20});
-t2   = str2num(arg_list{21});
-dial1= str2num(arg_list{22});
-dial2= str2num(arg_list{23});
-dial3= str2num(arg_list{24});
-dial4= str2num(arg_list{25});
-inf1 = str2num(arg_list{26});
-inf4 = str2num(arg_list{27});
+% arg_list = argv();
+IC1  = arg_list(1);
+IC2  = arg_list(2);
+IC3  = arg_list(3);
+IC4  = arg_list(4);
+IC5  = arg_list(5);
+IC6  = arg_list(6);
+IC7  = arg_list(7);
+IC8  = arg_list(8);
+IC9  = arg_list(9);
+IC10 = arg_list(10);
+IC11 = arg_list(11);
+IC12 = arg_list(12);
+IC13 = arg_list(13);
+IC14 = arg_list(14);
+IC15 = arg_list(15);
+IC16 = arg_list(16);
+IC17 = arg_list(17);
+IC18 = arg_list(18);
+IC19 = arg_list(19);
+t1   = arg_list(20);
+t2   = arg_list(21);
+dial1= arg_list(22);
+dial2= arg_list(23);
+dial3= arg_list(24);
+dial4= arg_list(25);
+inf1 = arg_list(26);
+inf4 = arg_list(27);
 
 % Declare global variables for use in ODE function
 global p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19;
@@ -103,10 +104,10 @@ p48 =  3.5;                 %VTSH
 
 % Equations are in a separate function
 function [dqdt] = ODEss(t,q)
-global p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19;
-global p20 p21 p22 p23 p24 p25 p26 p27 p28 p29 p30 p31 p32 p33 p34 p35 p36;
-global p37 p38 p39 p40 p41 p42 p43 p44 p45 p46 p47 p48 kdelay u1 u4;
-global d1 d2 d3 d4;
+%  global p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 p18 p19;
+%  global p20 p21 p22 p23 p24 p25 p26 p27 p28 p29 p30 p31 p32 p33 p34 p35 p36;
+%  global p37 p38 p39 p40 p41 p42 p43 p44 p45 p46 p47 p48 kdelay u1 u4;
+%  global d1 d2 d3 d4;
 
 % Auxillary equations
 q4F = (p24+p25*q(1)+p26*q(1)^2+p27*q(1)^3)*q(4);         %FT3p
@@ -164,7 +165,7 @@ dqdt(18)=q18dot;
 dqdt(19)=q19dot;
 dqdt=dqdt';
 
-endfunction
+end
 
 % Declare solve conditions and solve
 q0 = [IC1; IC2; IC3; IC4; IC5; IC6; IC7; IC8; IC9; IC10; IC11; IC12; IC13; IC14; IC15; IC16; IC17; IC18; IC19];
@@ -177,143 +178,144 @@ vopt = odeset ('NormControl','on', 'InitialStep',1);
 [n m] = size(x);
 
 % T4
-printf("START_q1_START\n");
+disp('START_q1_START\n');
 for i = 1:n
-  printf("%0.6f\n",x(i,1));
+  disp(sprintf('%0.6f\n',x(i,1)));
 end
-printf("END_q1_END\n");
+disp('END_q1_END\n');
 
 % T3
-printf("START_q4_START\n");
+disp('START_q4_START\n');
 for i = 1:n
-  printf("%0.6f\n",x(i,4));
+  disp(sprintf('%0.6f\n',x(i,4)));
 end
-printf("END_q4_END\n");
+disp('END_q4_END\n');
 
 % TSH
-printf("START_q7_START\n");
+disp('START_q7_START\n');
 for i = 1:n
-  printf("%0.6f\n",x(i,7));
+  disp(sprintf('%0.6f\n',x(i,7)));
 end
-printf("END_q7_END\n");
+disp('END_q7_END\n');
 
 % time
-printf("START_t_START\n");
+disp('START_t_START\n');
 for i = 1:n
-  printf("%0.6f\n",t(i));
+  disp(sprintf('%0.6f\n',t(i)));
 end
-printf("END_t_END\n");
+disp('END_t_END\n');
 
 % q2
-printf("START_q2_START\n");
+disp('START_q2_START\n');
 for i = 1:n
-  printf("%0.6f\n",x(i,2));
+  disp(sprintf('%0.6f\n',x(i,2)));
 end
-printf("END_q2_END\n");
+disp('END_q2_END\n');
 
 % q3
-printf("START_q3_START\n");
+disp('START_q3_START\n');
 for i = 1:n
-  printf("%0.6f\n",x(i,3));
+  disp(sprintf('%0.6f\n',x(i,3)));
 end
-printf("END_q3_END\n");
+disp('END_q3_END\n');
 
 % q5
-printf("START_q5_START\n");
+disp('START_q5_START\n');
 for i = 1:n
-  printf("%0.6f\n",x(i,5));
+  disp(sprintf('%0.6f\n',x(i,5)));
 end
-printf("END_q5_END\n");
+disp('END_q5_END\n');
 
 % q6
-printf("START_q6_START\n");
+disp('START_q6_START\n');
 for i = 1:n
-  printf("%0.6f\n",x(i,6));
+  disp(sprintf('%0.6f\n',x(i,6)));
 end
-printf("END_q6_END\n");
+disp('END_q6_END\n');
 
 % q8
-printf("START_q8_START\n");
+disp('START_q8_START\n');
 for i = 1:n
-  printf("%0.6f\n",x(i,8));
+  disp(sprintf('%0.6f\n',x(i,8)));
 end
-printf("END_q8_END\n");
+disp('END_q8_END\n');
 
 % q9
-printf("START_q9_START\n");
+disp('START_q9_START\n');
 for i = 1:n
-  printf("%0.6f\n",x(i,9));
+  disp(sprintf('%0.6f\n',x(i,9)));
 end
-printf("END_q9_END\n");
+disp('END_q9_END\n');
 
 % q10
-printf("START_q10_START\n");
+disp('START_q10_START\n');
 for i = 1:n
-  printf("%0.6f\n",x(i,10));
+  disp(sprintf('%0.6f\n',x(i,10)));
 end
-printf("END_q10_END\n");
+disp('END_q10_END\n');
 
 % q11
-printf("START_q11_START\n");
+disp('START_q11_START\n');
 for i = 1:n
-  printf("%0.6f\n",x(i,11));
+  disp(sprintf('%0.6f\n',x(i,11)));
 end
-printf("END_q11_END\n");
+disp('END_q11_END\n');
 
 % q12
-printf("START_q12_START\n");
+disp('START_q12_START\n');
 for i = 1:n
-  printf("%0.6f\n",x(i,12));
+  disp(sprintf('%0.6f\n',x(i,12)));
 end
-printf("END_q12_END\n");
+disp('END_q12_END\n');
 
 % q13
-printf("START_q13_START\n");
+disp('START_q13_START\n');
 for i = 1:n
-  printf("%0.6f\n",x(i,13));
+  disp(sprintf('%0.6f\n',x(i,13)));
 end
-printf("END_q13_END\n");
+disp('END_q13_END\n');
 
 % q14
-printf("START_q14_START\n");
+disp('START_q14_START\n');
 for i = 1:n
-  printf("%0.6f\n",x(i,14));
+  disp(sprintf('%0.6f\n',x(i,14)));
 end
-printf("END_q14_END\n");
+disp('END_q14_END\n');
 
 % q15
-printf("START_q15_START\n");
+disp('START_q15_START\n');
 for i = 1:n
-  printf("%0.6f\n",x(i,15));
+  disp(sprintf('%0.6f\n',x(i,15)));
 end
-printf("END_q15_END\n");
+disp('END_q15_END\n');
 
 % q16
-printf("START_q16_START\n");
+disp('START_q16_START\n');
 for i = 1:n
-  printf("%0.6f\n",x(i,16));
+  disp(sprintf('%0.6f\n',x(i,16)));
 end
-printf("END_q16_END\n");
+disp('END_q16_END\n');
 
 % q17
-printf("START_q17_START\n");
+disp('START_q17_START\n');
 for i = 1:n
-  printf("%0.6f\n",x(i,17));
+  disp(sprintf('%0.6f\n',x(i,17)));
 end
-printf("END_q17_END\n");
+disp('END_q17_END\n');
 
 % q18
-printf("START_q18_START\n");
+disp('START_q18_START\n');
 for i = 1:n
-  printf("%0.6f\n",x(i,18));
+  disp(sprintf('%0.6f\n',x(i,18)));
 end
-printf("END_q18_END\n");
+disp('END_q18_END\n');
 
 % q19
-printf("START_q19_START\n");
+disp('START_q19_START\n');
 for i = 1:n
-  printf("%0.6f\n",x(i,19));
+  disp(sprintf('%0.6f\n',x(i,19)));
 end
-printf("END_q19_END\n");
+disp('END_q19_END\n');
 
 %%% script end %%%
+end
