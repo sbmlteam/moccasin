@@ -29,8 +29,6 @@ from pyparsing import ParseException, ParseResults
 sys.path.append('../../moccasin/')
 from matlab_parser import *
 
-parser = MatlabGrammar()
-
 
 def main(argv):
     '''Usage: run-syntax-tests.py [-d] [-v]
@@ -49,20 +47,24 @@ def main(argv):
 
     for f in glob.glob("syntax-test-cases/valid*.m"):
         print('===== ' + f + ' ' + '='*30)
+        contents = ''
         with open(f, 'r') as file:
             contents = file.read()
+            file.close()
         print(contents.rstrip())
         if do_print:
             print('----- output ' + '-'*30)
-        try:
-            results = parser.parse_string(contents, print_debug=do_print, fail_soft=True)
-        except Exception as err:
-            if do_debug and not results:
-                print('Object "results" contains the output of parse_string()')
-                pdb.set_trace()
-        print('----- interpreted ' + '-'*30)
-        parser.print_parse_results(results)
-        print('')
+        with MatlabGrammar() as parser:
+            try:
+                results = parser.parse_string(contents, print_debug=do_print,
+                                              fail_soft=True)
+            except Exception as err:
+                if do_debug and not results:
+                    print('Object "results" contains the output of parse_string()')
+                    pdb.set_trace()
+            print('----- interpreted ' + '-'*30)
+            parser.print_parse_results(results)
+            print('')
 
 
 if __name__ == '__main__':
