@@ -70,34 +70,35 @@ Arguments:
 
     path, debug, print_old, quiet, interactive = get_filename_and_options(argv)
 
-    file = open(path, 'r')
-    if not quiet: print('----- file ' + path + ' ' + '-'*30)
-    contents = file.read()
-    if not quiet: print(contents)
+    with open(path, 'r') as file:
+        if not quiet: print('----- file ' + path + ' ' + '-'*30)
+        contents = file.read()
+        if not quiet: print(contents)
+        file.close()
 
-    parser  = MatlabGrammar()
-    # This uses parse_string() instead of parse_file() because the file has
-    # already been opened.  This is a minor performance improvement in case
-    # someone tries to read a really huge file -- no sense reading it twice.
-    results = parser.parse_string(contents, print_debug=debug)
-    # parse_string() doesn't set the name of the file in the context object,
-    # so let's do it ourselves as a convenience to the user.
-    results.file = path
-    if not print_old:
-        if not quiet: print('----- raw parse results ' + '-'*50)
-        parser.print_parse_results(results, print_raw=True)
-    else:
-        if not quiet:
-            print('----- raw parse results ' + '-'*50)
+    with MatlabGrammar() as parser:
+        # This uses parse_string() instead of parse_file() because the file has
+        # already been opened.  This is a minor performance improvement in case
+        # someone tries to read a really huge file -- no sense reading it twice.
+        results = parser.parse_string(contents, print_debug=debug)
+        # parse_string() doesn't set the name of the file in the context object,
+        # so let's do it ourselves as a convenience to the user.
+        results.file = path
+        if not print_old:
+            if not quiet: print('----- raw parse results ' + '-'*50)
             parser.print_parse_results(results, print_raw=True)
-        if not quiet: print('----- old format ' + '-'*50)
-        parser.print_parse_results(results)
+        else:
+            if not quiet:
+                print('----- raw parse results ' + '-'*50)
+                parser.print_parse_results(results, print_raw=True)
+            if not quiet: print('----- old format ' + '-'*50)
+            parser.print_parse_results(results)
 
-    if interactive:
-        print('-'*60)
-        print('Debug reminder: parsed results are in variable `results`')
-        print('-'*60)
-        pdb.set_trace()
+        if interactive:
+            print('-'*60)
+            print('Debug reminder: parsed results are in variable `results`')
+            print('-'*60)
+            pdb.set_trace()
 
 
 if __name__ == '__main__':
