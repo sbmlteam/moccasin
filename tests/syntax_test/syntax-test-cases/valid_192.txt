@@ -1,3 +1,3 @@
 [
-If(cond=BinaryOp(op='<', left=Identifier(name='n'), right=Number(value='0')), body=[], elseif_tuples=[(BinaryOp(op='>', left=Identifier(name='n'), right=Number(value='10')), []), (BinaryOp(op='>', left=Identifier(name='n'), right=Number(value='6')), []), (BinaryOp(op='>', left=Identifier(name='n'), right=Number(value='2')), [])], else=[])
+If(cond=BinaryOp(op='<', left=Ambiguous(name=Identifier(name='n'), args=None), right=Number(value='0')), body=[], elseif_tuples=[(BinaryOp(op='>', left=Ambiguous(name=Identifier(name='n'), args=None), right=Number(value='10')), []), (BinaryOp(op='>', left=Ambiguous(name=Identifier(name='n'), args=None), right=Number(value='6')), []), (BinaryOp(op='>', left=Ambiguous(name=Identifier(name='n'), args=None), right=Number(value='2')), [])], else=[])
 ]

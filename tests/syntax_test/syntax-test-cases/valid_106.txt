@@ -2,7 +2,7 @@
 Comment(content=' From MATLAB docs.')
 Assignment(lhs=Identifier(name='a'), rhs=FunCall(name=Identifier(name='struct'), args=[String(value='b'), Number(value='0'), String(value='c'), String(value='test')]))
 Comment(content=' Create structure')
-Assignment(lhs=StructRef(name=ArrayRef(is_cell=False, name=Identifier(name='a'), args=[Number(value='2')]), field=Identifier(name='b'), dynamic_access=False), rhs=Number(value='1'))
+Assignment(lhs=StructRef(name=ArrayRef(is_cell=False, name=Identifier(name='a'), args=[Number(value='2')]), field=Identifier(name='b'), dynamic=False), rhs=Number(value='1'))
 Comment(content=' Turn it into an array by creating another element')
-Assignment(lhs=StructRef(name=ArrayRef(is_cell=False, name=Identifier(name='a'), args=[Number(value='2')]), field=Identifier(name='c'), dynamic_access=False), rhs=String(value='testing'))
+Assignment(lhs=StructRef(name=ArrayRef(is_cell=False, name=Identifier(name='a'), args=[Number(value='2')]), field=Identifier(name='c'), dynamic=False), rhs=String(value='testing'))
 ]

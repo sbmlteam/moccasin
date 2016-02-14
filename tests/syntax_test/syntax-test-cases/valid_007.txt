@@ -1,4 +1,4 @@
 [
-Assignment(lhs=Identifier(name='m'), rhs=ArrayOrFunCall(name=Identifier(name='f'), args=[Number(value='1')]))
-Assignment(lhs=Identifier(name='n'), rhs=ArrayOrFunCall(name=Identifier(name='f'), args=[Number(value='2'), Number(value='3'), Number(value='4')]))
+Assignment(lhs=Identifier(name='m'), rhs=Ambiguous(name=Identifier(name='f'), args=[Number(value='1')]))
+Assignment(lhs=Identifier(name='n'), rhs=Ambiguous(name=Identifier(name='f'), args=[Number(value='2'), Number(value='3'), Number(value='4')]))
 ]

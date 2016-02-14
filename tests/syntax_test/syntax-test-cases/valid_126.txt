@@ -2,5 +2,5 @@
 Assignment(lhs=Identifier(name='mixed_values'), rhs=Array(is_cell=True, rows=[[String(value='jim'), Number(value='89'), Array(is_cell=False, rows=[[Number(value='5'), Number(value='2'), Number(value='1')]])]]))
 Comment(content=' here we retrieve the regular array out of the ')
 Comment(content=' cell array and then the first value from the regular array ')
-ArrayOrFunCall(name=ArrayRef(is_cell=True, name=Identifier(name='mixed_values'), args=[Number(value='3')]), args=[Number(value='1')])
+Ambiguous(name=ArrayRef(is_cell=True, name=Identifier(name='mixed_values'), args=[Number(value='3')]), args=[Number(value='1')])
 ]

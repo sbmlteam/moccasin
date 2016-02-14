@@ -1,3 +1,3 @@
 [
-StructRef(name=Identifier(name='i'), field=Identifier(name='j'), dynamic_access=False)
+StructRef(name=Identifier(name='i'), field=Identifier(name='j'), dynamic=False)
 ]

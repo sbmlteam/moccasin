@@ -1,4 +1,4 @@
 [
 Assignment(lhs=Identifier(name='x'), rhs=BinaryOp(op='.*', left=FunCall(name=Identifier(name='rand'), args=[Number(value='1'), Number(value='50')]), right=Number(value='100')))
-Assignment(lhs=Identifier(name='xpart'), rhs=ArrayOrFunCall(name=Identifier(name='x'), args=[BinaryOp(op='&', left=BinaryOp(op='>', left=Identifier(name='x'), right=Number(value='20')), right=BinaryOp(op='<', left=Identifier(name='x'), right=Number(value='35')))]))
+Assignment(lhs=Identifier(name='xpart'), rhs=ArrayRef(is_cell=False, name=Identifier(name='x'), args=[BinaryOp(op='&', left=BinaryOp(op='>', left=Identifier(name='x'), right=Number(value='20')), right=BinaryOp(op='<', left=Identifier(name='x'), right=Number(value='35')))]))
 ]

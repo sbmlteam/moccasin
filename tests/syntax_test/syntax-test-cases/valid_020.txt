@@ -1,6 +1,6 @@
 [
 Assignment(lhs=Identifier(name='t'), rhs=ColonOp(left=Number(value='0'), middle=Number(value='0.001'), right=Number(value='1')))
-FunCall(name=Identifier(name='plot'), args=[Identifier(name='t'), FunCall(name=Identifier(name='sin'), args=[BinaryOp(op='*', left=BinaryOp(op='*', left=Number(value='2'), right=FunCall(name=Identifier(name='pi'), args=[])), right=Array(is_cell=False, rows=[[Identifier(name='t')], [BinaryOp(op='+', left=Identifier(name='t'), right=Number(value='0.25'))]]))])])
+FunCall(name=Identifier(name='plot'), args=[Identifier(name='t'), FunCall(name=Identifier(name='sin'), args=[BinaryOp(op='*', left=BinaryOp(op='*', left=Number(value='2'), right=FunCall(name=Identifier(name='pi'), args=None)), right=Array(is_cell=False, rows=[[Identifier(name='t')], [BinaryOp(op='+', left=Identifier(name='t'), right=Number(value='0.25'))]]))])])
 FunCall(name=Identifier(name='xlabel'), args=[String(value='t')])
 FunCall(name=Identifier(name='ylabel'), args=[String(value='$\\hat{y}_k=sin 2\\pi (t+{k \\over 4})$'), String(value='Interpreter'), String(value='latex')])
 FunCall(name=Identifier(name='legend'), args=[Array(is_cell=True, rows=[[String(value='$\\hat{y}_0$'), String(value='$\\hat{y}_1$')]]), String(value='Interpreter'), String(value='latex')])

@@ -1,5 +1,5 @@
 [
 FunDef(name=Identifier(name='valid_78'), parameters=[Identifier(name='a')], output=[Identifier(name='x')], body=[Assignment(lhs=Identifier(name='x'), rhs=FunCall(name=Identifier(name='a'), args=[Number(value='2')]))])
-FunDef(name=Identifier(name='other'), parameters=[Identifier(name='y')], output=[Identifier(name='x')], body=[Assignment(lhs=Identifier(name='x'), rhs=Identifier(name='y'))])
-FunDef(name=Identifier(name='another'), parameters=[], output=[Identifier(name='x')], body=[FunCall(name=Identifier(name='valid_78'), args=[FunHandle(name=Identifier(name='other'))])])
+FunDef(name=Identifier(name='other'), parameters=[Identifier(name='y')], output=[Identifier(name='x')], body=[Assignment(lhs=Identifier(name='x'), rhs=Ambiguous(name=Identifier(name='y'), args=None))])
+FunDef(name=Identifier(name='another'), parameters=None, output=[Identifier(name='x')], body=[FunCall(name=Identifier(name='valid_78'), args=[FunHandle(name=Identifier(name='other'))])])
 ]

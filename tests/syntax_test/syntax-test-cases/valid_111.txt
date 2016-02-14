@@ -1,3 +1,3 @@
 [
-Assignment(lhs=Identifier(name='validationFcn'), rhs=AnonFun(args=[Identifier(name='x')], body=BinaryOp(op='&&', left=BinaryOp(op='&&', left=FunCall(name=Identifier(name='isnumeric'), args=[Identifier(name='x')]), right=FunCall(name=Identifier(name='isscalar'), args=[Identifier(name='x')])), right=BinaryOp(op='>', left=Identifier(name='x'), right=Number(value='0')))))
+Assignment(lhs=Identifier(name='validationFcn'), rhs=AnonFun(args=[Identifier(name='x')], body=BinaryOp(op='&&', left=BinaryOp(op='&&', left=FunCall(name=Identifier(name='isnumeric'), args=[Ambiguous(name=Identifier(name='x'), args=None)]), right=FunCall(name=Identifier(name='isscalar'), args=[Ambiguous(name=Identifier(name='x'), args=None)])), right=BinaryOp(op='>', left=Ambiguous(name=Identifier(name='x'), args=None), right=Number(value='0')))))
 ]

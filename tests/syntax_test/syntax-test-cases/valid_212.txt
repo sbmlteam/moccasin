@@ -1,12 +1,12 @@
 [
-UnaryOp(op='~', operand=FunCall(name=Identifier(name='true'), args=[]))
-UnaryOp(op='~', operand=UnaryOp(op='~', operand=FunCall(name=Identifier(name='true'), args=[])))
+UnaryOp(op='~', operand=FunCall(name=Identifier(name='true'), args=None))
+UnaryOp(op='~', operand=UnaryOp(op='~', operand=FunCall(name=Identifier(name='true'), args=None)))
 Number(value='2')
 Number(value='2')
 Number(value='-3')
 Number(value='3')
-Transpose(op=''', operand=Identifier(name='M'))
-Transpose(op=''', operand=Transpose(op=''', operand=Identifier(name='M')))
-Transpose(op='.'', operand=Identifier(name='N'))
-Transpose(op='.'', operand=Transpose(op='.'', operand=Identifier(name='N')))
+Transpose(op=''', operand=Ambiguous(name=Identifier(name='M'), args=None))
+Transpose(op=''', operand=Transpose(op=''', operand=Ambiguous(name=Identifier(name='M'), args=None)))
+Transpose(op='.'', operand=Ambiguous(name=Identifier(name='N'), args=None))
+Transpose(op='.'', operand=Transpose(op='.'', operand=Ambiguous(name=Identifier(name='N'), args=None)))
 ]

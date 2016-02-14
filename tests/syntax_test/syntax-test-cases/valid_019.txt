@@ -1,4 +1,4 @@
 [
-Assignment(lhs=Array(is_cell=False, rows=[[Identifier(name='a'), Identifier(name='b')]]), rhs=ArrayOrFunCall(name=Identifier(name='f'), args=[Number(value='3')]))
-Assignment(lhs=Array(is_cell=False, rows=[[Identifier(name='a')], [Identifier(name='b')]]), rhs=ArrayOrFunCall(name=Identifier(name='f'), args=[Number(value='3')]))
+Assignment(lhs=Array(is_cell=False, rows=[[Identifier(name='a'), Identifier(name='b')]]), rhs=Ambiguous(name=Identifier(name='f'), args=[Number(value='3')]))
+Assignment(lhs=Array(is_cell=False, rows=[[Identifier(name='a')], [Identifier(name='b')]]), rhs=Ambiguous(name=Identifier(name='f'), args=[Number(value='3')]))
 ]

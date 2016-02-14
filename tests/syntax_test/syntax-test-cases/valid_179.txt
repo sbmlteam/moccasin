@@ -1,3 +1,3 @@
 [
-Assignment(lhs=Identifier(name='A'), rhs=ArrayOrFunCall(name=ArrayRef(is_cell=True, name=Identifier(name='C'), args=[Number(value='2'), Number(value='2')]), args=[]))
+Assignment(lhs=Identifier(name='A'), rhs=Ambiguous(name=ArrayRef(is_cell=True, name=Identifier(name='C'), args=[Number(value='2'), Number(value='2')]), args=[]))
 ]

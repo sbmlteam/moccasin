@@ -1,8 +1,8 @@
 [
 Assignment(lhs=Identifier(name='a'), rhs=AnonFun(args=[], body=Number(value='1')))
-Assignment(lhs=Identifier(name='b'), rhs=AnonFun(args=[Identifier(name='x')], body=Identifier(name='x')))
-Assignment(lhs=Identifier(name='c'), rhs=AnonFun(args=[Identifier(name='x'), Identifier(name='y')], body=BinaryOp(op='-', left=Identifier(name='y'), right=Identifier(name='x'))))
-Assignment(lhs=Identifier(name='d'), rhs=AnonFun(args=[Identifier(name='x'), Identifier(name='y')], body=BinaryOp(op='-', left=Identifier(name='y'), right=Identifier(name='x'))))
-Assignment(lhs=Identifier(name='e'), rhs=AnonFun(args=[Identifier(name='x'), Identifier(name='y')], body=AnonFun(args=[Identifier(name='x')], body=Identifier(name='x'))))
-Assignment(lhs=Identifier(name='f'), rhs=AnonFun(args=[Identifier(name='x')], body=AnonFun(args=[Identifier(name='y')], body=BinaryOp(op='+', left=Identifier(name='x'), right=Identifier(name='y')))))
+Assignment(lhs=Identifier(name='b'), rhs=AnonFun(args=[Identifier(name='x')], body=Ambiguous(name=Identifier(name='x'), args=None)))
+Assignment(lhs=Identifier(name='c'), rhs=AnonFun(args=[Identifier(name='x'), Identifier(name='y')], body=BinaryOp(op='-', left=Ambiguous(name=Identifier(name='y'), args=None), right=Ambiguous(name=Identifier(name='x'), args=None))))
+Assignment(lhs=Identifier(name='d'), rhs=AnonFun(args=[Identifier(name='x'), Identifier(name='y')], body=BinaryOp(op='-', left=Ambiguous(name=Identifier(name='y'), args=None), right=Ambiguous(name=Identifier(name='x'), args=None))))
+Assignment(lhs=Identifier(name='e'), rhs=AnonFun(args=[Identifier(name='x'), Identifier(name='y')], body=AnonFun(args=[Identifier(name='x')], body=Ambiguous(name=Identifier(name='x'), args=None))))
+Assignment(lhs=Identifier(name='f'), rhs=AnonFun(args=[Identifier(name='x')], body=AnonFun(args=[Identifier(name='y')], body=BinaryOp(op='+', left=Ambiguous(name=Identifier(name='x'), args=None), right=Ambiguous(name=Identifier(name='y'), args=None)))))
 ]

@@ -54,7 +54,7 @@
 # other words, _MOCCASIN does not have access to the user's MATLAB
 # environment_, so it must resort to various heuristics to try to guess
 # whether a given entity is meant to be an array reference or a function
-# call.  It often cannot, and then it can only return `ArrayOrFunCall` as a
+# call.  It often cannot, and then it can only return `Ambiguous` as a
 # way to indicate it could be either one.
 #
 # Hierarchy of `MatlabNode` object classes
@@ -80,10 +80,10 @@
 # |  |  |
 # |  |  `- Reference        # Objects that store or return values.
 # |  |     +- Identifier
-# |  |     +- ArrayOrFunCall
 # |  |     +- FunCall
 # |  |     +- ArrayRef
-# |  |     `- StructRef
+# |  |     +- StructRef
+# |  |     `- Ambiguous
 # |  |
 # |  `- Operator
 # |     +- UnaryOp
@@ -139,13 +139,13 @@
 #      Unfortunately, they are among the most difficult objects to classify
 #      correctly in MATLAB.  The most notable case involves array accesses
 #      versus function calls, which are syntactically identical in MATLAB.
-#      `ArrayOrFunCall` objects represent something that cannot be
+#      `Ambiguous` objects represent something that cannot be
 #      distinguished as either an array reference or a named function call.
 #      This problem is discussed in a separate section below.  If the parser
 #      *can* infer that a given term is an array reference or a function
 #      call, then it will report them as `ArrayRef` or `FunCall`,
 #      respectively, but often it is impossible to tell and the parser must
-#      resort to using `ArrayOrFunCall`.
+#      resort to using `Ambiguous`.
 #
 # * `Operator` objects are tree-structured combinations of operators and
 #   `Entity` objects.  Operators generally have an attribute that represents
@@ -261,10 +261,10 @@
 #    array reference or function call has a name that appears on this list,
 #    it is inferred to be a `FunCall` and not an `ArrayRef`.
 #
-# 4. In all other cases, it will label the object `ArrayOrFunCall`.
+# 4. In all other cases, it will label the object `Ambiguous`.
 #
 # Users will need to do their own processing when they encounter a
-# `ArrayOrFunCall` object to determine what kind of thing the object really
+# `Ambiguous` object to determine what kind of thing the object really
 # is.  In the most general case, MOCCASIN can't tell from syntax alone
 # whether something could be a function, because without running MATLAB (and
 # doing it _in the user's environment_, since the user's environment affects
@@ -359,9 +359,11 @@ from __future__ import print_function
 import pdb
 import sys
 import copy
+import traceback
 import pyparsing                        # Need this for version check, so ...
 from pyparsing import *                 # ... DON'T merge this & previous stmt!
 from distutils.version import LooseVersion
+from collections import defaultdict
 try:
     from grammar_utils import *
     from context import *
@@ -493,12 +495,7 @@ class ParseResultsTransformer:
 
 
     def visit_end_operator(self, pr):
-        # 'end' should be the only keyword we ever encounter.
-        # FIXME this needs to be checked more closely.
-        if 'end' in pr['end operator']:
-            return Special(value='end')
-        else:
-            raise MatlabInternalException('Failed to parse "end" operator')
+        return Special(value='end')
 
 
     def visit_unary_operator(self, pr):
@@ -618,7 +615,7 @@ class ParseResultsTransformer:
             the_args = self._convert_list(content['argument list'])
         else:
             the_args = []
-        return ArrayOrFunCall(name=the_name, args=the_args)
+        return Ambiguous(name=the_name, args=the_args)
 
 
     def visit_function_handle(self, pr):
@@ -626,8 +623,8 @@ class ParseResultsTransformer:
         if 'name' in content:
             return FunHandle(name=self.visit(content['name']))
         else:
-            if 'argument list' in content.keys():
-                the_args = self._convert_list(content['argument list'])
+            if 'parameter list' in content.keys():
+                the_args = self._convert_list(content['parameter list'])
             else:
                 the_args = []
             the_body = self.visit(content['function definition'])
@@ -673,13 +670,10 @@ class ParseResultsTransformer:
         return fundef
 
 
-    def visit_funcall_or_id(self, pr):
-        content = pr['funcall or id']
+    def visit_ambiguous_id(self, pr):
+        content = pr['ambiguous id']
         name = content[0]
-        if matlab_function_or_command(name):
-            return FunCall(name=Identifier(name=name), args=[])
-        else:
-            return Identifier(name=name)
+        return Ambiguous(name=Identifier(name=name), args=None)
 
 
     def visit_struct(self, pr):
@@ -774,6 +768,8 @@ class ParseResultsTransformer:
         the_body = None
         if 'body' in content:
             the_body = self._convert_list(content['body'])
+        # We can convert references to the loop variable.
+        the_body = [Disambiguator(self, vars=[the_var]).visit(node) for node in the_body]
         return For(var=the_var, expr=the_expr, body=the_body)
 
 
@@ -788,6 +784,10 @@ class ParseResultsTransformer:
             the_var = self.visit(content['catch variable'])
         if 'catch body' in content:
             the_catch_body = self._convert_list(content['catch body'])
+            if the_var:
+                # We can convert references to the loop variable.
+                the_catch_body = [Disambiguator(self, vars=[the_var]).visit(node)
+                                  for node in the_catch_body]
         return Try(body=the_body, catch_var=the_var, catch_body=the_catch_body)
 
 
@@ -820,6 +820,7 @@ class ParseResultsTransformer:
                     if 'subscript list' in row]
         return [node for node in nodelist if node]
 
+
 
 # NodeTransformer
 #
@@ -829,7 +830,7 @@ class ParseResultsTransformer:
 #  1) Tries to infer the whether each object it encounters is a variable or
 #     a function.
 #
-#  2) Saves kind information about identifiers it encounters.
+#  2) Saves kind information about identifiers and functions it encounters.
 #
 #  3) Converts certain classes from one type to another. This is used to do
 #     things like convert ambiguous cases, like something that could be
@@ -845,136 +846,195 @@ class NodeTransformer(MatlabNodeVisitor):
         return [self.visit(item) for item in node]
 
 
+    def visit_FunCall(self, node):
+        # Save the call.
+        self._parser._save_function_call(node)
+        return node
+
+
     def visit_FunDef(self, node):
+        parser = self._parser
         # Since we know this to be a function, we record its type as such.
         # Make sure to record it in the parent's context -- that's why this
         # is done before a context is pushed in the next step below.
-        self._parser._save_type(node.name, 'function')
-
+        parser._save_type(node.name, 'function')
         # Push the new function context.
-        self._parser._push_context(node.context)
-
+        parser._push_context(node.context)
         # Record inferred type info about the input and output parameters.
         # The type info applies *inside* the function.
-        if node.output:
-            for var in node.output:
-                # The output parameter names are variables inside the
-                # context of the function definition.
-                if isinstance(var, Identifier):
-                    self._parser._save_type(var.name, 'variable')
+        for var in (node.output or []):
+            # Output parameters are vars inside the context of a function def.
+            if isinstance(var, Identifier):
+                parser._save_type(var.name, 'variable')
         if node.parameters:
-            # We later correlate the arguments with calls to this function,
-            # to figure out whether any of the arguments are known to be
-            # function handles.  If they're not, we assume they're variables.
-
-            # First, set the default as being variables.
-            for param in node.parameters:
-                if not isinstance(param, Special):
-                    self._parser._save_type(param.name, 'variable')
-
-            # Next, search through the dictionary of calls in the parent
-            # context.  Did we ever see this function get called directly?
-            # If we did, examine the arguments to the call.
-            fun_name = node.name.name
+            # Look at the rest of the file, to see if we can find a call to
+            # this function and correlate the arguments with the parameters,
+            # to figure out what type they are based on their usage patterns.
+            fname = node.name.name
             num_param = len(node.parameters)
-            parent_context = self._parser._context.parent
-            if fun_name in parent_context.calls:
-                for arglist in parent_context.calls[fun_name]:
-                    if len(arglist) != num_param:
+            context = parser._context
+            # Case 1: direct calls to this function.
+            calls = parser._get_direct_calls(fname, context.parent, anywhere=True)
+            for arglist in (calls or []):
+                if len(arglist) != num_param:
+                    continue
+                for i in range(0, num_param):
+                    arg = arglist[i]
+                    param = node.parameters[i]
+                    if not isinstance(param, Identifier):
                         continue
-                    for i in range(0, num_param):
-                        arg = arglist[i]
-                        param = node.parameters[i]
-                        if not isinstance(param, Identifier):
-                            continue
-                        if isinstance(arg, FunHandle):
-                            self._parser._save_type(param.name, 'function')
-                            break
+                    if isinstance(arg, FunHandle):
+                        parser._save_type(param.name, 'function')
+                    elif (isinstance(arg, Identifier)
+                          and parser._get_type(arg.name, context) == 'function'):
+                        parser._save_type(param.name, 'function')
+                    elif (isinstance(arg, FunCall)
+                          and isinstance(arg.name, Identifier)
+                          and parser._get_type(arg.name.name, context) == 'function'):
+                        parser._save_type(param.name, 'variable')
+                    elif (isinstance(arg, Primitive) or isinstance(arg, Array)
+                          or isinstance(arg, Operator)):
+                        parser._save_type(param.name, 'variable')
+                    elif (isinstance(arg, Identifier) and
+                          parser._get_type(arg.name, context) == 'variable'):
+                        parser._save_type(param.name, 'variable')
 
+            # Case 2: passing a handle to this funtion as an argument to another.
+            calls = parser._get_indirect_calls(fname, context.parent, anywhere=True)
+            # FIXME: this currently only looks for calls involving odeNN
+            # functions, but there are probably others we could inspect.
+            if any(name.startswith('ode') for name in calls.keys()):
+                # This function gets passed as a function handle to a MATLAB
+                # odeNN function.  This means that the arguments to the current
+                # function are variables, and not other functions.
+                for param in node.parameters:
+                    if isinstance(param, Identifier):
+                        parser._save_type(param.name, 'variable')
+        # Make sure to process the body of this function.
         if node.body:
             node.body = self.visit(node.body)
-
-        self._parser._pop_context()
-
+        parser._pop_context()
         return node
 
 
     def visit_Assignment(self, node):
+        parser = self._parser
+
+        # Save the assignment.
+        parser._save_assignment(node)
+
         # Record inferred type info about the input and output parameters.
         lhs = node.lhs
         rhs = node.rhs
         if isinstance(lhs, Identifier):
+            if (isinstance(rhs, Array) or isinstance(rhs, Primitive)
+                  or isinstance(rhs, Operator)):
+                # In these cases, the LHS is clearly a variable.
+                parser._save_type(lhs.name, 'variable')
+            elif isinstance(rhs, Handle):
+                # RHS is clearly a function.
+                parser._save_type(lhs.name, 'function')
+            elif (isinstance(rhs, FunCall) and isinstance(rhs.name, Identifier)
+                and rhs.name.name == 'str2func'):
+                # Special case: a function is being created using Matlab's
+                # str2func(), so in fact, the thing we're assigning to should
+                # be considered a function.
+                parser._save_type(lhs.name, 'function')
+            elif (isinstance(rhs, FunCall) or isinstance(rhs, ArrayRef)
+                  or isinstance(rhs, ArrayRef) or isinstance(rhs, StructRef)):
+                # FIXME: this is an assumption.
+                parser._save_type(lhs.name, 'variable')
+        elif isinstance(lhs, ArrayRef):
+            # A function call can't appear on the LHS of an assignment, so
+            # we know that what we have here is a variable, not a function.
+            parser._save_type(lhs.name, 'variable')
+        elif isinstance(lhs, StructRef) and not lhs.dynamic:
             if (isinstance(rhs, FunCall) and isinstance(rhs.name, Identifier)
                 and rhs.name.name == 'str2func'):
                 # Special case: a function is being created using Matlab's
                 # str2func(), so in fact, the thing we're assigning to should
                 # be considered a function.
-                self._parser._save_type(lhs.name, 'function')
-            elif (isinstance(rhs, Array) or isinstance(rhs, Number)
-                  or isinstance(rhs, String)):
-                self._parser._save_type(lhs.name, 'variable')
-        elif isinstance(lhs, ArrayRef):
-            # A function call can't appear on the LHS of an assignment, so
-            # we know that what we have here is a variable, not a function.
-            self._parser._save_type(lhs.name, 'variable')
+                parser._save_type(lhs, 'function')
+            else:
+                parser._save_type(lhs, 'variable')
+            if isinstance(lhs.name, Identifier):
+                # A simple x.y struct reference => x is a
+                parser._save_type(lhs.name, 'variable')
         elif isinstance(lhs, Array):
-            # If the LHS of an assignment is a bare array, and if there
-            # are bare identifiers inside the array, then they must be
-            # variables and not functions (else, syntax error).
-            row = lhs.rows[0]  # Can only have one row when arrays is on lhs.
-            for item in row:
-                if isinstance(item, Identifier):
-                    self._parser._save_type(item.name, 'variable')
+            # A bare array on the LHS.  If symbols appear as subscripts, they
+            # cannot be functions.  They could be array references, but it is
+            # enough for now to tag them as variables.  Also, there can only
+            # be one row of subscripts in an array used on the LHS.
+            for item in lhs.rows[0]:
+                if isinstance(item, Ambiguous) and item.args == None:
+                    parser._save_type(item.name, 'variable')
+
         return node
 
 
-    def visit_ArrayOrFunCall(self, node):
-        if not isinstance(node.name, Identifier):
-            # FIXME: it is potentially the case that a function call is
-            # nested, using the result of another reference.  In that case,
-            # the name won't be an Identifier.  Currently, the code below
-            # doesn't handle that case.
-            return node
-        the_name = node.name.name
-        context = self._parser._context
-        if (matlab_function_or_command(the_name) or
-            self._parser._get_type(the_name, context, True) == 'function'):
-            # This is a known function or command.  We can convert this
-            # to a FunCall.  At this time, we also process the arguments.
-            the_args = self.visit(node.args)
-            node = FunCall(name=node.name, args=the_args)
-        elif self._parser._get_type(the_name, context, True) == 'variable':
-            # We have seen this name before, and it's not a function.  We
-            # can convert this ArrayOrFunCall to an ArrayRef.  We can
-            # also convert the arguments/subscripts.
-
-            # Also, if it was previously unknown whether this name is a
-            # function or array, it might have been put in the list of
-            # function calls.  Remove it if so.
-            if the_name in context.calls:
-                context.calls.pop(the_name)
-
-            the_args = self.visit(node.args)
-            node = ArrayRef(name=node.name, args=the_args, is_cell=False)
+    def visit_Ambiguous(self, node):
+        if isinstance(node.name, Identifier):
+            the_name = node.name.name
+        elif isinstance(node.name, StructRef):
+            the_name = node.name
         else:
-            # Although we didn't change the type of this ArrayOrFunCall,
+            # We don't know how to deal with it.
+            return node
+        parser = self._parser
+        context = parser._context
+        if parser._get_type(the_name, context) == 'function':
+            # This is a known function or command.  We can convert this
+            # to a FunCall.  At this time, we also process the arguments,
+            # being careful not to change "None" to [].
+            the_args = self.visit(node.args) if node.args else node.args
+            node = FunCall(name=node.name, args=the_args)
+        elif parser._get_type(the_name, context) == 'variable':
+            # We have seen this name before, and it's not a function.
+            if node.args == None:
+                # There were no arguments at all (e.g., it was "a" rather
+                # than "a()".  It's a plain identifier.
+                return node.name
+            else:
+                # It's an ArrayRef.  We can also convert the
+                # args/subscripts.  Also, if it was previously unknown
+                # whether this name is a function or array, it might have
+                # been put in the list of function calls.  Remove it.
+                if the_name in context.calls:
+                    context.calls.pop(the_name)
+                the_args = self.visit(node.args)
+                node = ArrayRef(name=node.name, args=the_args, is_cell=False)
+        elif (isinstance(the_name, StructRef) and node.args == []):
+            # It's something of the form a.b().  This could be an array
+            # reference, but in practice, few people put "()" when referring to
+            # an array.  So, it's probably a function call.
+            # FIXME: this is an assumption, not a certainty.
+            node = FunCall(name=the_name, args=node.args)
+        else:
+            # Although we didn't change the type of this Ambiguous,
             # we may still be able to change some of its arguments.
-            node.args = self.visit(node.args)
+            # However, be careful not to change "None" to [].
+            if node.args:
+                node.args = self.visit(node.args)
+
         return node
 
 
     def visit_ArrayRef(self, node):
-        # Convert array refs that were later found out to be function calls.
         if not isinstance(node.name, Identifier):
             return node
-        the_name = node.name.name
-        context = self._parser._context
-        if self._parser._get_type(the_name, context, True) == 'function':
+        name = node.name.name
+        parser = self._parser
+        context = parser._context
+        # If we've decided we have an array reference, then the identifier is
+        # a variable.  This is useful when we have not seen an assignment and
+        # the variable might have come from, e.g., loading a file.
+        parser._save_type(name, 'variable')
+        if parser._get_type(name, context) == 'function':
             # We have seen this name before, and it's a function.  We need to
             # convert this ArrayRef to FunCall.  Also, store this as a
             # function call.  And let's not forget to convert the subscripts.
-            if the_name not in context.calls:
-                self._parser._save_function_call(node)
+            if name not in context.calls:
+                parser._save_function_call(node)
             the_args = self.visit(node.args)
             node = FunCall(name=node.name, args=the_args)
         else:
@@ -984,44 +1044,41 @@ class NodeTransformer(MatlabNodeVisitor):
         return node
 
 
+    def visit_StructRef(self, node):
+        # If we have a structure reference where the name is a simple id,
+        # we can tag the id as a variable.
+        parser = self._parser
+        if isinstance(node.name, Identifier):
+            parser._save_type(node.name.name, 'variable')
+        return node
+
+
 
-# EntitySaver
+# Disambiguator
 #
-# Helper class to save some types of objects into the context structure.
-# This is designed to be called starting from the top of the input file.
+# Helper class to traverse a node structure and convert cases of Ambiguous
+# to other things, when we know about them.
 
-class EntitySaver(MatlabNodeVisitor):
-    def __init__(self, parser):
-        self._parser = parser
+class Disambiguator(MatlabNodeVisitor):
+    def __init__(self, parser, vars=[], functions=[]):
+        self._parser          = parser
+        self._known_vars      = vars
+        self._known_functions = functions
 
 
-    def visit_FunDef(self, node):
-        # Push a new function context, so that the other methods in this
-        # class work with the right context.
-        self._parser._push_context(node.context)
-        node.body = self.visit(node.body)
-        self._parser._pop_context()
+    def visit_list(self, node):
+        return [self.visit(item) for item in node]
+
+
+    def visit_Ambiguous(self, node):
+        if self._known_vars:
+            if isinstance(node.name, Identifier) and node.args == None:
+                for vars in self._known_vars:
+                    if vars.name == node.name.name:
+                        # Don't need create new Identifier; just return this.
+                        return node.name
         return node
 
-
-    def visit_Assignment(self, node):
-        self._parser._save_assignment(node)
-        return node
-
-
-    def visit_ArrayOrFunCall(self, node):
-        if not isinstance(node.name, Identifier):
-            return node
-        name = node.name.name
-        found_type = self._parser._get_type(name, self._parser._context, False)
-        if found_type != 'variable':
-            self._parser._save_function_call(node)
-        return node
-
-
-    def visit_FunCall(self, node):
-        self._parser._save_function_call(node)
-        return node
 
 
 # MatlabGrammar.
@@ -1189,11 +1246,6 @@ class MatlabGrammar:
     _expr          = Forward()
     _expr_in_array = Forward()
 
-    # The 'end' keyword is special because of its many meanings.  One applies
-    # when indexing arrays.  This next definition is so we can detect that.
-
-    _end_op        = Keyword('end')('end operator')
-
     # The possible statement separators/delimiters in Matlab are:
     #   - EOL
     #   - line comment (because they eat the EOL at the end)
@@ -1221,7 +1273,7 @@ class MatlabGrammar:
     # the other elements can only be identifiers, not expressions.  The
     # following are the different versions used in different places later on.
     #
-    # For this to work, the next bunch of grammar objects have to be
+    # For array parsing to work, the next bunch of grammar objects have to be
     # constructed with different whitespace-handling rules: they must not eat
     # line breaks, because we need to match EOL explicitly, or else we can't
     # properly parse a matrix like the following as consisting of 2 rows:
@@ -1247,14 +1299,14 @@ class MatlabGrammar:
     #
     #    a(1)        => one item, the value inside the array "a" at location 1
     #    a (1)       => one item, the value inside the array "a" at location 1
-    #    [a (1)]     => an array of TWO items, a and 1
+    #    [a (1)]     => an array of TWO items, the value of a and 1
     #    [(a (1))]   => an array of ONE item, a(1)
     #
     # Notice how in the 3rd example, the handling of whitespace changes inside
     # the array context, yet wrapping the same expression in parentheses once
     # again reverts the behavior of whitespace handling to how it is outside
-    # the array context.  (Aside: WTF!?)  The solution implemented here is
-    # rooted in the definition of _one_sub below, which references two
+    # the array context.  (Aside: WTF, MATLAB!?)  The solution implemented here
+    # is rooted in the definition of _one_sub below, which references two
     # different expression grammar terms.  The first one, _expr_in_array,
     # handles the third example above.  The definition of _expr_in_array is a
     # variant of _expr that changes whitespace behavior such that whitespace
@@ -1275,7 +1327,12 @@ class MatlabGrammar:
     _space_subs    = _one_sub + ZeroOrMore(OneOrMore(_WHITE) + _one_sub)
 
     _call_args     = delimitedList(_expr)
+
     _opt_arglist   = Optional(_call_args('argument list'))
+
+    _one_param     = Group(_TILDE) | Group(_id)
+    _paramlist     = delimitedList(_one_param)
+    _opt_paramlist = Optional(_paramlist('parameter list'))
 
     # Bare matrices.  This is a cheat because it doesn't check that all the
     # element contents have the same data type.  But again, since we expect our
@@ -1326,7 +1383,7 @@ class MatlabGrammar:
     # case for function defs and function return values too.)
 
     _named_handle  = Group('@' + _name)
-    _anon_handle   = Group('@' + _LPAR + _opt_arglist + _RPAR
+    _anon_handle   = Group('@' + _LPAR + _opt_paramlist + _RPAR
                            + _expr('function definition'))  # noqa
     _fun_handle    = (_named_handle | _anon_handle).setResultsName('function handle')
 
@@ -1431,21 +1488,25 @@ class MatlabGrammar:
     # known failure: it requires an argument.  We deal with command-syntax
     # function calls *without* arguments separately in post-processing.
 
-    _most_ops          = Group(_PLUS ^ _MINUS ^ _TIMES ^ _ELTIMES
-                               ^ _MRDIVIDE ^ _MLDIVIDE ^ _RDIVIDE ^ _LDIVIDE
-                               ^ _MPOWER ^ _ELPOWER
-                               ^ _LT ^ _LE ^ _GT ^ _GE ^ _EQ ^ _NE
-                               ^ _AND ^ _OR ^ _SHORT_AND ^ _SHORT_OR
-                               ^ _COLON ^ _NC_TRANSP)
+    ParserElement.setDefaultWhitespaceChars(' \t')
+
+    _most_ops          = Group(_PLUS ^ _MINUS ^ _TIMES ^ _ELTIMES ^ _MRDIVIDE
+                               ^ _MLDIVIDE ^ _RDIVIDE ^ _LDIVIDE ^ _MPOWER
+                               ^ _ELPOWER ^ _LT ^ _LE ^ _GT ^ _GE ^ _EQ ^ _NE
+                               ^ _AND ^ _OR ^ _SHORT_AND ^ _SHORT_OR ^ _COLON
+                               ^ _NC_TRANSP)
     _noncmd_arg_start  = _EQUALS | _LPAR | _most_ops + _WHITE | _delimiter | _comment
     _dash_term         = Combine(Literal('-') + Word(alphas, alphanums + '_'))
     _fun_cmd_arg       = _STRING | _dash_term | CharsNotIn(" ,;\t\n\r")
     _fun_cmd_arglist   = _fun_cmd_arg + ZeroOrMore(NotAny(_noncontent)
                                                    + Optional(_WHITE)
                                                    + _fun_cmd_arg)
-    _funcall_cmd_style = Group(_name + _WHITE + NotAny(_noncmd_arg_start)
+    _funcall_cmd_style = Group(_name + NotAny(_EOL)
+                               + _WHITE + NotAny(_noncmd_arg_start)
                                + _fun_cmd_arglist('arguments')
-                              ).setResultsName('command statement')
+                              )('command statement')
+
+    ParserElement.setDefaultWhitespaceChars(' \t\n\r')
 
     # Function calls without parentheses.
     #
@@ -1457,30 +1518,26 @@ class MatlabGrammar:
     #   end;
     #
     # Currently, we only recognize this case if the function involved is a
-    # known MATLAB function.  This is done in post processing, but we tag the
-    # possible cases during the initial parse by looking for _funcall_or_id
-    # instead of a plain _id.  This is why the following seemingly-pointless
-    # definition exists, and is used instead of using _id directly in
-    # _operand_basic and other similar places later.
+    # known MATLAB function or a function defined somewhere in the file.
+    # This is done in post processing, but we tag the possible cases during
+    # the initial parse by looking for _ambiguous_id instead of a plain _id.
+    # This is why the following seemingly-pointless definition exists, and is
+    # used instead of using _id directly in _operand and other similar places
+    # later.
 
-    _funcall_or_id = _id('funcall or id')
+    _ambiguous_id = _id('ambiguous id')
 
     # And now, general expressions and operators outside of arrays.
 
-    _operand_basic = _funcall_or_array \
-                     | _struct_access    \
-                     | _array_access     \
-                     | _cell_array       \
-                     | _bare_array       \
-                     | _fun_handle       \
-                     | _funcall_or_id    \
-                     | _NUMBER           \
-                     | _STRING
-
-    _operand       = Group(_operand_basic)
-
-    # The operator precedence rules in Matlab are listed here:
-    # http://www.mathworks.com/help/matlab/matlab_prog/operator-precedence.html
+    _operand = Group(_funcall_or_array \
+                     | _struct_access  \
+                     | _array_access   \
+                     | _cell_array     \
+                     | _bare_array     \
+                     | _fun_handle     \
+                     | _ambiguous_id   \
+                     | _NUMBER         \
+                     | _STRING)
 
     _transp_op     = NotAny(_WHITE) + _NC_TRANSP ^ NotAny(_WHITE) + _CC_TRANSP
     _uplusminusneg = _UPLUS ^ _UMINUS ^ _UNOT
@@ -1490,15 +1547,17 @@ class MatlabGrammar:
     _logical_op    = _LE ^ _GE ^ _NE ^ _LT ^ _GT ^ _EQ
     _colon_op      = _COLON('colon operator')
 
-    # This next hack solves a problem in correctly matching expressions in
-    # which a unary operator comes immediately after another operator,
-    # particularly the _power operators.  It happens because of how
-    # infixNotation() constructs the matching expression left-to-right as it
-    # goes down the list of arguments in the order given.  In the MATLAB
-    # grammar, _power is unique in having higher precedence than the unary
-    # operators, and the unary operators are unique in being
-    # right-associative.  For reasons that are not 100% clear, if the first
-    # few terms are in the following (intuitive, natural) order,
+    # In MATLAB, power and transpose have higher precedence than the unary
+    # operators.  The next hack solves a problem in correctly matching
+    # expressions in which a unary operator comes immediately after another
+    # operator, particularly the _power operators.  The problem occurs
+    # because of how infixNotation() constructs the matching expression
+    # left-to-right as it goes down the list of arguments in the order given.
+    # To get the right behavior, we have to set up _power to have higher
+    # precendence than unary operators, which seems easy at first but it
+    # turns out it interacts with the right-associative nature of unary
+    # operators (_uplusminusneg).  For reasons that are not 100% clear, if
+    # the first few terms are in the following (more intuitive, natural) order,
     #
     #   _expr <<= infixNotation(_operand, [
     #        (Group(_transp_op),     1, opAssoc.LEFT, makeLRlike(1)),
@@ -1506,9 +1565,13 @@ class MatlabGrammar:
     #        (Group(_uplusminusneg), 1, opAssoc.RIGHT),
     #       ...
     #
-    # an expression such as 2^-3 does not match.  The following hack provides
-    # a second expression for matching the unary operators if and only if they
-    # appear in the second operand of a binary operator.
+    # then an expression such as 2^-3 does not match.  The following hack
+    # provides a second expression (_uplusminusneg_after) for matching the
+    # unary operators if and only if they appear in the second operand of a
+    # binary operator.
+    #
+    # The operator precedence rules in MATLAB are listed here:
+    # http://www.mathworks.com/help/matlab/matlab_prog/operator-precedence.html
 
     _not_unary = _transp_op ^ _plusminus ^ _timesdiv ^ _power ^ _logical_op ^ _COLON
     _uplusminusneg_after = FollowedBy(_not_unary) + _UPLUS \
@@ -1531,6 +1594,11 @@ class MatlabGrammar:
         (Group(_SHORT_OR),                     2, opAssoc.LEFT, makeLRlike(2)),
     ])
 
+    # The 'end' keyword is special because of its many meanings.  One applies
+    # when indexing arrays.  This next definition is so we can detect that.
+
+    _end_op        = Keyword('end')('end operator')
+
     # MATLAB does something evil: the parsing behavior changes inside array
     # expressions.  This can be seen by typing the following expressions into
     # the MATLAB interpreter:
@@ -1545,18 +1613,46 @@ class MatlabGrammar:
     # [1 2 -3 + 4]  result: array of 3 elements, [1, 2, 1]
     # [1 2 -3 +4]   result: array of 4 elements, [1, 2, -3, 4]
     #
-    # The only solution I have found so far is to define the expression
-    # grammar differently for the case of array contents.  This is the reason
-    # for _expr_in_array below; this version of _expr deals with whitespace
-    # explicitly.  The definitions of arrays and their subscripts earlier in
-    # this file have explicit whitespace definitions in them, which wouldn't
-    # be necessary except for the fact that _operand_in_array below uses
-    # leaveWhitespace() to cause whitespace to be significant.
+    # Another example was mentioned earlier in this file, involving the
+    # definition of _one_sub.  Suppose that "a" is an array of one item:
+    #
+    #    a(1)        => one item, the value inside the array "a" at location 1
+    #    a (1)       => one item, the value inside the array "a" at location 1
+    #    [a (1)]     => an array of TWO items, the value of a and 1
+    #    [(a (1))]   => an array of ONE item, a(1)
+    #
+    # The only solution I have found is to define the expression grammar
+    # differently for the case of array contents.  This is the reason for
+    # _expr_in_array, _funcall_or_array_in_array, and _operand_in_array
+    # below; these versions change the interpretation of whitespace to make
+    # it significant, to cause matching to prefer different interpretations
+    # when used inside arrays.  Along with this, the definitions of arrays
+    # and their subscripts earlier in this file also have explicit uses of
+    # _WHITE in them, which wouldn't be necessary except for the fact that
+    # _operand_in_array below uses leaveWhitespace() to cause whitespace to
+    # be significant.
+    #
+    # Look, I know it's ugly.
 
     _plusminus_array = (OneOrMore(_WHITE) + (_PLUS ^ _MINUS).leaveWhitespace() + OneOrMore(_WHITE)) \
                        | (NotAny(_WHITE) + (_PLUS ^ _MINUS).leaveWhitespace())
 
-    _operand_in_array = Group(_end_op | _TILDE | _operand_basic).leaveWhitespace()
+    _funcall_or_array_in_array = Group(_fun_access('name')
+                                       + _LPAR.copy().leaveWhitespace() + _opt_arglist + _RPAR
+                                      ).setResultsName('array or function')  # noqa
+
+    _operand_in_array = Group(_end_op
+                              | _TILDE
+                              | _funcall_or_array_in_array
+                              | _struct_access
+                              | _array_access
+                              | _cell_array
+                              | _bare_array
+                              | _fun_handle
+                              | _ambiguous_id
+                              | _NUMBER
+                              | _STRING
+                             ).leaveWhitespace()
 
     _expr_in_array <<= infixNotation(_operand_in_array, [
         (Group(_transp_op),                    1, opAssoc.LEFT, makeLRlike(1)),
@@ -1690,38 +1786,58 @@ class MatlabGrammar:
     # expression in square brackets, a bare tilde can be put in place of an
     # argument value to indicate that the value is to be ignored.
 
-    _matlab_syntax  = Forward()
+    _fun_body       = Forward()
 
     _single_value   = Group(_id) | Group(_TILDE)
     _comma_values   = delimitedList(_single_value)
     _space_values   = OneOrMore(_single_value)
     _multi_values   = _LBRACKET + Optional(_comma_values ^ _space_values) + _RBRACKET
     _fun_outputs    = Group(_multi_values) | Group(_single_value)
-    _fun_params     = delimitedList(Group(_TILDE) | Group(_id))
-    _fun_paramslist = _LPAR + Optional(_fun_params) + _RPAR
-    _fun_def        = Group(_FUNCTION
+    _fun_paramslist = _LPAR + _opt_paramlist + _RPAR
+
+    # The 'end' in a function definition is optional in some cases and not in
+    # others.  The use of 'end' is required for nested function definitions,
+    # which means that we need two variants of function bodies too.  This
+    # leads to our final grammatical indiginity: two expressions for function
+    # definitions, which are used in the overall definition of _matlab_file
+    # such that _matlab_file tries first one variant and then the other.
+    # In the following two definitions, note that both the use of 'end' and
+    # the definition of the body are different.
+
+    _fun_without_end = Group(_FUNCTION
+                             + Optional(_fun_outputs('output list') + _EQUALS())
+                             + Optional(_WHITE) + _name
+                             + Optional(_fun_paramslist)
+                             + Group(_stmt_list)('body')
+                            ).setResultsName('function definition')
+
+    _fun_with_end   = Group(_FUNCTION
                             + Optional(_fun_outputs('output list') + _EQUALS())
-                            + _name
-                            + Optional(_fun_paramslist('parameter list'))
-                            + Group(_matlab_syntax)('body')
-                            + Optional(_END)
+                            + Optional(_WHITE) + _name
+                            + Optional(_fun_paramslist)
+                            + Group(_fun_body)('body')
+                            + _END
                            ).setResultsName('function definition')
 
-    _fun_def_stmt   = Group(_fun_def)
+    # The next two definitions are only used to make the grouping level the
+    # same as other statements in the overall grammar.
 
-    # The overall MATLAB syntax definition.
-    #
-    # This fails to encode the following rules of MATLAB syntax, but once
-    # again we fall back on the expectation that the input already conforms
-    # to valid syntax:
-    #
-    # 1) In real MATLAB, if a function definition exists in a file that has
-    #    other statements, then the function definition must have an explicit
-    #    'end'.  If the function definition is the only thing in the file
-    #    (aside from comments), then the 'end' may be omitted.  Our syntax
-    #    always only has it as optional.
+    _fun_def_shallow = Group(_fun_without_end)
+    _fun_def_deep    = Group(_fun_with_end)
 
-    _matlab_syntax <<= ZeroOrMore(_fun_def_stmt ^ _stmt ^ _shell_cmd ^ _noncontent)
+    # And now, the function body for function definitions that permit nesting.
+    # (Bodies that don't allow function nesting simply use _stmt_list.)
+
+    _fun_body <<= ZeroOrMore(_fun_def_deep ^ _stmt ^ _shell_cmd ^ _noncontent)
+
+    # The complete MATLAB file syntax.
+    #
+    # Since a file cannot mix the style of function definitions that use ends
+    # (either they all have to have 'end', or none do), we have two forms of
+    # MATLAB files.
+
+    _matlab_file = ZeroOrMore(_fun_def_shallow ^ _stmt ^ _shell_cmd ^ _noncontent) \
+                   ^ ZeroOrMore(_fun_def_deep ^ _stmt ^ _shell_cmd ^ _noncontent)
 
 
     # Preprocessor.
@@ -1765,12 +1881,15 @@ class MatlabGrammar:
     # stored strings and shell commands.
 
     _continuation  = Combine(_ELLIPSIS.leaveWhitespace()
-                             + Optional(CharsNotIn('\n\r')('comment'))
+                             + Optional(CharsNotIn('\n\r\f')('comment'))
                              + _EOL + _SOL)
 
     _continuation.setParseAction(lambda t: ' ')
 
     def _preprocess(self, input):
+        # Remove DOS-style carriage returns from the input.
+        input = input.replace('\r\n', '\n')
+        # Remove continuations.
         return self._continuation.transformString(input)
 
 
@@ -1785,23 +1904,13 @@ class MatlabGrammar:
         self._push_context(MatlabContext(topmost=True))
 
         # 1st pass: visit ParseResults items, translate them to MatlabNodes,
-        # and create contexts for anyfunction definitions encountered.
+        # and create contexts for function definitions encountered.
         nodes = [ParseResultsTransformer(self).visit(item) for item in pr]
 
-        # 2nd pass: infer the types of objects where possible, and transform
-        # some classes into others to overcome limitations in our initial parse.
+        # 2nd & 3rd passes: infer the types of objects where possible, and
+        # transform some classes into others to overcome limitations in our
+        # initial parse.  Must be done twice to propagate inferences.
         nodes = [NodeTransformer(self).visit(node) for node in nodes]
-
-        # 3rd pass: store more constructs in our context structure, now
-        # that we have a context structure for the whole file.
-        nodes = [EntitySaver(self).visit(node) for node in nodes]
-
-        # 4th pass: another node transformation pass.  That's twice we do
-        # this.  Yes, it's inefficient.  Maybe a future update can figure out
-        # how to avoid it.  The problem this solves is that we can't tell
-        # what some things are until we see how they're used, and we don't
-        # have that information until we've seen the whole file.  This is
-        # approach is a sledgehammer, but it does it.
         nodes = [NodeTransformer(self).visit(node) for node in nodes]
 
         self._context.nodes = nodes
@@ -1858,11 +1967,6 @@ class MatlabGrammar:
         return newcontext
 
 
-    def _save_assignment(self, node):
-        key = MatlabGrammar.make_key(node.lhs)
-        self._context.assignments[key] = node.rhs
-
-
     def _save_function_call(self, node):
         key = MatlabGrammar.make_key(node.name)
         # Save each call as a list of the arguments to the call.
@@ -1873,19 +1977,57 @@ class MatlabGrammar:
             self._context.calls[key].append(node.args)
 
 
+    def _save_assignment(self, node):
+        key = MatlabGrammar.make_key(node.lhs)
+        self._context.assignments[key] = node.rhs
+
+
     def _save_type(self, thing, type):
         key = MatlabGrammar.make_key(thing)
         self._context.types[key] = type
 
 
-    def _get_type(self, thing, context, recursive=False):
+    def _get_type(self, thing, context):
         key = MatlabGrammar.make_key(thing)
         if key in context.types:
             return context.types[key]
-        elif recursive and hasattr(context, 'parent') and context.parent:
-            return self._get_type(key, context.parent, True)
+        elif hasattr(context, 'parent') and context.parent:
+            return self._get_type(key, context.parent)
+        elif matlab_function_or_command(key):
+            return 'function'
         else:
             return None
+
+
+    def _get_direct_calls(self, name, context, anywhere=False, recursive=False):
+        calls = []
+        if context.calls and name in context.calls:
+            calls += context.calls[name]
+        if anywhere and context.functions:
+            for fun_name, fun_context in context.functions.items():
+                if name == fun_name:
+                    continue
+                calls += self._get_direct_calls(name, fun_context, False, False)
+        if recursive and hasattr(context, 'parent') and context.parent:
+            calls += self._get_direct_calls(name, context.parent, anywhere, True)
+        return [x for x in calls if x]
+
+
+    def _get_indirect_calls(self, name, context, anywhere=False, recursive=False):
+        # Search function calls, looking for cases where the named function is
+        # passed in as a function handle.
+        calls = defaultdict(list)
+        for fun_name in (context.calls or []):
+            for arglist in context.calls[fun_name]:
+                for arg in (arglist or []):
+                    if isinstance(arg, FunHandle) and name == arg.name.name:
+                        calls[fun_name].append(arglist)
+        if anywhere and context.functions:
+            for fun_name, fun_context in context.functions.items():
+                calls.update(self._get_indirect_calls(name, fun_context, False, False))
+        if recursive and hasattr(context, 'parent') and context.parent:
+            calls.update(self._get_indirect_calls(name, context.parent, anywhere, True))
+        return calls
 
 
     # Debugging.
@@ -1895,39 +2037,41 @@ class MatlabGrammar:
     # debugging output, it uses the name rather than a generic regexp term.
 
     _to_name = [ _AND, _CC_TRANSP, _COLON, _COMMA, _DOT, _ELLIPSIS, _ELPOWER,
-                 _ELTIMES, _EOL, _EQ, _EQUALS, _EXPONENT, _FLOAT, _GE, _GT,
-                 _INTEGER, _LBRACE, _LBRACKET, _LDIVIDE, _LE, _LPAR, _LT,
-                 _MINUS, _MLDIVIDE, _MPOWER, _MRDIVIDE, _NC_TRANSP, _NE,
-                 _NUMBER, _OR, _PLUS, _RBRACE, _RBRACKET, _RDIVIDE, _RPAR,
-                 _SEMI, _SHORT_AND, _SHORT_OR, _SOL, _STRING, _TILDE, _TIMES,
-                 _UMINUS, _UNOT, _UPLUS, _WHITE, _anon_handle, _array_access,
-                 _array_args, _array_base, _assignment, _bare_array,
-                 _bare_cell, _block_c_end, _block_c_start, _block_comment,
-                 _body, _break_stmt, _call_args, _catch_body, _catch_term,
-                 _catch_var, _cell_access, _cell_args, _cell_array,
-                 _cell_base, _cell_nested, _colon_op, _comma_subs,
-                 _comma_values, _comment, _continuation, _continue_stmt,
-                 _control_stmt, _dash_term, _delimiter, _else_stmt,
-                 _elseif_stmt, _end_op, _expr, _expr_in_array, _for_stmt,
-                 _for_version1, _for_version2, _fun_access, _fun_cmd_arg,
-                 _fun_cmd_arglist, _funcall_cmd_style, _fun_def_stmt,
-                 _funcall_or_id, _fun_handle, _fun_outputs, _fun_params,
-                 _fun_paramslist, _funcall_or_array, _id, _identifier,
+                 _ELTIMES, _END, _EOL, _EQ, _EQUALS, _EXPONENT, _FLOAT,
+                 _FUNCTION, _GE, _GT, _INTEGER, _LBRACE, _LBRACKET, _LDIVIDE,
+                 _LE, _LPAR, _LT, _MINUS, _MLDIVIDE, _MPOWER, _MRDIVIDE,
+                 _NC_TRANSP, _NE, _NUMBER, _OR, _PLUS, _RBRACE, _RBRACKET,
+                 _RDIVIDE, _RPAR, _SEMI, _SHORT_AND, _SHORT_OR, _SOL,
+                 _STRING, _TILDE, _TIMES, _UMINUS, _UNOT, _UPLUS, _WHITE,
+                 _ambiguous_id, _anon_handle, _array_access, _array_args,
+                 _array_base, _assignment, _bare_array, _bare_cell,
+                 _block_c_end, _block_c_start, _block_comment, _body,
+                 _break_stmt, _call_args, _case_stmt, _catch_body,
+                 _catch_term, _catch_var, _cell_access, _cell_args,
+                 _cell_array, _cell_base, _cell_nested, _colon_op,
+                 _comma_subs, _comma_values, _comment, _continue_stmt,
+                 _control_stmt, _control_stmt, _dash_term, _delimiter,
+                 _else_stmt, _elseif_stmt, _end_op, _expr, _expr_in_array,
+                 _expr_in_array, _for_stmt, _for_version1, _for_version2,
+                 _fun_access, _fun_body, _fun_cmd_arg, _fun_cmd_arglist,
+                 _fun_def_deep, _fun_def_shallow, _fun_handle, _fun_outputs,
+                 _fun_paramslist, _fun_with_end, _fun_without_end,
+                 _funcall_cmd_style, _funcall_or_array, _id , _identifier,
                  _if_stmt, _lhs_array, _lhs_var, _line_c_start,
-                 _line_comment, _logical_op, _loop_var, _matlab_syntax,
-                 _most_ops, _multi_values, _named_handle, _noncmd_arg_start,
-                 _noncontent, _not_unary, _one_row, _one_sub, _operand,
-                 _operand_basic, _operand_in_array, _opt_arglist,
-                 _other_assign, _plusminus, _plusminus_array, _power,
-                 _reserved, _return_stmt, _row_sep, _rows, _scope_args,
-                 _scope_stmt, _scope_type, _scope_var_list, _shell_cmd,
-                 _shell_cmd_cmd, _simple_assign, _simple_struct,
-                 _simple_struct_base, _single_expr, _single_value,
-                 _space_subs, _space_values, _stmt, _stmt_list,
-                 _struct_access, _struct_base, _standalone_expr,
-                 _struct_field, _switch_other, _switch_stmt, _timesdiv,
-                 _transp_op, _try_stmt, _uplusminusneg, _uplusminusneg_after,
-                 _while_stmt ]
+                 _line_comment, _logical_op, _loop_var, _matlab_file,
+                 _most_ops, _multi_values, _name, _named_handle,
+                 _noncmd_arg_start, _noncontent, _not_unary, _one_param,
+                 _one_row, _one_sub, _operand, _operand_in_array,
+                 _opt_arglist, _opt_paramlist, _other_assign, _paramlist,
+                 _plusminus, _plusminus_array, _power, _reserved,
+                 _return_stmt, _row_sep, _rows, _scope_args, _scope_stmt,
+                 _scope_type, _scope_var_list, _shell_cmd, _shell_cmd_cmd,
+                 _simple_assign, _simple_struct, _simple_struct_base,
+                 _single_expr, _single_value, _space_subs, _space_values,
+                 _standalone_expr, _stmt, _stmt_list, _stmt_list,
+                 _struct_access, _struct_base, _struct_field, _switch_other,
+                 _switch_stmt, _test_expr, _timesdiv, _transp_op, _try_stmt,
+                 _uplusminusneg, _uplusminusneg_after, _while_stmt]
 
     def _object_name(self, obj):
         """Returns the name of a given object."""
@@ -1954,7 +2098,7 @@ class MatlabGrammar:
     # (which is _to_name by default) to a list of specific objects.  E.g.:
     #    _to_print_debug = [_cell_access, _cell_array, _bare_cell, _expr]
 
-    _to_print_debug = _to_name
+    _to_print_debug = _to_name # [_fun_body, _fun_def_deep, _fun_def_shallow, _stmt, _matlab_file]
 
     def _print_debug(self, print_debug=False):
         if print_debug:
@@ -1970,6 +2114,18 @@ class MatlabGrammar:
         # self._init_parse_actions()
         self._print_debug(False)
         self._reset()
+
+
+    def __enter__(self):
+        self._reset()
+        return self
+
+
+    def __exit__(self, exception_type, exception_value, tb):
+        if exception_type:
+            traceback.print_tb(tb)
+            raise MatlabInternalException(exception_value)
+        return self
 
 
     def _reset(self):
@@ -1995,7 +2151,7 @@ class MatlabGrammar:
         try:
             preprocessed = self._preprocess(input)
             self._print_debug(print_debug)
-            pr = self._matlab_syntax.parseString(preprocessed, parseAll=True)
+            pr = self._matlab_file.parseString(preprocessed, parseAll=True)
             top_context = self._generate_nodes_and_contexts(pr)
             if print_results:
                 self.print_parse_results(top_context)
@@ -2029,7 +2185,7 @@ class MatlabGrammar:
             contents = file.read()
             preprocessed = self._preprocess(contents)
             self._print_debug(print_debug)
-            pr = self._matlab_syntax.parseString(preprocessed, parseAll=True)
+            pr = self._matlab_file.parseString(preprocessed, parseAll=True)
             top_context = self._generate_nodes_and_contexts(pr)
             top_context.file = path
             file.close()
@@ -2083,14 +2239,16 @@ class MatlabGrammar:
             return str(thing.value)
         elif isinstance(thing, Identifier):
             return str(thing.name)
-        elif isinstance(thing, FunCall) or isinstance(thing, ArrayOrFunCall):
+        elif isinstance(thing, FunCall) or isinstance(thing, Ambiguous):
             base = MatlabGrammar.make_key(thing.name)
-            return base + '(' + row_to_string(thing.args) + ')'
+            arg_list = row_to_string(thing.args) if thing.args else ''
+            return base + '(' + arg_list + ')'
         elif isinstance(thing, ArrayRef):
             base  = MatlabGrammar.make_key(thing.name)
             left  = '{' if thing.is_cell else '('
             right = '}' if thing.is_cell else ')'
-            return base + left + row_to_string(thing.args) + right
+            arg_list = row_to_string(thing.args) if thing.args else ''
+            return base + left + arg_list + right
         elif isinstance(thing, StructRef):
             base = MatlabGrammar.make_key(thing.name)
             return base + '.' + MatlabGrammar.make_key(thing.field)
@@ -2117,7 +2275,7 @@ class MatlabGrammar:
         elif isinstance(thing, FunHandle):
             return str(thing)
         elif isinstance(thing, AnonFun):
-            arg_list = row_to_string(thing.args)
+            arg_list = row_to_string(thing.args) if thing.args else ''
             body = MatlabGrammar.make_key(thing.body)
             return '@(' + arg_list + ')' + body
         elif isinstance(thing, Comment) or isinstance(thing, FunDef) \
@@ -2163,7 +2321,7 @@ class MatlabGrammar:
             return str(thing.value)
         elif isinstance(thing, Identifier):
             return str(thing.name)
-        elif isinstance(thing, ArrayRef) or isinstance(thing, ArrayOrFunCall):
+        elif isinstance(thing, ArrayRef) or isinstance(thing, Ambiguous):
             if atrans:
                 return atrans(thing)
             else:

@@ -1,4 +1,4 @@
 [
 Comment(content=' foo')
-FunDef(name=Identifier(name='valid_35'), parameters=[Identifier(name='x')], output=None, body=[BinaryOp(op='*', left=Identifier(name='x'), right=Number(value='2'))])
+FunDef(name=Identifier(name='valid_35'), parameters=[Identifier(name='x')], output=None, body=[BinaryOp(op='*', left=Ambiguous(name=Identifier(name='x'), args=None), right=Number(value='2'))])
 ]

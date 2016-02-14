@@ -1,9 +1,9 @@
 [
-ArrayOrFunCall(name=Identifier(name='x'), args=[Number(value='1')])
-Assignment(lhs=Identifier(name='y'), rhs=Transpose(op=''', operand=Identifier(name='x')))
+Ambiguous(name=Identifier(name='x'), args=[Number(value='1')])
+Assignment(lhs=Identifier(name='y'), rhs=Transpose(op=''', operand=Ambiguous(name=Identifier(name='x'), args=None)))
 Transpose(op=''', operand=Array(is_cell=False, rows=[]))
 Transpose(op=''', operand=Number(value='1'))
-Transpose(op=''', operand=ArrayOrFunCall(name=Identifier(name='x'), args=[Number(value='1')]))
-Assignment(lhs=Identifier(name='y'), rhs=Transpose(op=''', operand=ArrayOrFunCall(name=Identifier(name='x'), args=[Number(value='1')])))
-Assignment(lhs=Identifier(name='y'), rhs=Transpose(op=''', operand=Identifier(name='x')))
+Transpose(op=''', operand=Ambiguous(name=Identifier(name='x'), args=[Number(value='1')]))
+Assignment(lhs=Identifier(name='y'), rhs=Transpose(op=''', operand=Ambiguous(name=Identifier(name='x'), args=[Number(value='1')])))
+Assignment(lhs=Identifier(name='y'), rhs=Transpose(op=''', operand=Ambiguous(name=Identifier(name='x'), args=None)))
 ]

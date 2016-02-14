@@ -1,10 +1,10 @@
 [
-Array(is_cell=False, rows=[[StructRef(name=Identifier(name='u'), field=Identifier(name='v'), dynamic_access=False)]])
-Array(is_cell=False, rows=[[StructRef(name=Identifier(name='u'), field=Identifier(name='v'), dynamic_access=False)]])
-Array(is_cell=False, rows=[[StructRef(name=Identifier(name='u'), field=Identifier(name='v'), dynamic_access=False)]])
-Array(is_cell=False, rows=[[StructRef(name=Identifier(name='u'), field=Identifier(name='v'), dynamic_access=False)]])
-Array(is_cell=False, rows=[[StructRef(name=Identifier(name='u'), field=Identifier(name='v'), dynamic_access=False)]])
-Array(is_cell=False, rows=[[StructRef(name=Identifier(name='u'), field=Identifier(name='v'), dynamic_access=False)]])
-Array(is_cell=False, rows=[[StructRef(name=Identifier(name='u'), field=Identifier(name='v'), dynamic_access=False)]])
-Array(is_cell=False, rows=[[StructRef(name=Identifier(name='u'), field=Identifier(name='v'), dynamic_access=False)]])
+Array(is_cell=False, rows=[[StructRef(name=Identifier(name='u'), field=Identifier(name='v'), dynamic=False)]])
+Array(is_cell=False, rows=[[StructRef(name=Identifier(name='u'), field=Identifier(name='v'), dynamic=False)]])
+Array(is_cell=False, rows=[[StructRef(name=Identifier(name='u'), field=Identifier(name='v'), dynamic=False)]])
+Array(is_cell=False, rows=[[StructRef(name=Identifier(name='u'), field=Identifier(name='v'), dynamic=False)]])
+Array(is_cell=False, rows=[[StructRef(name=Identifier(name='u'), field=Identifier(name='v'), dynamic=False)]])
+Array(is_cell=False, rows=[[StructRef(name=Identifier(name='u'), field=Identifier(name='v'), dynamic=False)]])
+Array(is_cell=False, rows=[[StructRef(name=Identifier(name='u'), field=Identifier(name='v'), dynamic=False)]])
+Array(is_cell=False, rows=[[StructRef(name=Identifier(name='u'), field=Identifier(name='v'), dynamic=False)]])
 ]

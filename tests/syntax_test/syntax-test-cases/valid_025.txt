@@ -1,12 +1,12 @@
 [
 Comment(content=' quick functions')
-Assignment(lhs=Identifier(name='f'), rhs=AnonFun(args=[Identifier(name='x')], body=BinaryOp(op='+', left=BinaryOp(op='+', left=BinaryOp(op='*', left=Number(value='3'), right=BinaryOp(op='.^', left=Identifier(name='x'), right=Number(value='2'))), right=BinaryOp(op='*', left=Number(value='2'), right=Identifier(name='x'))), right=Number(value='7'))))
+Assignment(lhs=Identifier(name='f'), rhs=AnonFun(args=[Identifier(name='x')], body=BinaryOp(op='+', left=BinaryOp(op='+', left=BinaryOp(op='*', left=Number(value='3'), right=BinaryOp(op='.^', left=Ambiguous(name=Identifier(name='x'), args=None), right=Number(value='2'))), right=BinaryOp(op='*', left=Number(value='2'), right=Ambiguous(name=Identifier(name='x'), args=None))), right=Number(value='7'))))
 Assignment(lhs=Identifier(name='t'), rhs=ColonOp(left=Number(value='0'), middle=Number(value='0.001'), right=Number(value='1')))
-FunCall(name=Identifier(name='plot'), args=[Identifier(name='t'), ArrayOrFunCall(name=Identifier(name='f'), args=[Identifier(name='t')]), Identifier(name='t'), ArrayOrFunCall(name=Identifier(name='f'), args=[BinaryOp(op='*', left=Number(value='2'), right=Identifier(name='t'))]), Identifier(name='t'), ArrayOrFunCall(name=Identifier(name='f'), args=[BinaryOp(op='*', left=Number(value='3'), right=Identifier(name='t'))])])
+FunCall(name=Identifier(name='plot'), args=[Identifier(name='t'), FunCall(name=Identifier(name='f'), args=[Identifier(name='t')]), Identifier(name='t'), FunCall(name=Identifier(name='f'), args=[BinaryOp(op='*', left=Number(value='2'), right=Identifier(name='t'))]), Identifier(name='t'), FunCall(name=Identifier(name='f'), args=[BinaryOp(op='*', left=Number(value='3'), right=Identifier(name='t'))])])
 Comment(content=' closures (linfunc below is a function that returns a function,')
 Comment(content=' and the outer functions arguments are held for the lifetime')
 Comment(content=' of the returned function.')
-Assignment(lhs=Identifier(name='linfunc'), rhs=AnonFun(args=[Identifier(name='m'), Identifier(name='b')], body=AnonFun(args=[Identifier(name='x')], body=BinaryOp(op='+', left=BinaryOp(op='*', left=Identifier(name='m'), right=Identifier(name='x')), right=Identifier(name='b')))))
-Assignment(lhs=Identifier(name='C2F'), rhs=ArrayOrFunCall(name=Identifier(name='linfunc'), args=[BinaryOp(op='/', left=Number(value='9'), right=Number(value='5')), Number(value='32')]))
-Assignment(lhs=Identifier(name='F2C'), rhs=ArrayOrFunCall(name=Identifier(name='linfunc'), args=[BinaryOp(op='/', left=Number(value='5'), right=Number(value='9')), BinaryOp(op='/', left=BinaryOp(op='*', left=Number(value='-32'), right=Number(value='5')), right=Number(value='9'))]))
+Assignment(lhs=Identifier(name='linfunc'), rhs=AnonFun(args=[Identifier(name='m'), Identifier(name='b')], body=AnonFun(args=[Identifier(name='x')], body=BinaryOp(op='+', left=BinaryOp(op='*', left=Ambiguous(name=Identifier(name='m'), args=None), right=Ambiguous(name=Identifier(name='x'), args=None)), right=Ambiguous(name=Identifier(name='b'), args=None)))))
+Assignment(lhs=Identifier(name='C2F'), rhs=FunCall(name=Identifier(name='linfunc'), args=[BinaryOp(op='/', left=Number(value='9'), right=Number(value='5')), Number(value='32')]))
+Assignment(lhs=Identifier(name='F2C'), rhs=FunCall(name=Identifier(name='linfunc'), args=[BinaryOp(op='/', left=Number(value='5'), right=Number(value='9')), BinaryOp(op='/', left=BinaryOp(op='*', left=Number(value='-32'), right=Number(value='5')), right=Number(value='9'))]))
 ]
