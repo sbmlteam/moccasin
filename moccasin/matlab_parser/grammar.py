@@ -527,12 +527,6 @@ class ParseResultsTransformer:
 
 
     def visit_colon_operator(self, pr):
-        # This is needed because PyParsing's infixNotation(), used in our
-        # Matlab grammar definition, does not support ternary operators.  So,
-        # we currently define ':' as being binary when it appears in an
-        # expression context, which in turn leads to a ternary ':' expression
-        # becoming a nested list of two binary operators.  FIXME: ask the
-        # PyParsing developer for a way to do ternary operators properly.
         if len(pr) == 3:
             left=self.visit(pr[0])
             middle=None
