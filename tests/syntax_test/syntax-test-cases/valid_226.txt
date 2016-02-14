@@ -1,0 +1,5 @@
+[
+Assignment(lhs=Identifier(name='gamma'), rhs=Number(value='1'))
+Identifier(name='gamma')
+Transpose(op=''', operand=Transpose(op=''', operand=Identifier(name='gamma')))
+]
