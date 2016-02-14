@@ -1,0 +1,4 @@
+[
+FunDef(name=Identifier(name='a'), parameters=None, output=None, body=[Assignment(lhs=Identifier(name='x'), rhs=Number(value='1'))])
+FunDef(name=Identifier(name='b'), parameters=None, output=None, body=[Comment(content=' Local function.'), Assignment(lhs=Identifier(name='x'), rhs=Number(value='2'))])
+]
