@@ -69,6 +69,7 @@ matlab_symbols = {
     'addTeardown': 1,
     'addcats': 1,
     'addevent': 1,
+    'addframe': 1,
     'addlistener': 1,
     'addmulti': 1,
     'addpath': 1,
