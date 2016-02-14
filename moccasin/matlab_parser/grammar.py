@@ -1951,8 +1951,6 @@ class MatlabGrammar:
 
 
     def _save_function_definition(self, node):
-        # FIXME function "names" might be more than identifiers, such as a
-        # cell array or structure reference.  This doesn't handle that.
         the_name = node.name.name       # Node.name is an Identifier.
         newcontext = MatlabContext(name=the_name, parent=self._context,
                                    parameters=node.parameters,
