@@ -223,21 +223,6 @@ class Identifier(Reference):
         return '{{identifier: "{}"}}'.format(self.name)
 
 
-class ArrayOrFunCall(Reference):
-    '''Syntactically looks like either an array reference or a function call.'''
-
-    _attr_names = ['name', 'args']
-    _visitable_attr = ['name', 'args']
-
-    def __repr__(self):
-        return 'ArrayOrFunCall(name={}, args={})'.format(repr(self.name),
-                                                         repr(self.args))
-
-    def __str__(self):
-        return '{{function/array: {} {}}}'.format(_str_format(self.name),
-                                                  _str_format_args(self.args))
-
-
 class FunCall(Reference):
     '''Objects that are determined to be function calls.'''
 
@@ -288,7 +273,7 @@ class StructRef(Reference):
     _visitable_attr = ['name', 'field']
 
     def __repr__(self):
-        return 'StructRef(name={}, field={}, dynamic_access={})'.format(
+        return 'StructRef(name={}, field={}, dynamic={})'.format(
             repr(self.name), repr(self.field), repr(self.dynamic))
 
     def __str__(self):
@@ -297,10 +282,61 @@ class StructRef(Reference):
             'dynamic' if self.dynamic else 'static')
 
 
+class Ambiguous(Reference):
+    '''An object that could be a variable, function call, or array reference.
+    This can happen in a variety of contexts.  A simple example is:
+
+        if a < 1
+        end
+
+    Here, "a" could be a variable or a function call without arguments, and
+    it may be impossible to tell which it is if "a" has not been seen in an
+    assignment or a function definition in the current file.  Note that if
+    "a" were a known MATLAB function, such as in the following example,
+
+        if rand < 1
+        end
+
+    then the expression could, heuristically, be assumed to involve a
+    function call.  (In that case, the MOCCASIN parser will return a FunCall
+    object instead.)  Another ambiguous situation is
+
+        a(1, 2)
+
+    This could be an array reference or a function call.  Again, if "a" is not
+    a function definition in the current file and is not in the left-hand side
+    of an assignment in the current file, then it is impossible to be certain.
+
+    The attributes on this object obey the following rules:
+
+    1. The 'name' attribute is the name of the reference.  This may be an
+       Identifier object, or it may be a more complex object, for example
+       a structure reference.
+
+    2. The 'args' attribute can have the following values:
+       - the value None => the expression had no parentheses
+       - the value []   => the expression had "()" for the arguments/subscripts
+       - a list         => the expression had nonempty argument/subcripts
+
+    '''
+
+    _attr_names = ['name', 'args']
+    _visitable_attr = ['name', 'args']
+
+    def __repr__(self):
+        return 'Ambiguous(name={}, args={})'.format(repr(self.name),
+                                                         repr(self.args))
+
+    def __str__(self):
+        return '{{function/array: {} {}}}'.format(_str_format(self.name),
+                                                  _str_format_args(self.args))
+
+
 # Operators
 # .........................................................................
 
 class Operator(Expression):
+
     '''Parent class for operators in expressions.'''
     pass
 
