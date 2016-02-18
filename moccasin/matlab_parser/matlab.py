@@ -453,13 +453,6 @@ class FunDef(Definition):
             _str_format(self.name), params, output, _str_format(self.body))
 
 
-# Decided not to do this for now.
-
-# class Script(Definition):
-#     _attr_names = ['name', 'body']
-
-
-
 # Flow control.
 # .........................................................................
 
