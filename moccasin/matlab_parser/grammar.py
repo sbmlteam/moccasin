@@ -648,6 +648,9 @@ class ParseResultsTransformer:
         fundef = FunDef(name=name, parameters=params, output=output,
                         body=None, context=None)
         fundef.context = self._parser._save_function_definition(fundef)
+        # Also, record if this is the first function in the file.
+        if self._parser._context.topmost and not self._parser._context.name:
+            self._parser._context.name = name.name
         self._parser._push_context(fundef.context)
 
         # Now process the body, having set the context.
@@ -1945,7 +1948,7 @@ class MatlabGrammar:
 
 
     def _pop_context(self):
-        # Don't pop top-most context.
+        # Don't pop topmost context.
         if self._context.parent and not self._context.topmost:
             self._context = self._context.parent
 
@@ -2130,7 +2133,7 @@ class MatlabGrammar:
 
     def parse_string(self, input, print_results=False, print_debug=False,
                      fail_soft=False):
-        '''Parses MATLAB input and returns an a MatlabContext object.
+        """Parses MATLAB input and returns an a MatlabContext object.
 
         :param print_debug: print complete parsing debug output.
         :param print_results: print the internal presentation of the results.
@@ -2138,7 +2141,7 @@ class MatlabGrammar:
 
         Warning: print_debug produces *a lot* of output.  Don't use it on
         anything more than a few lines of input.
-        '''
+        """
         self._reset()
         try:
             preprocessed = self._preprocess(input)
@@ -2160,7 +2163,7 @@ class MatlabGrammar:
 
     def parse_file(self, path, print_results=False, print_debug=False,
                    fail_soft=False):
-        '''Parses the MATLAB contained in `file` and returns a MatlabContext.
+        """Parses the MATLAB contained in `file` and returns a MatlabContext.
         object This is essentially identical to MatlabGrammar.parse_string()
         but does the work of opening and closing the `file`.
 
@@ -2170,7 +2173,7 @@ class MatlabGrammar:
 
         Warning: print_debug produces *a lot* of output.  Don't use it on
         anything more than a few lines of input.
-        '''
+        """
         self._reset()
         try:
             file = open(path, 'r')
@@ -2195,7 +2198,7 @@ class MatlabGrammar:
 
 
     def print_parse_results(self, results, print_raw=False):
-        '''Prints a representation of the parsed output given in `results`.
+        """Prints a representation of the parsed output given in `results`.
         This is intended for debugging purposes.  If `print_raw` is True,
         prints the underlying Python objects of the representation.  The
         objects in the output are valid Python objects, and in theory could
@@ -2203,7 +2206,7 @@ class MatlabGrammar:
 
         If `print_raw` is False (the default), prints the output in a
         slightly more human-readable form.
-        '''
+        """
         if not isinstance(results, MatlabContext):
             raise ValueError("Expected a MatlabContext object")
         if print_raw:
@@ -2218,9 +2221,9 @@ class MatlabGrammar:
 
     @staticmethod
     def make_key(thing):
-        '''Turns a parsed object like an array into a canonical text-string
+        """Turns a parsed object like an array into a canonical text-string
         form, for use as a key in dictionaries such as MatlabContext.assignments.
-        '''
+        """
         def row_to_string(row):
             list = [MatlabGrammar.make_key(item) for item in row]
             return ','.join(list)
@@ -2285,7 +2288,7 @@ class MatlabGrammar:
 
     @staticmethod
     def make_formula(thing, spaces=True, parens=True, atrans=None):
-        '''Converted a mathematical expression into libSBML-style string form.
+        """Converted a mathematical expression into libSBML-style string form.
         The default behavior is to put spaces between terms and operators; if
         the optional flag 'spaces' is False, then no spaces are introduced.
         The default between is also to surround the expression with
@@ -2297,7 +2300,7 @@ class MatlabGrammar:
         text string corresponding to the value to be used in place of the
         array.  If no 'atrans' is given, the default behavior is to render
         arrays like they would appear in Matlab text: e.g., "foo(2,3)".
-        '''
+        """
         def compose(name, args, delimiters=None):
             list = [MatlabGrammar.make_formula(arg, spaces, parens, atrans)
                     for arg in args]
