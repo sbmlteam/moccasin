@@ -66,11 +66,15 @@ class MatlabContext(object):
 
     The properties are:
 
-      name:        The name of this context.  If this context represents a
-                   function definition, it will be the function name; otherwise,
-                   it will be something else indicating the context.
+      topmost:     Boolean; True if this is the top-most context in the file.
 
-      parent:      The parent context object.
+      name:        The name of this context.  If this context represents a
+                   function definition, it will be the function name.  If this
+                   is the topmost context, the name will be the name of the
+                   first function defined in the file.
+
+      parent:      The parent context object.  If this is the top-most context
+                   in the file, this value will be None.
 
       nodes:       The parsed representation of the MATLAB code within this
                    context, expressed as a list of MatlabNode objects.  If this
@@ -127,20 +131,17 @@ class MatlabContext(object):
     To make a copy of a Context object, use the Python 'copy' module.
     '''
 
-    def __init__(self, name='', parent=None, nodes=None, parameters=[],
+    def __init__(self, name=None, parent=None, nodes=None, parameters=[],
                  returns=[], pr=None, file=None, topmost=False):
-        self.topmost        = topmost   # Whether this is the top context.
-        if topmost:
-            self.name       = '(topmost context)'
-        else:
-            self.name       = name      # Name of this context.
-        self.parameters     = parameters  # If this is a function, its arg list.
-        self.returns        = returns  # If this is a function, return values.
-        self.comments       = []       # Comments ahead of this function.
-        self.parent         = parent   # Parent context containing this one.
-        self.nodes          = nodes    # The list of MatlabNode objects.
-        self.parse_results  = pr       # The corresponding ParseResults obj.
-        self.file           = file     # The path to the file, if any.
+        self.topmost        = topmost    # Whether this is the top context.
+        self.name           = name       # Name of this context.
+        self.parameters     = parameters # Arg list, if this is a function.
+        self.returns        = returns    # If this is a function, return values.
+        self.comments       = []         # Comments ahead of this function.
+        self.parent         = parent     # Parent context containing this one.
+        self.nodes          = nodes      # The list of MatlabNode objects.
+        self.parse_results  = pr         # The corresponding ParseResults obj.
+        self.file           = file       # The path to the file, if any.
         self._functions     = ContextDict()
         self._assignments   = ContextDict()
         self._calls         = ContextDict()
@@ -151,8 +152,9 @@ class MatlabContext(object):
         parent_name = ''
         if self.parent:
             parent_name = self.parent.name
-        s = '<context "{0}": {1} func defs, {2} assignments, {3} calls, parent = "{4}", file = "{5}">'
-        return s.format(self.name, len(self._functions), len(self._assignments),
+        s = '<context "{0}"{1}: {2} func, {3} assign, {4} calls, parent = {5}, file = "{6}">'
+        return s.format(self.name, " (top)" if self.topmost else '',
+                        len(self._functions), len(self._assignments),
                         len(self._calls), parent_name, self.file)
 
 
