@@ -79,10 +79,10 @@ class MatlabContext(object):
                    the function's body.
 
       parameters:  If this is a function, a list of the parameters it takes.
-                   This list contains just symbol names, not parse objects.
+                   The list will contain MatlabNode objects.
 
-      returns:     If this is a function, its return values.  This list
-                   contains just symbol names, not parse objects.
+      returns:     If this is a function, its return values.  The list will
+                   contain MatlabNode objects.
 
       functions:   A dictionary of functions defined within this context.  The
                    keys are the function names; the values are Context objects
@@ -100,7 +100,7 @@ class MatlabContext(object):
                    instead of square braces.  So, e.g., [a b] is turned into
                    '[a,b]', '[ a ; b ; c]' is turned into '[a;b;c]', 'foo(1,
                    2)' is turned into 'foo(1,2)', and so on.  The dict values
-                   are the ParseResults objects for the RHS.
+                   are the MatlabNode objects for the RHS.
 
       types:       A dictionary of data types associated with objects.  For
                    example, when MatlabGrammar encounters an assignment
@@ -113,7 +113,7 @@ class MatlabContext(object):
                    keys are the function names; the values is a list of the
                    arguments (as annotated ParseResults objects).
 
-      pr:          The ParseResults object related to this context.  This Context
+      pr:          The pr object related to this context.  This Context
                    will contain the stuff from which we constructed this
                    instance of a Context object.  The representation is awkward
                    and not meant to be used by callers, but it's left around
