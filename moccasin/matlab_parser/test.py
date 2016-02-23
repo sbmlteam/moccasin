@@ -45,7 +45,7 @@ import getopt
 from grammar import *
 
 def get_filename_and_options(argv):
-    '''Helper function for parsing command-line arguments.'''
+    """Helper function for parsing command-line arguments."""
     try:
         options, path = getopt.getopt(argv[1:], "dpqi")
     except:
@@ -60,13 +60,13 @@ def get_filename_and_options(argv):
 
 
 def main(argv):
-    '''Usage: matlab_parser.py [-d] [-i] [-p] [-q] FILENAME.m
+    """Usage: matlab_parser.py [-d] [-i] [-p] [-q] FILENAME.m
 Arguments:
   -d   (Optional) Print extremely detailed debug output during parsing
   -i   (Optional) Drop into pdb as the final step
   -p   (Optional) Print a representation of the output in the "old" format
   -q   (Optional) Be quiet -- just print the output
-'''
+"""
 
     path, debug, print_old, quiet, interactive = get_filename_and_options(argv)
 

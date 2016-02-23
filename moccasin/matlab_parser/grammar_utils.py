@@ -33,10 +33,10 @@ from pyparsing import ParseResults
 # makeLRlike -- function used in the definition of our grammar in grammar.py
 
 def makeLRlike(numterms):
-    '''Parse action that will take flat lists of tokens and nest them
+    """Parse action that will take flat lists of tokens and nest them
     as if parsed left-recursively.  Originally written by Paul McGuire as
     a StackOverflow answer here: http://stackoverflow.com/a/4589920/743730
-    '''
+    """
     initlen = {0: 1, 1: 2, 2: 3, 3: 5}[numterms]
     incr = {0: 1, 1: 1, 2: 2, 3: 4}[numterms]
 

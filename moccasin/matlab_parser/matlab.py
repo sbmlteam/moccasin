@@ -77,7 +77,7 @@ class MatlabNode(object):
 # .........................................................................
 
 class Expression(MatlabNode):
-    '''Parent class for expressions.'''
+    """Parent class for expressions."""
     pass
 
 
@@ -86,7 +86,7 @@ class Expression(MatlabNode):
 # .........................................................................
 
 class Entity(Expression):
-    '''Parent class for entities in expressions.'''
+    """Parent class for entities in expressions."""
 
     def __repr__(self):
         return 'Entity()'
@@ -99,7 +99,7 @@ class Entity(Expression):
 #
 
 class Primitive(Entity):
-    '''Parent class for primitive terms, such as numbers and strings.'''
+    """Parent class for primitive terms, such as numbers and strings."""
     _attr_names = ['value']
 
     def __repr__(self):
@@ -110,12 +110,12 @@ class Primitive(Entity):
 
 
 class Number(Primitive):
-    '''Any numerical value.  Note that it is stored as a text string.'''
+    """Any numerical value.  Note that it is stored as a text string."""
     pass
 
 
 class String(Primitive):
-    '''A text string.'''
+    """A text string."""
 
     # Overrides default printer to put double quotes around value.
     def __str__(self):
@@ -123,7 +123,7 @@ class String(Primitive):
 
 
 class Special(Primitive):
-    '''A literal ~, :, or "end" used in an array context.'''
+    """A literal ~, :, or "end" used in an array context."""
 
     # This is not strictly necessary, but the old printer/formatter in
     # grammar.py did it this way, so I'm repeating it here to make comparing
@@ -146,7 +146,7 @@ class Special(Primitive):
 #
 
 class Array(Entity):
-    '''The field `is_cell` is True if this is a cell array.'''
+    """The field `is_cell` is True if this is a cell array."""
     _attr_names = ['is_cell', 'rows']
     _visitable_attr = ['rows']
 
@@ -218,10 +218,10 @@ class Reference(Entity):
 
 
 class Identifier(Reference):
-    '''Identifiers NOT used in the syntactic context of a function call or
+    """Identifiers NOT used in the syntactic context of a function call or
     array reference.  The value they represent may still be an array or
     function, but where we encountered it, we did not see it used in the
-    manner of an array reference or functon call.'''
+    manner of an array reference or functon call."""
 
     _attr_names = ['name']
 
@@ -233,7 +233,7 @@ class Identifier(Reference):
 
 
 class FunCall(Reference):
-    '''Objects that are determined to be function calls.'''
+    """Objects that are determined to be function calls."""
 
     _attr_names = ['name', 'args']
     _visitable_attr = ['name', 'args']
@@ -248,8 +248,8 @@ class FunCall(Reference):
 
 
 class ArrayRef(Reference):
-    '''Objects that are determined to be array references.
-    The field `is_cell` is True if this is a cell array.'''
+    """Objects that are determined to be array references.
+    The field `is_cell` is True if this is a cell array."""
 
     _attr_names = ['name', 'args', 'is_cell']
     _visitable_attr = ['name', 'args']
@@ -275,8 +275,8 @@ class ArrayRef(Reference):
 
 
 class StructRef(Reference):
-    '''Objects that are determined to be structure references.
-    Warning: `name` may be an expression, not just an identifier.'''
+    """Objects that are determined to be structure references.
+    Warning: `name` may be an expression, not just an identifier."""
 
     _attr_names = ['name', 'field', 'dynamic']
     _visitable_attr = ['name', 'field']
@@ -292,7 +292,7 @@ class StructRef(Reference):
 
 
 class Ambiguous(Reference):
-    '''An object that could be a variable, function call, or array reference.
+    """An object that could be a variable, function call, or array reference.
     This can happen in a variety of contexts.  A simple example is:
 
         if a < 1
@@ -327,7 +327,7 @@ class Ambiguous(Reference):
        - the value []   => the expression had "()" for the arguments/subscripts
        - a list         => the expression had nonempty argument/subcripts
 
-    '''
+    """
 
     _attr_names = ['name', 'args']
     _visitable_attr = ['name', 'args']
@@ -346,7 +346,7 @@ class Ambiguous(Reference):
 
 class Operator(Expression):
 
-    '''Parent class for operators in expressions.'''
+    """Parent class for operators in expressions."""
     pass
 
 
@@ -407,7 +407,7 @@ class Transpose(Operator):
 # .........................................................................
 
 class Definition(MatlabNode):
-    '''Parent class for definitions.'''
+    """Parent class for definitions."""
     pass
 
 
@@ -621,12 +621,12 @@ class MatlabNodeVisitor(object):
 
 
     def default_visit(self, node):
-        '''Default visitor.  Users can redefine this if desired.'''
+        """Default visitor.  Users can redefine this if desired."""
         return node
 
 
     def default_visit_list(self, node):
-        '''Default visitor for lists.  Users can redefine this if desired.'''
+        """Default visitor for lists.  Users can redefine this if desired."""
         return [self.visit(item) for item in node]
 
 

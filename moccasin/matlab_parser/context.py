@@ -35,7 +35,7 @@ from pyparsing import ParseResults
 # This next class def is based on http://stackoverflow.com/a/7760938/743730
 
 class ContextDict(collections.MutableMapping, dict):
-    '''Class used to implement MatlabContext properties that are dictionaries.'''
+    """Class used to implement MatlabContext properties that are dictionaries."""
 
     def __getitem__(self, key):
         return dict.__getitem__(self, key)
@@ -57,7 +57,7 @@ class ContextDict(collections.MutableMapping, dict):
 
 
 class MatlabContext(object):
-    '''Class for tracking our interpretation of MATLAB parsing results.  Most
+    """Class for tracking our interpretation of MATLAB parsing results.  Most
     properties of objects of this class are used to store things that are
     also in one of our annotated ParseResults structures, but designed to
     make it easier to access data that we need for our MATLAB translation
@@ -66,14 +66,14 @@ class MatlabContext(object):
 
     The properties are:
 
-      topmost:     Boolean; True if this is the top-most context in the file.
+      topmost:     Boolean; True if this is the topmost context in the file.
 
       name:        The name of this context.  If this context represents a
                    function definition, it will be the function name.  If this
                    is the topmost context, the name will be the name of the
                    first function defined in the file.
 
-      parent:      The parent context object.  If this is the top-most context
+      parent:      The parent context object.  If this is the topmost context
                    in the file, this value will be None.
 
       nodes:       The parsed representation of the MATLAB code within this
@@ -129,7 +129,7 @@ class MatlabContext(object):
     Users can access via the normal x.propname approach.
 
     To make a copy of a Context object, use the Python 'copy' module.
-    '''
+    """
 
     def __init__(self, name=None, parent=None, nodes=None, parameters=[],
                  returns=[], pr=None, file=None, topmost=False):
@@ -160,7 +160,7 @@ class MatlabContext(object):
 
     @property
     def functions(self):
-        '''Allows access to the 'functions' property as a dictionary.'''
+        """Allows access to the 'functions' property as a dictionary."""
         return self._functions
 
 
@@ -179,7 +179,7 @@ class MatlabContext(object):
 
     @property
     def assignments(self):
-        '''Allows access to the 'assignments' property as a dictionary.'''
+        """Allows access to the 'assignments' property as a dictionary."""
         return self._assignments
 
 
@@ -195,7 +195,7 @@ class MatlabContext(object):
 
     @property
     def calls(self):
-        '''Allows access to the 'calls' property as a dictionary.'''
+        """Allows access to the 'calls' property as a dictionary."""
         return self._calls
 
 
@@ -211,7 +211,7 @@ class MatlabContext(object):
 
     @property
     def types(self):
-        '''Allows access to the 'types' property as a dictionary.'''
+        """Allows access to the 'types' property as a dictionary."""
         return self._types
 
 
