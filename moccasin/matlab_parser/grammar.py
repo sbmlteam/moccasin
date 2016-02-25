@@ -2278,9 +2278,6 @@ class MatlabGrammar:
             # No reason for make_key called for these things, but must catch
             # random mayhem before falling through to the final case.
             return None
-        elif isinstance(thing, list):
-            the_list = [MatlabGrammar.make_formula(term, False) for term in thing]
-            return '(' + ''.join(the_list) + ')'
         else:
             # Something must be wrong if we get here.  Unclear what to do.
             return None
