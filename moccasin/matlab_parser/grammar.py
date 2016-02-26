@@ -839,11 +839,10 @@ class NodeTransformer(MatlabNodeVisitor):
         self._parser = parser
 
 
-    def visit_list(self, node):
-        return [self.visit(item) for item in node]
-
-
     def visit_FunCall(self, node):
+        # Process the subcomponents first.
+        node.name = self.visit(node.name)
+        node.args = self.visit(node.args)
         # Save the call.
         self._parser._save_function_call(node)
         return node
@@ -859,19 +858,17 @@ class NodeTransformer(MatlabNodeVisitor):
         parser._push_context(node.context)
         # Record inferred type info about the input and output parameters.
         # The type info applies *inside* the function.
-        for var in (node.output or []):
+        for var in filter(lambda x: isinstance(x, Identifier), (node.output or [])):
             # Output parameters are vars inside the context of a function def.
-            if isinstance(var, Identifier):
-                parser._save_type(var.name, 'variable')
+            parser._save_type(var, 'variable')
         if node.parameters:
             # Look at the rest of the file, to see if we can find a call to
             # this function and correlate the arguments with the parameters,
             # to figure out what type they are based on their usage patterns.
-            fname = node.name.name
             num_param = len(node.parameters)
             context = parser._context
             # Case 1: direct calls to this function.
-            calls = parser._get_direct_calls(fname, context.parent, anywhere=True)
+            calls = parser._get_direct_calls(node.name, context.parent, anywhere=True)
             for arglist in (calls or []):
                 if len(arglist) != num_param:
                     continue
@@ -881,32 +878,36 @@ class NodeTransformer(MatlabNodeVisitor):
                     if not isinstance(param, Identifier):
                         continue
                     if isinstance(arg, FunHandle):
-                        parser._save_type(param.name, 'function')
+                        parser._save_type(param, 'function')
+
                     elif (isinstance(arg, Identifier)
-                          and parser._get_type(arg.name, context) == 'function'):
-                        parser._save_type(param.name, 'function')
+                          and parser._get_type(arg, context) == 'function'):
+                        parser._save_type(param, 'function')
+
                     elif (isinstance(arg, FunCall)
                           and isinstance(arg.name, Identifier)
-                          and parser._get_type(arg.name.name, context) == 'function'):
-                        parser._save_type(param.name, 'variable')
+                          and parser._get_type(arg.name, context) == 'function'):
+                        parser._save_type(param, 'variable')
+
                     elif (isinstance(arg, Primitive) or isinstance(arg, Array)
                           or isinstance(arg, Operator)):
-                        parser._save_type(param.name, 'variable')
+                        parser._save_type(param, 'variable')
+
                     elif (isinstance(arg, Identifier) and
-                          parser._get_type(arg.name, context) == 'variable'):
-                        parser._save_type(param.name, 'variable')
+                          parser._get_type(arg, context) == 'variable'):
+                        parser._save_type(param, 'variable')
 
             # Case 2: passing a handle to this funtion as an argument to another.
-            calls = parser._get_indirect_calls(fname, context.parent, anywhere=True)
+            calls = parser._get_indirect_calls(node.name, context.parent, anywhere=True)
             # FIXME: this currently only looks for calls involving odeNN
             # functions, but there are probably others we could inspect.
-            if any(name.startswith('ode') for name in calls.keys()):
+            if any(func.name.startswith('ode') for func in calls.keys()):
                 # This function gets passed as a function handle to a MATLAB
                 # odeNN function.  This means that the arguments to the current
                 # function are variables, and not other functions.
                 for param in node.parameters:
                     if isinstance(param, Identifier):
-                        parser._save_type(param.name, 'variable')
+                        parser._save_type(param, 'variable')
         # Make sure to process the body of this function.
         if node.body:
             node.body = self.visit(node.body)
@@ -915,9 +916,12 @@ class NodeTransformer(MatlabNodeVisitor):
 
 
     def visit_Assignment(self, node):
-        parser = self._parser
+        # First visit the lhs and rhs.
+        node.lhs = self.visit(node.lhs)
+        node.rhs = self.visit(node.rhs)
 
-        # Save the assignment.
+        # Save this assignment.
+        parser = self._parser
         parser._save_assignment(node)
 
         # Record inferred type info about the input and output parameters.
@@ -927,20 +931,20 @@ class NodeTransformer(MatlabNodeVisitor):
             if (isinstance(rhs, Array) or isinstance(rhs, Primitive)
                   or isinstance(rhs, Operator)):
                 # In these cases, the LHS is clearly a variable.
-                parser._save_type(lhs.name, 'variable')
+                parser._save_type(lhs, 'variable')
             elif isinstance(rhs, Handle):
                 # RHS is clearly a function.
-                parser._save_type(lhs.name, 'function')
+                parser._save_type(lhs, 'function')
             elif (isinstance(rhs, FunCall) and isinstance(rhs.name, Identifier)
                 and rhs.name.name == 'str2func'):
                 # Special case: a function is being created using Matlab's
                 # str2func(), so in fact, the thing we're assigning to should
                 # be considered a function.
-                parser._save_type(lhs.name, 'function')
+                parser._save_type(lhs, 'function')
             elif (isinstance(rhs, FunCall) or isinstance(rhs, ArrayRef)
                   or isinstance(rhs, ArrayRef) or isinstance(rhs, StructRef)):
                 # FIXME: this is an assumption.
-                parser._save_type(lhs.name, 'variable')
+                parser._save_type(lhs, 'variable')
         elif isinstance(lhs, ArrayRef):
             # A function call can't appear on the LHS of an assignment, so
             # we know that what we have here is a variable, not a function.
@@ -955,7 +959,7 @@ class NodeTransformer(MatlabNodeVisitor):
             else:
                 parser._save_type(lhs, 'variable')
             if isinstance(lhs.name, Identifier):
-                # A simple x.y struct reference => x is a
+                # It's a simple x.y struct reference => x is a variable.
                 parser._save_type(lhs.name, 'variable')
         elif isinstance(lhs, Array):
             # A bare array on the LHS.  If symbols appear as subscripts, they
@@ -970,42 +974,51 @@ class NodeTransformer(MatlabNodeVisitor):
 
 
     def visit_Ambiguous(self, node):
-        if isinstance(node.name, Identifier):
-            the_name = node.name.name
-        elif isinstance(node.name, StructRef):
-            the_name = node.name
+        # Visit the pieces first.
+        node.name = self.visit(node.name)
+        node.args = self.visit(node.args)
+        # Now analyze the pieces.
+        if isinstance(node.name, Identifier) or isinstance(node.name, StructRef):
+            thing = node.name
         else:
             # We don't know how to deal with it.
             return node
         parser = self._parser
         context = parser._context
-        if parser._get_type(the_name, context) == 'function':
-            # This is a known function or command.  We can convert this
-            # to a FunCall.  At this time, we also process the arguments,
-            # being careful not to change "None" to [].
-            the_args = self.visit(node.args) if node.args else node.args
-            node = FunCall(name=node.name, args=the_args)
-        elif parser._get_type(the_name, context) == 'variable':
+        if parser._get_type(thing, context) == 'variable':
             # We have seen this name before, and it's not a function.
             if node.args == None:
                 # There were no arguments at all (e.g., it was "a" rather
-                # than "a()".  It's a plain identifier.
+                # than "a()".  It's a plain identifier, and we can simplify
+                # it to the Identifier object that is the name.
                 return node.name
             else:
                 # It's an ArrayRef.  We can also convert the
                 # args/subscripts.  Also, if it was previously unknown
                 # whether this name is a function or array, it might have
                 # been put in the list of function calls.  Remove it.
-                if the_name in context.calls:
-                    context.calls.pop(the_name)
+                if thing in context.calls:
+                    context.calls.pop(thing)
                 the_args = self.visit(node.args)
                 node = ArrayRef(name=node.name, args=the_args, is_cell=False)
-        elif (isinstance(the_name, StructRef) and node.args == []):
+        elif parser._get_type(thing, context) == 'function':
+            # This is a known function or command.  We can convert this
+            # to a FunCall.  At this time, we also process the arguments,
+            # being careful not to change "None" to [].
+            the_args = self.visit(node.args) if node.args else node.args
+            node = FunCall(name=thing, args=the_args)
+            # Save the call in the present context.
+            self._parser._save_function_call(node)
+        elif (isinstance(thing, StructRef) and node.args == []):
             # It's something of the form a.b().  This could be an array
-            # reference, but in practice, few people put "()" when referring to
-            # an array.  So, it's probably a function call.
-            # FIXME: this is an assumption, not a certainty.
-            node = FunCall(name=the_name, args=node.args)
+            # reference, but in practice, few people put "()" when referring
+            # to an array.  So, it's probably a function call.  FIXME: this
+            # is an assumption, not a certainty.  We also process the
+            # arguments, being careful not to change "None" to [].
+            the_args = self.visit(node.args) if node.args else node.args
+            node = FunCall(name=thing, args=the_args)
+            # Save the call in the present context.
+            self._parser._save_function_call(node)
         else:
             # Although we didn't change the type of this Ambiguous,
             # we may still be able to change some of its arguments.
@@ -1017,36 +1030,30 @@ class NodeTransformer(MatlabNodeVisitor):
 
 
     def visit_ArrayRef(self, node):
+        # Process the pieces first.
+        node.name = self.visit(node.name)
+        node.args = self.visit(node.args)
+        # Now analyze the pieces.
         if not isinstance(node.name, Identifier):
             return node
-        name = node.name.name
-        parser = self._parser
-        context = parser._context
         # If we've decided we have an array reference, then the identifier is
         # a variable.  This is useful when we have not seen an assignment and
         # the variable might have come from, e.g., loading a file.
-        parser._save_type(name, 'variable')
-        if parser._get_type(name, context) == 'function':
-            # We have seen this name before, and it's a function.  We need to
-            # convert this ArrayRef to FunCall.  Also, store this as a
-            # function call.  And let's not forget to convert the subscripts.
-            if name not in context.calls:
-                parser._save_function_call(node)
-            the_args = self.visit(node.args)
-            node = FunCall(name=node.name, args=the_args)
-        else:
-            # Although we didn't change the type of this ArrayRef, we may
-            # still be able to change some of its arguments.
-            node.args = self.visit(node.args)
+        self._parser._save_type(node.name, 'variable')
+        node.args = self.visit(node.args)
         return node
 
 
     def visit_StructRef(self, node):
+        # Process the pieces first.
+        node.name = self.visit(node.name)
+        node.field = self.visit(node.field)
+        # Now analyze the pieces.
         # If we have a structure reference where the name is a simple id,
         # we can tag the id as a variable.
         parser = self._parser
         if isinstance(node.name, Identifier):
-            parser._save_type(node.name.name, 'variable')
+            parser._save_type(node.name, 'variable')
         return node
 
 
@@ -1063,15 +1070,15 @@ class Disambiguator(MatlabNodeVisitor):
         self._known_functions = functions
 
 
-    def visit_list(self, node):
-        return [self.visit(item) for item in node]
-
-
     def visit_Ambiguous(self, node):
+        # Visit the pieces first.
+        node.name = self.visit(node.name)
+        node.args = self.visit(node.args)
+        # Now analyze the pieces.
         if self._known_vars:
             if isinstance(node.name, Identifier) and node.args == None:
-                for vars in self._known_vars:
-                    if vars.name == node.name.name:
+                for var in self._known_vars:
+                    if var == node.name:
                         # Don't need create new Identifier; just return this.
                         return node.name
         return node
@@ -1907,8 +1914,8 @@ class MatlabGrammar:
         # 2nd & 3rd passes: infer the types of objects where possible, and
         # transform some classes into others to overcome limitations in our
         # initial parse.  Must be done twice to propagate inferences.
-        nodes = [NodeTransformer(self).visit(node) for node in nodes]
-        nodes = [NodeTransformer(self).visit(node) for node in nodes]
+        nodes = NodeTransformer(self).visit(nodes)
+        nodes = NodeTransformer(self).visit(nodes)
 
         self._context.nodes = nodes
         return self._context
@@ -1954,44 +1961,44 @@ class MatlabGrammar:
 
 
     def _save_function_definition(self, node):
-        the_name = node.name.name       # Node.name is an Identifier.
-        newcontext = MatlabContext(name=the_name, parent=self._context,
+        newcontext = MatlabContext(name=node.name.name, parent=self._context,
                                    parameters=node.parameters,
                                    returns=node.output, pr=None, topmost=False)
-        self._context.functions[the_name] = newcontext
+        self._context.functions[node.name] = newcontext
         return newcontext
 
 
     def _save_function_call(self, node):
-        key = MatlabGrammar.make_key(node.name)
         # Save each call as a list of the arguments to the call.
         # This will thus be a list of lists.
-        if key not in self._context.calls:
-            self._context.calls[key] = [node.args]
+        if node.name not in self._context.calls:
+            self._context.calls[node.name] = [node.args]
         else:
-            self._context.calls[key].append(node.args)
+            self._context.calls[node.name].append(node.args)
 
 
     def _save_assignment(self, node):
-        key = MatlabGrammar.make_key(node.lhs)
-        self._context.assignments[key] = node.rhs
+        self._context.assignments[node.lhs] = node.rhs
 
 
     def _save_type(self, thing, type):
-        key = MatlabGrammar.make_key(thing)
-        self._context.types[key] = type
+        self._context.types[thing] = type
 
 
     def _get_type(self, thing, context):
-        key = MatlabGrammar.make_key(thing)
-        if key in context.types:
-            return context.types[key]
+        if thing in context.types:
+            return context.types[thing]
         elif hasattr(context, 'parent') and context.parent:
-            return self._get_type(key, context.parent)
-        elif matlab_function_or_command(key):
-            return 'function'
-        else:
-            return None
+            return self._get_type(thing, context.parent)
+        elif isinstance(thing, Ambiguous) or isinstance(thing, FunCall):
+            if isinstance(thing.name, Identifier):
+                name = thing.name.name
+                return 'function' if matlab_function_or_command(name) else None
+            else:
+                return None
+        elif isinstance(thing, Identifier):
+            return 'function' if matlab_function_or_command(thing.name) else None
+        return None
 
 
     def _get_direct_calls(self, name, context, anywhere=False, recursive=False):
@@ -2015,7 +2022,7 @@ class MatlabGrammar:
         for fun_name in (context.calls or []):
             for arglist in context.calls[fun_name]:
                 for arg in (arglist or []):
-                    if isinstance(arg, FunHandle) and name == arg.name.name:
+                    if isinstance(arg, FunHandle) and name == arg.name:
                         calls[fun_name].append(arglist)
         if anywhere and context.functions:
             for fun_name, fun_context in context.functions.items():
@@ -2220,70 +2227,6 @@ class MatlabGrammar:
 
 
     @staticmethod
-    def make_key(thing):
-        """Turns a parsed object like an array into a canonical text-string
-        form, for use as a key in dictionaries such as MatlabContext.assignments.
-        """
-        def row_to_string(row):
-            list = [MatlabGrammar.make_key(item) for item in row]
-            return ','.join(list)
-
-        if isinstance(thing, str):
-            return thing
-        elif isinstance(thing, Primitive):
-            return str(thing.value)
-        elif isinstance(thing, Identifier):
-            return str(thing.name)
-        elif isinstance(thing, FunCall) or isinstance(thing, Ambiguous):
-            base = MatlabGrammar.make_key(thing.name)
-            arg_list = row_to_string(thing.args) if thing.args else ''
-            return base + '(' + arg_list + ')'
-        elif isinstance(thing, ArrayRef):
-            base  = MatlabGrammar.make_key(thing.name)
-            left  = '{' if thing.is_cell else '('
-            right = '}' if thing.is_cell else ')'
-            arg_list = row_to_string(thing.args) if thing.args else ''
-            return base + left + arg_list + right
-        elif isinstance(thing, StructRef):
-            base = MatlabGrammar.make_key(thing.name)
-            return base + '.' + MatlabGrammar.make_key(thing.field)
-        elif isinstance(thing, Array):
-            rowlist = [row_to_string(row) for row in thing.rows]
-            return '[' + ';'.join(rowlist) + ']'
-        elif isinstance(thing, Operator):
-            if isinstance(thing, UnaryOp):
-                return thing.op + MatlabGrammar.make_key(thing.operand)
-            elif isinstance(thing, BinaryOp):
-                left = MatlabGrammar.make_key(thing.left)
-                right = MatlabGrammar.make_key(thing.right)
-                return left + thing.op + right
-            elif isinstance(thing, ColonOp):
-                left = MatlabGrammar.make_key(thing.left)
-                right = MatlabGrammar.make_key(thing.right)
-                if thing.middle:
-                    middle = MatlabGrammar.make_key(thing.middle)
-                    return left + ':' + middle + ':' + right
-                else:
-                    return left + ':' + right
-            elif isinstance(thing, Transpose):
-                return MatlabGrammar.make_key(thing.operand) + thing.op
-        elif isinstance(thing, FunHandle):
-            return str(thing)
-        elif isinstance(thing, AnonFun):
-            arg_list = row_to_string(thing.args) if thing.args else ''
-            body = MatlabGrammar.make_key(thing.body)
-            return '@(' + arg_list + ')' + body
-        elif isinstance(thing, Comment) or isinstance(thing, FunDef) \
-             or isinstance(thing, Command):
-            # No reason for make_key called for these things, but must catch
-            # random mayhem before falling through to the final case.
-            return None
-        else:
-            # Something must be wrong if we get here.  Unclear what to do.
-            return None
-
-
-    @staticmethod
     def make_formula(thing, spaces=True, parens=True, atrans=None):
         """Converted a mathematical expression into libSBML-style string form.
         The default behavior is to put spaces between terms and operators; if
@@ -2326,7 +2269,7 @@ class MatlabGrammar:
              or isinstance(thing, AnonFun) \
              or isinstance(thing, FunHandle) \
              or isinstance(thing, Operator):
-            return MatlabGrammar.make_key(thing)
+            return MatlabNode.as_string(thing)
         elif isinstance(thing, list):
             return compose(None, thing, '()')
         elif 'comment' in thing:
