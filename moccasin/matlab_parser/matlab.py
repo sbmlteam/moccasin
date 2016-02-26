@@ -73,6 +73,76 @@ class MatlabNode(object):
         return not self.__eq__(other)
 
 
+    def __hash__(self):
+        return hash(MatlabNode.as_string(self))
+
+
+    @staticmethod
+    def as_string(thing):
+        """Turns a node structure into a canonical text string form.
+        This is a recursive function, and is meant to be used to convert simple
+        node structures (such as array accesses) into dictionary hash keys.
+        It is unlikely to yield useful results for more complicated node trees.
+        """
+        def row_to_string(row):
+            list = [MatlabNode.as_string(item) for item in row]
+            return ','.join(list)
+
+        if isinstance(thing, str):
+            return thing
+        elif isinstance(thing, Primitive):
+            return str(thing.value)
+        elif isinstance(thing, Identifier):
+            return str(thing.name)
+        elif isinstance(thing, FunCall) or isinstance(thing, Ambiguous):
+            base = MatlabNode.as_string(thing.name)
+            arg_list = row_to_string(thing.args) if thing.args else ''
+            return base + '(' + arg_list + ')'
+        elif isinstance(thing, ArrayRef):
+            base  = MatlabNode.as_string(thing.name)
+            left  = '{' if thing.is_cell else '('
+            right = '}' if thing.is_cell else ')'
+            arg_list = row_to_string(thing.args) if thing.args else ''
+            return base + left + arg_list + right
+        elif isinstance(thing, StructRef):
+            base = MatlabNode.as_string(thing.name)
+            return base + '.' + MatlabNode.as_string(thing.field)
+        elif isinstance(thing, Array):
+            rowlist = [row_to_string(row) for row in thing.rows]
+            return '[' + ';'.join(rowlist) + ']'
+        elif isinstance(thing, Operator):
+            if isinstance(thing, UnaryOp):
+                return thing.op + MatlabNode.as_string(thing.operand)
+            elif isinstance(thing, BinaryOp):
+                left = MatlabNode.as_string(thing.left)
+                right = MatlabNode.as_string(thing.right)
+                return left + thing.op + right
+            elif isinstance(thing, ColonOp):
+                left = MatlabNode.as_string(thing.left)
+                right = MatlabNode.as_string(thing.right)
+                if thing.middle:
+                    middle = MatlabNode.as_string(thing.middle)
+                    return left + ':' + middle + ':' + right
+                else:
+                    return left + ':' + right
+            elif isinstance(thing, Transpose):
+                return MatlabNode.as_string(thing.operand) + thing.op
+        elif isinstance(thing, FunHandle):
+            return str(thing)
+        elif isinstance(thing, AnonFun):
+            arg_list = row_to_string(thing.args) if thing.args else ''
+            body = MatlabNode.as_string(thing.body)
+            return '@(' + arg_list + ')' + body
+        elif isinstance(thing, Comment) or isinstance(thing, FunDef) \
+             or isinstance(thing, Command):
+            # No reason for as_string called for these things, but must catch
+            # random mayhem before falling through to the final case.
+            return None
+        else:
+            # Something must be wrong if we get here.  Unclear what to do.
+            return None
+
+
 # Expressions -- parent class of operators and other things in expressions.
 # .........................................................................
 
