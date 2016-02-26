@@ -589,15 +589,12 @@ class Comment(MatlabNode):
 # This is a mostly standard Python-style Visitor Pattern, except that it
 # designed to work with both individual MatlabNode objects and lists of
 # MatlabNodes.
-#
-# This automatically visits the subcomponents of nodes such as the arguments
-# to function calls, so the caller does not have to include that logic.  It
-# assumes callers return a node if a node is to be transformed (such as
-# changed from one node class to another).  This does depth-first traversal.
 
 class MatlabNodeVisitor(object):
     def visit(self, node):
-        if isinstance(node, list):
+        if not node:
+            return node
+        elif isinstance(node, list):
             meth = getattr(self, 'visit_list', None)
             if meth is None:
                 meth = self.default_visit_list
@@ -605,14 +602,8 @@ class MatlabNodeVisitor(object):
         elif isinstance(node, tuple):
             return (self.visit(node[0]), self.visit(node[1]))
         else:
-            # Call ourselves on the node attributes that are indicated as
-            # being ones that should be visited recursively.
-            for a in type(node)._visitable_attr:
-                value = getattr(node, a, None)
-                if value:
-                    setattr(node, a, self.visit(value))
-
-            # Now call user's visitor methods and return the final result.
+            # If the user has defined a method for this class of object, we
+            # call that; else, we default to walking the visitable attributes.
             methname = 'visit_' + type(node).__name__
             meth = getattr(self, methname, None)
             if meth is None:
@@ -622,6 +613,10 @@ class MatlabNodeVisitor(object):
 
     def default_visit(self, node):
         """Default visitor.  Users can redefine this if desired."""
+        for a in type(node)._visitable_attr:
+            value = getattr(node, a, None)
+            if value:
+                setattr(node, a, self.visit(value))
         return node
 
 
