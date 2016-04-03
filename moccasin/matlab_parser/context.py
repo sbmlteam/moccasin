@@ -150,10 +150,13 @@ class MatlabContext(object):
 
     def __repr__(self):
         parent_name = ''
-        if self.parent:
-            parent_name = self.parent.name
-        s = '<context "{0}"{1}: {2} func, {3} assign, {4} calls, parent = {5}, file = "{6}">'
-        return s.format(self.name, " (top)" if self.topmost else '',
+        if not self.topmost:
+            if self.parent and self.parent.topmost:
+                parent_name = "(top)"
+            else:
+                parent_name = self.parent.name
+        s = '<context {}: {} func, {} assign, {} calls, parent = "{}", file = "{}">'
+        return s.format("(top)" if self.topmost else '"{}"'.format(self.name),
                         len(self._functions), len(self._assignments),
                         len(self._calls), parent_name, self.file)
 
