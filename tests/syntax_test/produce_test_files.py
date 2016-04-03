@@ -29,9 +29,6 @@ from pyparsing import ParseException, ParseResults
 sys.path.append('../../moccasin/')
 from matlab_parser import *
 
-parser = MatlabGrammar()
-
-
 def main(argv):
     '''Usage: run-syntax-tests.py [-d] [-v]
     Arguments:
@@ -55,7 +52,9 @@ def main(argv):
         #if do_print:
             #print('----- output ' + '-'*30)
         try:
-            results = parser.parse_string(contents, print_debug=do_print, fail_soft=True)
+            with MatlabGrammar() as parser:
+                results = parser.parse_string(contents, print_debug=do_print,
+                                              fail_soft=True)
         except Exception as err:
             if do_debug and not results:
                 print('Object "results" contains the output of parse_string()')

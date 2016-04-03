@@ -5,7 +5,6 @@ import pytest
 import sys
 import glob
 import os
-import pdb
 import codecs
 from string import printable
 sys.path.append('moccasin/')
@@ -21,17 +20,18 @@ def pytest_generate_tests(metafunc):
     metafunc.parametrize(argnames, [[funcargs[name] for name in argnames]
             for funcargs in funcarglist],scope='module')
 
-#Parses the file and prints interpreted result(output is captured)                       
+#Parses the file and prints interpreted result(output is captured)
 def build_model(path):
     file = open(path,'r')
     contents = file.read()
     try:
-        parser = MatlabGrammar()
-        results = parser.parse_string(contents, fail_soft=True)
-        parser.print_parse_results(results, print_raw=True)
-        file.close()
+        with MatlabGrammar() as parser:
+            results = parser.parse_string(contents, fail_soft=True)
+            parser.print_parse_results(results, print_raw=True)
     except Exception as e:
         print(e)
+    finally:
+        file.close()
 
 #reads file containing expected parsed model and returns it as string
 def read_parsed(path):
