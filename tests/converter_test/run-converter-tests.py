@@ -9,6 +9,8 @@ sys.path.append('../../moccasin/')
 from matlab_parser import *
 from converter import *
 
+sys.setrecursionlimit(10000)
+
 def main(argv):
 
     #Flag values used for testing
@@ -45,7 +47,11 @@ def main(argv):
             print('')
             print('----- SBML output ' + '-'*50)
 
-        [sbml, additional] = create_raterule_model(parse_results, use_species,output_sbml)
+        [sbml, additional] = create_raterule_model(parse_results,
+                                                   use_species,
+                                                   output_sbml,
+                                                   use_func_param_for_var_name=False,
+                                                   add_comments=False)
         print(sbml)
 
         print(additional)
