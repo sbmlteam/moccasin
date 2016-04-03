@@ -123,6 +123,44 @@ class MatlabNode(object):
         return not self.__eq__(other)
 
 
+    def __gt__(self, other):
+        return not __le__(self, other)
+
+
+    def __ge__(self, other):
+        return not __lt__(self, other)
+
+
+    def __lt__(self, other):
+        # Subclasses may need to override this.
+        if hasattr(self, 'name') and hasattr(other, 'name'):
+            return self.name.lower() < other.name.lower()
+        elif hasattr(self, 'value') and hasattr(other, 'value'):
+            return self.value < other.value
+        else:
+            return repr(self) < repr(other)
+
+
+    def __le__(self, other):
+        # Subclasses may need to override this.
+        if hasattr(self, 'name') and hasattr(other, 'name'):
+            return self.name.lower() <= other.name.lower()
+        elif hasattr(self, 'value') and hasattr(other, 'value'):
+            return self.value <= other.value
+        else:
+            return repr(self) <= repr(other)
+
+
+    def __cmp__(self, other):
+        # Subclasses may need to override this.
+        if hasattr(self, 'name') and hasattr(other, 'name'):
+            return cmp(self.name.lower(), other.name.lower())
+        elif hasattr(self, 'value') and hasattr(other, 'value'):
+            return cmp(self.value, other.value)
+        else:
+            return cmp(repr(self), repr(other))
+
+
     def __hash__(self):
         return hash(MatlabNode.as_string(self))
 
@@ -702,7 +740,6 @@ class Comment(MatlabNode):
     def __str__(self):
         return '{{comment: {}}}'.format(self.content)
 
-pass
 
 # Visitor.
 # .........................................................................
