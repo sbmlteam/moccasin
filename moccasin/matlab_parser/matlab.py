@@ -21,13 +21,63 @@
 # ------------------------------------------------------------------------- -->
 
 from __future__ import print_function
+import inspect
 import sys
 import pdb
 import collections
+from collections import defaultdict
 
 
 # MatlabNode -- base class for all parse tree nodes.
 # .........................................................................
+#
+# There are numerous `MatlabNode` objects and they are hierarchically
+# organized as depicted by the following tree diagram.
+#
+# MatlabNode
+# |
+# +-Expression
+# |  +- Entity
+# |  |  +- Primitive
+# |  |  |  +- Number
+# |  |  |  +- String
+# |  |  |  `- Special       # A colon or tilde character, or the string "end".
+# |  |  |
+# |  |  +- Array            # Unnamed arrays ("square-bracket" type or cell).
+# |  |  |
+# |  |  +- Handle
+# |  |  |  +- FunHandle     # A function handle, e.g., "@foo"
+# |  |  |  `- AnonFun       # An anonymous function, e.g., "@(x,y)x+y".
+# |  |  |
+# |  |  `- Reference        # Objects that store or return values.
+# |  |     +- Identifier
+# |  |     +- FunCall
+# |  |     +- ArrayRef
+# |  |     +- StructRef
+# |  |     `- Ambiguous
+# |  |
+# |  `- Operator
+# |     +- UnaryOp
+# |     +- BinaryOp
+# |     +- ColonOp
+# |     `- Transpose
+# |
+# +--Definition
+# |  +- FunDef
+# |  +- Assignment
+# |  `- ScopeDecl
+# |
+# +--FlowControl
+# |  +- If
+# |  +- While
+# |  +- For
+# |  +- Switch
+# |  +- Try
+# |  `- Branch
+# |
+# +--ShellCommand
+# |
+# `- Comment
 
 class MatlabNode(object):
     _attr_names = None                 # Default set of node attributes.
@@ -652,15 +702,65 @@ class Comment(MatlabNode):
     def __str__(self):
         return '{{comment: {}}}'.format(self.content)
 
-
+pass
 
 # Visitor.
 # .........................................................................
-# This is a mostly standard Python-style Visitor Pattern, except that it
-# designed to work with both individual MatlabNode objects and lists of
-# MatlabNodes.
+# This is a visitor class with special powers:
+#
+# (1) It works with individual MatlabNode objects as well as lists and tuples
+# of MatlabNodes.
+#
+# (2) When considering whether a 'visit_CLASS()' function exists, the visit()
+# function looks for parent classes of CLASS if 'visit_CLASS()' does not exist.
+# For instance, if a visit_Identifier() is not defined, then upon
+# encountering a node of class Identifier, visit() will still check for
+# a visit_Reference(), visit_Entity(), and visit_Expression(), in that order.
+#
+# Subclasses must (A) make sure to call the __init__() functions in their
+# subclass __init__() functions, and (B) always make sure visit_CLASS()
+# functions return the current node.
+#
+# Here is a skeleton subclass definition to illustrate:
+#
+#     class SampleWalker(MatlabNodeVisitor):
+#         def __init__(self):
+#             super(SampleWalker, self).__init__()
+#             # ... other code ...
+#
+#         def visit_Ambiguous(self, node):
+#             # ... other code here ...
+#             return node
+#
+#         def visit_FlowControl(self, node):
+#             # Note that function this will get called for all subclasses of
+#             # FlowControl, such as If, While, Switch, etc., so make sure to
+#             # plan accordingly.
+#             #
+#             # ... other code here ...
+#             return node
+#
+# Note that no visit_MatlabNode() will ever get called, because there is no
+# point: the method visit() is effectively visit_MatlabNode().
 
 class MatlabNodeVisitor(object):
+    def __init__(self):
+        def catalog(this_class, classes):
+            # Note it doesn't help to put MatlabNode in the path because it
+            # bloats the list and complicates processing later, so we skip it.
+            for subclass in this_class.__subclasses__():
+                if this_class in classes:
+                    classes[subclass] = [this_class] + classes[this_class]
+                elif this_class is not MatlabNode:
+                    classes[subclass] = [this_class]
+                catalog(subclass, classes)
+
+        # Cache the superclass path for every subclass, so that we don't have
+        # to keep walking up the class hierarchy at every call to visit().
+        self._parent_classes = defaultdict(list)
+        catalog(MatlabNode, self._parent_classes)
+
+
     def visit(self, node):
         if not node:
             return node
@@ -672,13 +772,22 @@ class MatlabNodeVisitor(object):
         elif isinstance(node, tuple):
             return (self.visit(node[0]), self.visit(node[1]))
         else:
-            # If the user has defined a method for this class of object, we
-            # call that; else, we default to walking the visitable attributes.
+            # If the user has defined a method for this class of object, call
+            # that; else, look for a method for a superclass, and failing all
+            # that, default to walking the visitable attributes.
             methname = 'visit_' + type(node).__name__
             meth = getattr(self, methname, None)
-            if meth is None:
+            if meth:
+                return meth(node)
+            else:
+                for superclass in self._parent_classes[node.__class__]:
+                    methname = 'visit_' + superclass.__name__
+                    meth = getattr(self, methname, None)
+                    if meth:
+                        return meth(node)
+                # We got 'nothin.  We do the default walk.
                 meth = self.default_visit
-            return meth(node)
+                return meth(node)
 
 
     def default_visit(self, node):
