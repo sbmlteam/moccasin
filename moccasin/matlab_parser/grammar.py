@@ -648,9 +648,6 @@ class ParseResultsTransformer:
         fundef = FunDef(name=name, parameters=params, output=output,
                         body=None, context=None)
         fundef.context = self._parser._save_function_definition(fundef)
-        # Also, record if this is the first function in the file.
-        if self._parser._context.topmost and not self._parser._context.name:
-            self._parser._context.name = name.name
         self._parser._push_context(fundef.context)
 
         # Now process the body, having set the context.
@@ -836,6 +833,7 @@ class ParseResultsTransformer:
 
 class NodeTransformer(MatlabNodeVisitor):
     def __init__(self, parser):
+        super(NodeTransformer, self).__init__()
         self._parser = parser
 
 
@@ -854,7 +852,8 @@ class NodeTransformer(MatlabNodeVisitor):
         # Make sure to record it in the parent's context -- that's why this
         # is done before a context is pushed in the next step below.
         parser._save_type(node.name, 'function')
-        # Push the new function context.
+        # Push the new function context.  Note that FunDef is unusual in having
+        # a node.context property -- other MatlabNodes don't.
         parser._push_context(node.context)
         # Record inferred type info about the input and output parameters.
         # The type info applies *inside* the function.
@@ -911,6 +910,7 @@ class NodeTransformer(MatlabNodeVisitor):
         # Make sure to process the body of this function.
         if node.body:
             node.body = self.visit(node.body)
+            parser._context.nodes = node.body
         parser._pop_context()
         return node
 
@@ -932,9 +932,12 @@ class NodeTransformer(MatlabNodeVisitor):
                   or isinstance(rhs, Operator)):
                 # In these cases, the LHS is clearly a variable.
                 parser._save_type(lhs, 'variable')
-            elif isinstance(rhs, Handle):
-                # RHS is clearly a function.
-                parser._save_type(lhs, 'function')
+            elif isinstance(rhs, Handle) or isinstance(rhs, AnonFun):
+                # Confusing case: RHS is a function, but *this* is a
+                # variable.  If this is instead labeled as a function, then
+                # it will lead to erroneous results when the variable is used
+                # as an argument to a function call elsewhere.
+                parser._save_type(lhs, 'variable')
             elif (isinstance(rhs, FunCall) and isinstance(rhs.name, Identifier)
                 and rhs.name.name == 'str2func'):
                 # Special case: a function is being created using Matlab's
@@ -986,21 +989,37 @@ class NodeTransformer(MatlabNodeVisitor):
         parser = self._parser
         context = parser._context
         if parser._get_type(thing, context) == 'variable':
-            # We have seen this name before, and it's not a function.
-            if node.args == None:
-                # There were no arguments at all (e.g., it was "a" rather
-                # than "a()".  It's a plain identifier, and we can simplify
-                # it to the Identifier object that is the name.
-                return node.name
+            # A variable may store a function.  If the ambiguous identifier is
+            # followed by parens, we have a function call; else, a variable.
+            value = parser._get_assignment(thing, context, recursive=True)
+            if value and (isinstance(value, Handle) or isinstance(value, AnonFun)):
+                if node.args != None:
+                    the_args = self.visit(node.args)
+                    node = FunCall(name=thing, args=the_args)
+                    # Save the call in the present context.
+                    self._parser._save_function_call(node)
+                else:
+                    # There were no arguments at all (e.g., it was "a" rather
+                    # than "a()".  We treat it as a variable.  We can
+                    # simplify it to the Identifier object that is the name.
+                    return node.name
             else:
-                # It's an ArrayRef.  We can also convert the
-                # args/subscripts.  Also, if it was previously unknown
-                # whether this name is a function or array, it might have
-                # been put in the list of function calls.  Remove it.
-                if thing in context.calls:
-                    context.calls.pop(thing)
-                the_args = self.visit(node.args)
-                node = ArrayRef(name=node.name, args=the_args, is_cell=False)
+                # Either it has no value, or the value is not a handle or
+                # anon function.
+                if node.args == None:
+                    # There were no arguments at all (e.g., it was "a" rather
+                    # than "a()".  It's a plain identifier, and we can
+                    # simplify it to the Identifier object that is the name.
+                    return node.name
+                else:
+                    # It's an ArrayRef.  We can also convert the
+                    # args/subscripts.  Also, if it was previously unknown
+                    # whether this name is a function or array, it might have
+                    # been put in the list of function calls.  Remove it.
+                    if thing in context.calls:
+                        context.calls.pop(thing)
+                    the_args = self.visit(node.args)
+                    node = ArrayRef(name=node.name, args=the_args, is_cell=False)
         elif parser._get_type(thing, context) == 'function':
             # This is a known function or command.  We can convert this
             # to a FunCall.  At this time, we also process the arguments,
@@ -1065,6 +1084,7 @@ class NodeTransformer(MatlabNodeVisitor):
 
 class Disambiguator(MatlabNodeVisitor):
     def __init__(self, parser, vars=[], functions=[]):
+        super(Disambiguator, self).__init__()
         self._parser          = parser
         self._known_vars      = vars
         self._known_functions = functions
@@ -1840,8 +1860,8 @@ class MatlabGrammar:
     # (either they all have to have 'end', or none do), we have two forms of
     # MATLAB files.
 
-    _matlab_file = ZeroOrMore(_fun_def_shallow ^ _stmt ^ _shell_cmd ^ _noncontent) \
-                   ^ ZeroOrMore(_fun_def_deep ^ _stmt ^ _shell_cmd ^ _noncontent)
+    _matlab_file = (ZeroOrMore(_fun_def_shallow ^ _stmt ^ _shell_cmd ^ _noncontent)
+                    ^ ZeroOrMore(_fun_def_deep ^ _stmt ^ _shell_cmd ^ _noncontent))
 
 
     # Preprocessor.
@@ -1917,6 +1937,13 @@ class MatlabGrammar:
         nodes = NodeTransformer(self).visit(nodes)
         nodes = NodeTransformer(self).visit(nodes)
 
+        # Final step: if the first construct in this file (after possible
+        # comments) is a function definition, this whole file is a function.
+        # Indicate this by assigning the name to the top level context.
+        (is_function_file, function_name) = self._find_first_function(nodes)
+        if is_function_file:
+            self._context.name = function_name
+
         self._context.nodes = nodes
         return self._context
 
@@ -1961,7 +1988,7 @@ class MatlabGrammar:
 
 
     def _save_function_definition(self, node):
-        newcontext = MatlabContext(name=node.name.name, parent=self._context,
+        newcontext = MatlabContext(name=node.name, parent=self._context,
                                    parameters=node.parameters,
                                    returns=node.output, pr=None, topmost=False)
         self._context.functions[node.name] = newcontext
@@ -1979,6 +2006,20 @@ class MatlabGrammar:
 
     def _save_assignment(self, node):
         self._context.assignments[node.lhs] = node.rhs
+
+
+    def _get_assignment(self, node, context, recursive=False):
+        if node in self._context.assignments:
+            value = self._context.assignments[node]
+            if isinstance(value, Identifier) and recursive:
+                ultimate_value = self._get_assignment(value, context, True)
+                return ultimate_value or value
+            else:
+                return value
+        elif hasattr(context, 'parent') and context.parent:
+            return self._get_assignment(self, node, context.parent)
+        else:
+            return None
 
 
     def _save_type(self, thing, type):
@@ -2030,6 +2071,26 @@ class MatlabGrammar:
         if recursive and hasattr(context, 'parent') and context.parent:
             calls.update(self._get_indirect_calls(name, context.parent, anywhere, True))
         return calls
+
+
+    def _find_first_function(self, nodes):
+        for node in nodes:
+            if isinstance(node, Comment):
+                continue
+            if isinstance(node, FunDef):
+                return (True, node.name)
+            else:
+                return (False, None)
+        return (False, None)
+
+
+    # The core parser invocation.
+    # .........................................................................
+
+    def _do_parse(self, input):
+        preprocessed = self._preprocess(input)
+        pr = self._matlab_file.parseString(preprocessed, parseAll=True)
+        return self._generate_nodes_and_contexts(pr)
 
 
     # Debugging.
@@ -2151,10 +2212,8 @@ class MatlabGrammar:
         """
         self._reset()
         try:
-            preprocessed = self._preprocess(input)
             self._print_debug(print_debug)
-            pr = self._matlab_file.parseString(preprocessed, parseAll=True)
-            top_context = self._generate_nodes_and_contexts(pr)
+            top_context = self._do_parse(input)
             if print_results:
                 self.print_parse_results(top_context)
             return top_context
@@ -2185,10 +2244,8 @@ class MatlabGrammar:
         try:
             file = open(path, 'r')
             contents = file.read()
-            preprocessed = self._preprocess(contents)
             self._print_debug(print_debug)
-            pr = self._matlab_file.parseString(preprocessed, parseAll=True)
-            top_context = self._generate_nodes_and_contexts(pr)
+            top_context = self._do_parse(contents)
             top_context.file = path
             file.close()
             if print_results:
@@ -2228,18 +2285,18 @@ class MatlabGrammar:
 
     @staticmethod
     def make_formula(thing, spaces=True, parens=True, atrans=None):
-        """Converted a mathematical expression into libSBML-style string form.
+        """Converts a mathematical expression into libSBML-style string form.
         The default behavior is to put spaces between terms and operators; if
         the optional flag 'spaces' is False, then no spaces are introduced.
-        The default between is also to surround the expression with
-        parentheses but if the optional flag 'parens' is False, the outermost
-        parentheses (but not other parentheses) are omitted.  Finally, if
-        given a function for parameter 'atrans' (default: none), it will
-        call that function when it encounters array references.  The function
-        will be given one argument, the array object, and should return a
-        text string corresponding to the value to be used in place of the
-        array.  If no 'atrans' is given, the default behavior is to render
-        arrays like they would appear in Matlab text: e.g., "foo(2,3)".
+        The default is also to surround the expression with parentheses but
+        if the optional flag 'parens' is False, the outermost parentheses
+        (but not other parentheses) are omitted.  Finally, if given a
+        function for parameter 'atrans' (default: none), it will call that
+        function when it encounters array references.  The 'atrans' function
+        will be given one argument, the array object; it should return a text
+        string corresponding to the value to be used in place of the array.
+        If no 'atrans' is given, the default behavior is to render arrays
+        as they would appear in Matlab text: e.g., "foo(2,3)".
         """
         def compose(name, args, delimiters=None):
             list = [MatlabGrammar.make_formula(arg, spaces, parens, atrans)
@@ -2250,26 +2307,43 @@ class MatlabGrammar:
             right = delimiters[1] if delimiters else ''
             return front + left + sep.join(list) + right
 
+        recurse = MatlabGrammar.make_formula
         if isinstance(thing, str):
             return thing
         elif isinstance(thing, Primitive):
-            return str(thing.value)
+            return MatlabNode.as_string(thing.value)
         elif isinstance(thing, Identifier):
-            return str(thing.name)
+            return MatlabNode.as_string(thing.name)
         elif isinstance(thing, ArrayRef) or isinstance(thing, Ambiguous):
-            if atrans:
-                return atrans(thing)
-            else:
-                return compose(thing.name.name, thing.args, '()')
+            return atrans(thing) if atrans else compose(thing.name.name, thing.args, '()')
         elif isinstance(thing, FunCall):
             return compose(thing.name.name, thing.args, '()')
-        elif isinstance(thing, Array):
-            return compose(None, thing.rows, '[]')
-        elif isinstance(thing, StructRef) \
-             or isinstance(thing, AnonFun) \
-             or isinstance(thing, FunHandle) \
-             or isinstance(thing, Operator):
+        elif (isinstance(thing, StructRef) or isinstance(thing, FunHandle)
+              or isinstance(thing, AnonFun)):
+            # FIXME: we don't have a sensible equivalent in SBML.
             return MatlabNode.as_string(thing)
+        elif isinstance(thing, Operator):
+            if isinstance(thing, UnaryOp):
+                return compose(None, [thing.op, thing.operand], '()')
+            elif isinstance(thing, BinaryOp):
+                return compose(None, [thing.left, thing.op, thing.right], '()')
+            elif isinstance(thing, ColonOp):
+                # FIXME: we don't have a sensible equivalent in SBML.
+                left = MatlabNode.as_string(thing.left)
+                right = MatlabNode.as_string(thing.right)
+                if thing.middle:
+                    middle = MatlabNode.as_string(thing.middle)
+                    return left + ':' + middle + ':' + right
+                else:
+                    return left + ':' + right
+            elif isinstance(thing, Transpose):
+                # FIXME: we don't have a sensible equivalent in SBML.
+                return MatlabNode.as_string(thing.operand) + thing.op
+
+        elif isinstance(thing, Array):
+            # FIXME: we don't have arrays in core SBML.
+            return compose(None, thing.rows, '[]')
+
         elif isinstance(thing, list):
             return compose(None, thing, '()')
         elif 'comment' in thing:
