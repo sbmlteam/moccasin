@@ -6,11 +6,11 @@
 # Parameter id = a, constant
 par a=0.6
 
-# Parameter id = c, constant
-par c=0.36
-
 # Parameter id = b, constant
 par b=0.348
+
+# Parameter id = c, constant
+par c=0.36
 
 # Parameter id = d, constant
 par d=0.01152

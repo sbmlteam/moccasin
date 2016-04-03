@@ -6,11 +6,11 @@
 # Parameter id = k1, constant
 par k1=1.0
 
-# Parameter id = k3, constant
-par k3=6.0
-
 # Parameter id = k2, constant
 par k2=5.0
+
+# Parameter id = k3, constant
+par k3=6.0
 
 # rateRule : variable = Y_1
 init Y_1=1.0
@@ -31,3 +31,4 @@ dY_3/dt=((Y_1 * Y_2) * k3)
 # Species:   id = Y_3, defined by rule
 
 done
+

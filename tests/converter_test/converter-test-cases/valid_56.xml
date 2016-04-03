@@ -10,25 +10,25 @@
       <species id="Y_3" compartment="comp1" initialConcentration="3" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"/>
     </listOfSpecies>
     <listOfParameters>
-      <parameter id="k3" value="0" constant="true"/>
-      <parameter id="k2" value="0" constant="true"/>
       <parameter id="k1" value="1" constant="true"/>
+      <parameter id="k2" value="0" constant="true"/>
+      <parameter id="k3" value="0" constant="true"/>
     </listOfParameters>
     <listOfInitialAssignments>
-      <initialAssignment symbol="k3">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <apply>
-            <times/>
-            <cn type="integer"> 2 </cn>
-            <ci> k1 </ci>
-          </apply>
-        </math>
-      </initialAssignment>
       <initialAssignment symbol="k2">
         <math xmlns="http://www.w3.org/1998/Math/MathML">
           <apply>
             <plus/>
             <cn type="integer"> 4 </cn>
+            <ci> k1 </ci>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="k3">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <times/>
+            <cn type="integer"> 2 </cn>
             <ci> k1 </ci>
           </apply>
         </math>
@@ -71,3 +71,4 @@
     </listOfRules>
   </model>
 </sbml>
+

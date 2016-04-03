@@ -10,8 +10,8 @@
     </listOfSpecies>
     <listOfParameters>
       <parameter id="a" value="0" constant="true"/>
-      <parameter id="c" value="0" constant="true"/>
       <parameter id="b" value="0" constant="true"/>
+      <parameter id="c" value="0" constant="true"/>
       <parameter id="d" value="0" constant="true"/>
       <parameter id="t" value="0" constant="false"/>
     </listOfParameters>
@@ -25,20 +25,20 @@
           </apply>
         </math>
       </initialAssignment>
-      <initialAssignment symbol="c">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <apply>
-            <times/>
-            <cn> 0.006 </cn>
-            <cn type="integer"> 60 </cn>
-          </apply>
-        </math>
-      </initialAssignment>
       <initialAssignment symbol="b">
         <math xmlns="http://www.w3.org/1998/Math/MathML">
           <apply>
             <times/>
             <cn> 0.0058 </cn>
+            <cn type="integer"> 60 </cn>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="c">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <times/>
+            <cn> 0.006 </cn>
             <cn type="integer"> 60 </cn>
           </apply>
         </math>

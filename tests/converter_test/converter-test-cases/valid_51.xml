@@ -11,8 +11,8 @@
     </listOfSpecies>
     <listOfParameters>
       <parameter id="k1" value="1" constant="true"/>
-      <parameter id="k3" value="6" constant="true"/>
       <parameter id="k2" value="5" constant="true"/>
+      <parameter id="k3" value="6" constant="true"/>
     </listOfParameters>
     <listOfRules>
       <rateRule variable="Y_1">
@@ -51,3 +51,4 @@
     </listOfRules>
   </model>
 </sbml>
+
