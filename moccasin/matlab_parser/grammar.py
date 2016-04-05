@@ -997,7 +997,7 @@ class NodeTransformer(MatlabNodeVisitor):
                     the_args = self.visit(node.args)
                     node = FunCall(name=thing, args=the_args)
                     # Save the call in the present context.
-                    self._parser._save_function_call(node)
+                    parser._save_function_call(node)
                 else:
                     # There were no arguments at all (e.g., it was "a" rather
                     # than "a()".  We treat it as a variable.  We can
@@ -1027,7 +1027,7 @@ class NodeTransformer(MatlabNodeVisitor):
             the_args = self.visit(node.args) if node.args else node.args
             node = FunCall(name=thing, args=the_args)
             # Save the call in the present context.
-            self._parser._save_function_call(node)
+            parser._save_function_call(node)
         elif (isinstance(thing, StructRef) and node.args == []):
             # It's something of the form a.b().  This could be an array
             # reference, but in practice, few people put "()" when referring
@@ -1037,7 +1037,7 @@ class NodeTransformer(MatlabNodeVisitor):
             the_args = self.visit(node.args) if node.args else node.args
             node = FunCall(name=thing, args=the_args)
             # Save the call in the present context.
-            self._parser._save_function_call(node)
+            parser._save_function_call(node)
         else:
             # Although we didn't change the type of this Ambiguous,
             # we may still be able to change some of its arguments.
@@ -1070,9 +1070,8 @@ class NodeTransformer(MatlabNodeVisitor):
         # Now analyze the pieces.
         # If we have a structure reference where the name is a simple id,
         # we can tag the id as a variable.
-        parser = self._parser
         if isinstance(node.name, Identifier):
-            parser._save_type(node.name, 'variable')
+            self._parser._save_type(node.name, 'variable')
         return node
 
 
