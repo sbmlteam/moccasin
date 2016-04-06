@@ -356,9 +356,10 @@
 # .............................................................................
 
 from __future__ import print_function
-import pdb
-import sys
 import copy
+import pdb
+import six
+import sys
 import traceback
 import pyparsing                        # Need this for version check, so ...
 from pyparsing import *                 # ... DON'T merge this & previous stmt!
@@ -465,6 +466,10 @@ class ParseResultsTransformer:
 
         # Not an expression, but an individual, single parse result.
         # We dispatch to the appropriate transformer by building the name.
+        if num_keys(pr) > 1:
+            # Sanity check.  This should not happen, but maybe someday it will.
+            msg = 'Internal grammar inconsistency: multiple tags for same construct.'
+            raise MatlabInternalException(msg)
         key = first_key(pr)
         methname = 'visit_' + '_'.join(key.split())
         meth = getattr(self, methname, None)
@@ -763,7 +768,7 @@ class ParseResultsTransformer:
         if 'body' in content:
             the_body = self._convert_list(content['body'])
         # We can convert references to the loop variable.
-        the_body = [Disambiguator(self, vars=[the_var]).visit(node) for node in the_body]
+        the_body = Disambiguator(self, vars=[the_var]).visit(the_body)
         return For(var=the_var, expr=the_expr, body=the_body)
 
 
@@ -780,8 +785,7 @@ class ParseResultsTransformer:
             the_catch_body = self._convert_list(content['catch body'])
             if the_var:
                 # We can convert references to the loop variable.
-                the_catch_body = [Disambiguator(self, vars=[the_var]).visit(node)
-                                  for node in the_catch_body]
+                the_catch_body = Disambiguator(self, vars=[the_var]).visit(the_catch_body)
         return Try(body=the_body, catch_var=the_var, catch_body=the_catch_body)
 
 
@@ -1238,8 +1242,8 @@ class MatlabGrammar:
                   | _GLOBAL | _IF | _OTHERWISE | _PARFOR | _PERSISTENT \
                   | _RETURN | _SPMD | _SWITCH | _TRY | _WHILE
 
-    _identifier = Word(alphas, alphanums + '_')('identifier')
-    _id         = NotAny(_reserved) + _identifier
+    _identifier = Word(alphas, alphanums + '_')
+    _id         = NotAny(_reserved) + _identifier('identifier')
     _name       = Group(_id)('name')
 
     # Grammar for expressions.
@@ -1548,7 +1552,7 @@ class MatlabGrammar:
     # used instead of using _id directly in _operand and other similar places
     # later.
 
-    _ambiguous_id = _id('ambiguous id')
+    _ambiguous_id = Group(NotAny(_reserved) + _identifier)('ambiguous id')
 
     # And now, general expressions and operators outside of arrays.
 
