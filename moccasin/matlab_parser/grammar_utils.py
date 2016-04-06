@@ -119,10 +119,14 @@ def parse_debug_helper(f):
 
 def first_key(d):
     if sys.version < '3':
-        return d.keys()[0]
+        return sorted(d.keys())[0]
     else:
-        for key in d.keys():
+        for key in sorted(d.keys()):
             return key
+
+
+def num_keys(d):
+    return len(list(d.keys()))
 
 
 def empty_dict(d):
