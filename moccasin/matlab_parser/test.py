@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3.4
 #
 # @file    test.py
 # @brief   Simple test driver for MatlabGrammar class.
