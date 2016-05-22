@@ -20,4 +20,4 @@
 # available online at https://github.com/sbmlteam/moccasin/.
 # ------------------------------------------------------------------------- -->
 
-from .version import __version__
+from .version import __version__, __url__
