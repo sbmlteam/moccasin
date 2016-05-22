@@ -993,11 +993,15 @@ class NodeTransformer(MatlabNodeVisitor):
         parser = self._parser
         context = parser._context
         if parser._get_type(thing, context) == 'variable':
-            # A variable may store a function.  If the ambiguous identifier is
-            # followed by parens, we have a function call; else, a variable.
+            # The ambiguous identifier has been assigned a value.  If the
+            # value is a function handle or an anonymous function, we can
+            # recognize this node as a function call and change it accordingly.
             value = parser._get_assignment(thing, context, recursive=True)
             if value and (isinstance(value, Handle) or isinstance(value, AnonFun)):
                 if node.args != None:
+                    # It's an identifier followed by arguments.  We know it's
+                    # not an array or we wouldn't be here, so we're looking at
+                    # a function call.
                     the_args = self.visit(node.args)
                     node = FunCall(name=thing, args=the_args)
                     # Save the call in the present context.
@@ -2318,7 +2322,13 @@ class MatlabGrammar:
         elif isinstance(thing, Identifier):
             return MatlabNode.as_string(thing.name)
         elif isinstance(thing, ArrayRef) or isinstance(thing, Ambiguous):
-            return atrans(thing) if atrans else compose(thing.name.name, thing.args, '()')
+            if atrans:
+                return atrans(thing)
+            if isinstance(thing.name, Identifier):
+                aname = thing.name.name
+            else:
+                aname = recurse(thing.name, spaces, parens, atrans)
+            return compose(aname, thing.args, '()')
         elif isinstance(thing, FunCall):
             return compose(thing.name.name, thing.args, '()')
         elif (isinstance(thing, StructRef) or isinstance(thing, FunHandle)
@@ -2327,21 +2337,24 @@ class MatlabGrammar:
             return MatlabNode.as_string(thing)
         elif isinstance(thing, Operator):
             if isinstance(thing, UnaryOp):
-                return compose(None, [thing.op, thing.operand], '()')
+                operand = recurse(thing.operand, spaces, parens, atrans)
+                return compose(None, [thing.op, operand], '()')
             elif isinstance(thing, BinaryOp):
-                return compose(None, [thing.left, thing.op, thing.right], '()')
+                left = recurse(thing.left, spaces, parens, atrans)
+                right = recurse(thing.right, spaces, parens, atrans)
+                return compose(None, [left, thing.op, right], '()')
             elif isinstance(thing, ColonOp):
                 # FIXME: we don't have a sensible equivalent in SBML.
-                left = MatlabNode.as_string(thing.left)
-                right = MatlabNode.as_string(thing.right)
+                left = recurse(thing.left, spaces, parens, atrans)
+                right = recurse(thing.right, spaces, parens, atrans)
                 if thing.middle:
-                    middle = MatlabNode.as_string(thing.middle)
+                    middle = recurse(thing.middle, spaces, parens, atrans)
                     return left + ':' + middle + ':' + right
                 else:
                     return left + ':' + right
             elif isinstance(thing, Transpose):
                 # FIXME: we don't have a sensible equivalent in SBML.
-                return MatlabNode.as_string(thing.operand) + thing.op
+                return recurse(thing.operand, spaces, parens, atrans) + thing.op
 
         elif isinstance(thing, Array):
             # FIXME: we don't have arrays in core SBML.
