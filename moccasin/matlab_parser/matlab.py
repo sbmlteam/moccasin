@@ -184,8 +184,13 @@ class MatlabNode(object):
             return str(thing.name)
         elif isinstance(thing, FunCall) or isinstance(thing, Ambiguous):
             base = MatlabNode.as_string(thing.name)
-            arg_list = row_to_string(thing.args) if thing.args else ''
-            return base + '(' + arg_list + ')'
+            if thing.args == None:
+                maybe_args = ''
+            elif thing.args == []:
+                maybe_args = '()'
+            else:
+                maybe_args = '(' + row_to_string(thing.args) + ')'
+            return base + maybe_args
         elif isinstance(thing, ArrayRef):
             base  = MatlabNode.as_string(thing.name)
             left  = '{' if thing.is_cell else '('
@@ -838,7 +843,8 @@ class MatlabNodeVisitor(object):
 
     def default_visit_list(self, node):
         """Default visitor for lists.  Users can redefine this if desired."""
-        return [self.visit(item) for item in node]
+        visited = [self.visit(item) for item in node]
+        return [x for x in visited if x is not None]
 
 
 # General helpers.
