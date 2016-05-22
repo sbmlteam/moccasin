@@ -20,4 +20,7 @@
 # available online at https://github.com/sbmlteam/moccasin/.
 # ------------------------------------------------------------------------- -->
 
-__version__= '1.0.3'
+__version__      = '1.1.0'
+__url__          = 'https://github.com/sbmlteam/moccasin/'
+__author__       = 'Michael Hucka, Sarah Keating, and Harold Gomez'
+__author_email__ = 'moccasin-dev@googlegroups.com'
