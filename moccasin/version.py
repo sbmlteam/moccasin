@@ -21,6 +21,10 @@
 # ------------------------------------------------------------------------- -->
 
 __version__      = '1.1.0'
-__url__          = 'https://github.com/sbmlteam/moccasin/'
+__title__        = 'MOCCASIN'
+__url__          = 'https://github.com/sbmlteam/moccasin'
 __author__       = 'Michael Hucka, Sarah Keating, and Harold Gomez'
 __author_email__ = 'moccasin-dev@googlegroups.com'
+__license__      = 'GNU Lesser General Public License, version 2.1'
+__license_url__  = 'https://www.gnu.org/licenses/lgpl.html'
+__help_url__     = 'https://github.com/sbmlteam/moccasin/blob/master/README.md'
