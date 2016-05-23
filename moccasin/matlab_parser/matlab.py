@@ -80,11 +80,13 @@ from collections import defaultdict
 # `- Comment
 
 class MatlabNode(object):
+    '''Base class of nodes used to represent MATLAB statements as an AST.'''
+
     _attr_names = None                 # Default set of node attributes.
     _visitable_attr = []               # Default list of visitable attributes.
     _location   = (0, 0)               # Location in file (tuple: line, col).
 
-    # The following is based on code in Section 8.11 of the Python Cookbook,
+    # This clever __init__ is based on Section 8.11 of the Python Cookbook,
     # 3rd ed., by David Beazley and Brian K. Jones (O'Reilly Media, 2013).
     def __init__(self, *args, **kwargs):
         if not self._attr_names:
@@ -341,10 +343,12 @@ class Array(Entity):
 # values, and because they don't have names.
 
 class Handle(Entity):
+    '''Parent class for function handle objects.'''
     pass
 
 
 class FunHandle(Handle):
+    '''A named function handle.'''
     _attr_names = ['name']
     _visitable_attr = ['name']
 
@@ -356,6 +360,7 @@ class FunHandle(Handle):
 
 
 class AnonFun(Handle):
+    '''An anonymous function handle, with an argument list and a body.'''
     _attr_names = ['args', 'body']
     _visitable_attr = ['args', 'body']
 
@@ -508,12 +513,13 @@ class Ambiguous(Reference):
 # .........................................................................
 
 class Operator(Expression):
-
     """Parent class for operators in expressions."""
     pass
 
 
 class UnaryOp(Operator):
+    '''Unary operator, such as unary negation.'''
+
     _attr_names = ['op', 'operand']
     _visitable_attr = ['operand']
 
@@ -527,6 +533,7 @@ class UnaryOp(Operator):
 
 
 class BinaryOp(Operator):
+    '''Binary operator.'''
     _attr_names = ['op', 'left', 'right']
     _visitable_attr = ['left', 'right']
 
@@ -534,13 +541,13 @@ class BinaryOp(Operator):
         return 'BinaryOp(op=\'{}\', left={}, right={})'.format(
             self.op, repr(self.left), repr(self.right))
 
-
     def __str__(self):
         return '{{binary op expression {} left {} right {}}}'.format(
             self.op, _str_format(self.left), _str_format(self.right))
 
 
 class ColonOp(Operator):
+    '''MATLAB "colon" operator, of the form x:y or x:y:z.'''
     _attr_names = ['left', 'middle', 'right']
     _visitable_attr = ['left', 'middle', 'right']
 
@@ -554,6 +561,7 @@ class ColonOp(Operator):
 
 
 class Transpose(Operator):
+    '''MATLAB transpose operator.'''
     _attr_names = ['op', 'operand']
     _visitable_attr = ['operand']
 
@@ -575,6 +583,7 @@ class Definition(MatlabNode):
 
 
 class ScopeDecl(Definition):
+    '''MATLAB scope declarations (i.e., "global" or "persistent").'''
     _attr_names = ['type', 'variables']
     _visitable_attr = ['variables']
 
@@ -587,6 +596,7 @@ class ScopeDecl(Definition):
 
 
 class Assignment(Definition):
+    '''Assignment statement.'''
     _attr_names = ['lhs', 'rhs']
     _visitable_attr = ['lhs', 'rhs']
 
@@ -599,6 +609,7 @@ class Assignment(Definition):
 
 
 class FunDef(Definition):
+    '''Function definition, including the whole subcontext.'''
     _attr_names = ['name', 'parameters', 'output', 'body', 'context']
     _visitable_attr = ['name', 'parameters', 'output', 'body']
 
@@ -634,6 +645,7 @@ class FlowControl(MatlabNode):
 
 
 class Try(FlowControl):
+    '''Try-catch statement.'''
     _attr_names = ['body', 'catch_var', 'catch_body']
     _visitable_attr = ['body', 'catch_var', 'catch_body']
 
@@ -648,6 +660,7 @@ class Try(FlowControl):
 
 
 class Switch(FlowControl):
+    '''Switch statement.'''
     _attr_names = ['cond', 'case_tuples', 'otherwise']
     _visitable_attr = ['cond', 'case_tuples', 'otherwise']
 
@@ -662,6 +675,7 @@ class Switch(FlowControl):
 
 
 class If(FlowControl):
+    '''"If" conditional statement.'''
     _attr_names = ['cond', 'body', 'elseif_tuples', 'else_body']
     _visitable_attr = ['cond', 'body', 'elseif_tuples', 'else_body']
 
@@ -677,6 +691,7 @@ class If(FlowControl):
 
 
 class While(FlowControl):
+    '''"While" loop statement.'''
     _attr_names = ['cond', 'body']
     _visitable_attr = ['cond', 'body']
 
@@ -689,6 +704,7 @@ class While(FlowControl):
 
 
 class For(FlowControl):
+    '''"For" loop statement.'''
     _attr_names = ['var', 'expr', 'body']
     _visitable_attr = ['var', 'expr', 'body']
 
@@ -704,6 +720,7 @@ class For(FlowControl):
 
 
 class Branch(FlowControl):
+    '''Branch statement: "break", "continue" or "return".'''
     _attr_names = ['kind']
 
     def __repr__(self):
@@ -722,6 +739,7 @@ class Branch(FlowControl):
 # .........................................................................
 
 class ShellCommand(MatlabNode):
+    '''Shell command, of the form "!command".'''
     _attr_names = ['command', 'background']
 
     def __repr__(self):
@@ -737,6 +755,7 @@ class ShellCommand(MatlabNode):
 # .........................................................................
 
 class Comment(MatlabNode):
+    '''Comment, either as a line or a block.'''
     _attr_names = ['content']
 
     def __repr__(self):
@@ -853,10 +872,7 @@ class MatlabNodeVisitor(object):
 def _str_format(thing, no_parens=False):
     if isinstance(thing, list):
         formatted = ' '.join([_str_format(item) for item in thing])
-        if no_parens:
-            return formatted
-        else:
-            return '( ' + formatted + ' )'
+        return formatted if no_parens else '( ' + formatted + ' )'
     else:
         return str(thing)
 
