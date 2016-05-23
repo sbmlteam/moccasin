@@ -34,8 +34,8 @@ sys.setrecursionlimit(1500)
 # Main function - driver
 # -----------------------------------------------------------------------------
 
-def main(path, debug=False, quiet=False, use_equations=False, use_params=False,
-         output_XPP=False, print_parse=False):
+def main(path, omit_comments=False, debug=False, use_equations=False,
+         output_XPP=False, use_params=False, quiet=False, print_parse=False):
     '''A minimal interface for converting simple MATLAB models to SBML.'''
     #Flag-Option-Required-Default(FORD) convention was followed for function args declaration.
     #Flag arguments are first, then option arguments and required arguments, and finally default arguments.
@@ -44,6 +44,7 @@ def main(path, debug=False, quiet=False, use_equations=False, use_params=False,
         print('File "{}" does not appear to be a MATLAB file.'.format(path))
         sys.exit(1)
 
+    add_comments = not omit_comments
     try:
         #Interface with the back-end
         controller = Controller()
@@ -65,17 +66,17 @@ def main(path, debug=False, quiet=False, use_equations=False, use_params=False,
 
             if output_XPP:
                 print_header('XPP output', quiet)
-                [output, extra] = controller.build_model(use_species=(not use_params),
-                                                         produce_sbml=(not output_XPP),
-                                                         use_func_param_for_var_name=True,
-                                                         add_comments=True)
+                output = controller.build_model(use_species=(not use_params),
+                                                output_format="xpp",
+                                                name_after_param=False,
+                                                add_comments=add_comments)
                 print(output)
             elif use_equations:
                 print_header('Equation-based SBML output', quiet)
-                [output, extra] = controller.build_model(use_species=(not use_params),
-                                                         produce_sbml=(not output_XPP),
-                                                         use_func_param_for_var_name=True,
-                                                         add_comments=True)
+                output = controller.build_model(use_species=(not use_params),
+                                                output_format="sbml",
+                                                name_after_param=False,
+                                                add_comments=add_comments)
                 print(output)
             else:
                 print_header('Reaction-based SBML output', quiet)
@@ -84,9 +85,8 @@ def main(path, debug=False, quiet=False, use_equations=False, use_params=False,
                     sys.exit(1)
 
                 sbml = controller.build_reaction_model(use_species=(not use_params),
-                                                       produce_sbml=False,
-                                                       use_func_param_for_var_name=True,
-                                                       add_comments=True)
+                                                       name_after_param=False,
+                                                       add_comments=add_comments)
                 print(sbml)
 
     except Exception as err:
@@ -110,12 +110,13 @@ def print_header(text, quiet=False):
 # Argument annotation follows (help, kind, abbrev, type, choices, metavar) convention
 main.__annotations__ = dict(
     path          = ('path to MATLAB input file'),
+    omit_comments = ('omit MOCCASIN version info in comments (default: include)',    'flag', 'c'),
     debug         = ('drop into pdb before parsing the MATLAB input',                'flag', 'd'),
+    use_equations = ('create equation-based SBML (default: reaction-based SBML)',    'flag', 'e'),
+    output_XPP    = ('create XPP ODE format instead of SBML format output',          'flag', 'o'),
+    use_params    = ('encode variables as SBML parameters instead of SBML species',  'flag', 'p'),
     quiet         = ('be quiet: produce SBML and nothing else',                      'flag', 'q'),
     print_parse   = ('print extra debugging info about the interpreted MATLAB code', 'flag', 'x'),
-    use_params    = ('encode variables as SBML parameters instead of SBML species',  'flag', 'p'),
-    use_equations = ('create equation-based SBML (default: reaction-based SBML)',    'flag', 'e'),
-    output_XPP    = ('create XPP ODE format instead of SBML format output',          'flag', 'o')
 )
 
 # -----------------------------------------------------------------------------
