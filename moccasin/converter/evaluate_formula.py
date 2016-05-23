@@ -183,7 +183,7 @@ class NumericStringParser(object):
         else:
             return Decimal(op)
 
-    def eval(self,num_string, parse_all=True):
+    def eval(self, num_string, parse_all=True):
         self.exprStack = []
         results = None
         try:
@@ -192,7 +192,7 @@ class NumericStringParser(object):
             print(err)
 
         if results is None:
-            val = Decimal.NaN
+            val = Decimal('NaN')
         else:
             val = self.evaluate_stack(self.exprStack[:])
 
