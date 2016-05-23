@@ -21,4 +21,6 @@
 # ------------------------------------------------------------------------- -->
 
 from .converter import *
-
+from .rewriter import *
+from .recognizer import *
+from .errors import *
