@@ -19,4 +19,5 @@
 # file named "COPYING.txt" included with this software distribution and also
 # available online at https://github.com/sbmlteam/moccasin/.
 # ------------------------------------------------------------------------- -->
+
 __all__ = ["Moccasin_GUI"]
