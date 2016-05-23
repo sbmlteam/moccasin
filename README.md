@@ -19,7 +19,8 @@ MOCCASIN
 ⚑ Recent news and activities
 --------------------------
 
-_December 2015_: we have been working on improving the MATLAB parser in MOCCASIN, to rectify limitations in the 1.0 release and expand the coverage of MATLAB constructs. This will lay the groundwork for being able to convert more MATLAB inputs, especially using the approach of converting to Numpy ([Pivotal Tracker item #91874850](https://www.pivotaltracker.com/story/show/91874850)).  The updated MATLAB parser will constitute release 1.1 of MOCCASIN. (The Numpy translation will have to wait to a later release.)
+_May 2016_: The MATLAB parser and the conversion code in MOCCASIN version 1.1 are considerably better than they were in the 1.0 release.  The underlying parser now creates a more complete abstract syntax tree representation of the MATLAB input, and the converter also takes advantage of more syntactic features in XPP and BIOCHAM.  The result is better conversions of larger and more complex models.
+
 
 ☀ Background
 ----------
@@ -73,7 +74,7 @@ Before installing MOCCASIN, you need to separately install the following softwar
   * `libz-dev`
   * `libbz2-dev`
 
-* and [wxPython](http://wxpython.org/).
+* and [wxPython](http://wxpython.org/).  Note: wxPython is not fully supported for Python 3.4, even with [wxPython-Phoenix](http://wxpython.org/Phoenix/docs/html/index.html), and unfortunately, the MOCCASIN GUI uses features that are not available in wxPython-Phoenix.  Consequently, **to use the GUI interface, you must use Python 2.7**.  If you use the command-line interface for MOCCASIN, you can use Python 2.7 or 3.x.
 
 Once that is done, you can download or clone the MOCCASIN source code base and then run
 
@@ -84,7 +85,7 @@ python setup.py install
 ► Using MOCCASIN
 --------------
 
-You can use MOCCASIN either via the command line or via the GUI interface. To start the MOCCASIN GUI, execute the Python command `moccasin/interfaces/moccasin_GUI.py` in the source directory, or the command `moccasin-GUI` in a shell/terminal. A screenshot of the GUI in action is shown below.
+You can use MOCCASIN either via the command line or via the GUI interface. To start the MOCCASIN GUI, after installation (see above), execute the Python command `moccasin/interfaces/moccasin_GUI.py` in the MOCCASIN source directory, or the command `python -m moccasin-GUI` in a shell/terminal. A screenshot of the GUI in action is shown below.
 
 <img src="https://raw.githubusercontent.com/sbmlteam/moccasin/develop/docs/project/examples/screenshot-01.jpg"
  alt="MOCCASIN GUI" title="MOCCASIN GUI" align="center" />
@@ -116,7 +117,7 @@ The MOCCASIN logo was created by Randy Carlton (<rcarlton@rancar2.com>).
 ☮ Copyright and license
 ---------------------
 
-Copyright (C) 2014-2015 jointly by the California Institute of Technology (Pasadena, California, USA), the Icahn School of Medicine at Mount Sinai (New York, New York, USA), and Boston University (Boston, Massachusetts, USA).
+Copyright (C) 2014-2016 jointly by the California Institute of Technology (Pasadena, California, USA), the Icahn School of Medicine at Mount Sinai (New York, New York, USA), and Boston University (Boston, Massachusetts, USA).
 
 This library is free software; you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation; either version 2.1 of the License, or any later version.
 
