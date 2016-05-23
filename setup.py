@@ -29,7 +29,7 @@ from os import path
 import re
 import sys
 import moccasin
-from moccasin import __version__, __url__, __author__, __author_email__
+from moccasin import __title__, __version__, __url__, __author__, __author_email__, __license__
 
 here = path.abspath(path.dirname(__file__))
 
@@ -66,18 +66,18 @@ class PyTest(TestCommand):
         sys.exit(errno)
 
 setup(
-    name='moccasin',
+    name=__title__.lower(),
     version=__version__,
     url=__url__,
     author=__author__,
     author_email=__author_email__,
-    license='LGPL (GNU Lesser General Public License) version 2.1',
+    license=__license__,
     tests_require=['pytest'],
     install_requires=reqs,
     cmdclass={'test': PyTest},
     description='MOCCASIN: the Model ODE Converter for Creating Automated SBML INteroperability, a user-assisted converter that can take MATLAB or Octave ODE-based models in biology and translate them into the SBML format.',
     packages=find_packages(exclude='tests'),
-    package_data={'moccasin': ['docs/*.md','LICENSE.txt', 'requirements.txt']},
+    package_data={'moccasin': ['docs/*.md', 'LICENSE.txt', 'requirements.txt']},
     include_package_data=True,
     platforms='any',
     test_suite='tests',
