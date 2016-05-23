@@ -822,23 +822,21 @@ def create_sbml_assignment_rule(model, id, ast):
     check(rr.setMath(ast),     'set assignment rule formula')
     return rr
 
+
 def sort_sbml_parameters(model):
     '''Sort the list of parameters inside the SBMLDocument.
-    Code originally by Frank Bergmann.
+    Code originally in part by Frank Bergmann.
     '''
-    # We grab the parameters from the model and shove them into a dictionary.
-    unsorted = {}
+    # We get the parameters, remove them from the model, sort our list, and
+    # reinsert the parameters into the model in sorted order.
+    unsorted = []
     parameters = model.getListOfParameters()
     for i in range(0, parameters.size()):
-        current = parameters.remove(0)
-        unsorted[current.getId()] = current
+        unsorted.append(parameters.remove(0))
 
-    # Put the results into a list, sorting it while doing so.
-    sorted_dict = natsorted(unsorted, key=operator.itemgetter(0))
-
-    # Write it back to the model.
-    for item in sorted_dict:
-        parameters.appendAndOwn(unsorted[item])
+    # Write it back to the model, but in sorted order
+    for item in natsorted(unsorted, key=lambda x: x.getId().lower()):
+        parameters.appendAndOwn(item)
 
 
 # -----------------------------------------------------------------------------
