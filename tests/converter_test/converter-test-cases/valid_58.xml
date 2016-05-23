@@ -2,15 +2,15 @@
 <sbml xmlns="http://www.sbml.org/sbml/level3/version1/core" level="3" version="1">
   <model>
     <listOfCompartments>
-      <compartment id="comp1" spatialDimensions="3" size="1" constant="true"/>
+      <compartment id="comp1" name="comp1" spatialDimensions="3" size="1" constant="true"/>
     </listOfCompartments>
     <listOfSpecies>
-      <species id="Y_1" compartment="comp1" initialConcentration="1" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"/>
+      <species id="Y_1" name="Y_1" compartment="comp1" initialConcentration="1" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"/>
     </listOfSpecies>
     <listOfParameters>
-      <parameter id="b1" value="0.4" constant="true"/>
-      <parameter id="myf" value="0" constant="false"/>
-      <parameter id="t" value="0" constant="false"/>
+      <parameter id="b1" name="b1" value="0.4" constant="true"/>
+      <parameter id="myf" name="myf" value="0" constant="false"/>
+      <parameter id="t" name="t" value="0" constant="false"/>
     </listOfParameters>
     <listOfRules>
       <rateRule variable="Y_1">
