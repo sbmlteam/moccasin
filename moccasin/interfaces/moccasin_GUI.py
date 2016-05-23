@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3.4
 #
 # @file    Moccasin_GUI.py
 # @brief   Graphical User Interface (GUI) for Moccasin
