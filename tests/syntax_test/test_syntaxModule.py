@@ -61,7 +61,6 @@ class TestClass:
     # a map specifying multiple argument sets for a test method
     params = obtain_params()
 
-    sys.setrecursionlimit(5000)
     def test_syntaxCases(self, capsys, model, parsed):
         build_model(model)
         out, err = capsys.readouterr()
