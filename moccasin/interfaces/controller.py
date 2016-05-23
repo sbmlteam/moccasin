@@ -45,64 +45,64 @@ _BIOCHAM_URL = 'http://lifeware.inria.fr/biocham/online/rest/export'
 class Controller():
     '''This class serves to interface between Moccasins' modules to the CLI and GUI.'''
 
-    
+
     def __init__( self ):
         self.parser = MatlabGrammar()
         self.file_contents = None
         self.parse_results = None
 
-    
-    def parse_File( self , file_contents ):
-        '''Parses input file using Moccasin's parser'''
+
+    def parse_File(self , file_contents):
+        '''Parses input file using Moccasin's parser.'''
         self.file_contents = file_contents
         self.parse_results = self.parser.parse_string(self.file_contents)
 
 
-    def print_parsed_results( self ):
-        '''Prints the parsed input file'''
+    def print_parsed_results(self):
+        '''Prints the parsed input file.'''
         return (self.parser.print_parse_results(self.parse_results))
 
 
-    def build_model( self, use_species, produce_sbml, use_func_param_for_var_name, add_comments):
-        '''Converts a parsed file into XPP or equation-based SBML'''
-        [output, extra] = create_raterule_model(self.parse_results,
-                                                use_species,
-                                                produce_sbml,
-                                                use_func_param_for_var_name,
-                                                add_comments)
-        
-        return(output, extra)
+    def build_model(self, use_species, output_format, name_after_param, add_comments):
+        '''Converts a parsed file into XPP or equation-based SBML.'''
+        (output, _, _) = create_raterule_model(self.parse_results, use_species,
+                                               output_format, name_after_param,
+                                               add_comments)
+        return output
 
 
-    def build_reaction_model (self, use_species, produce_sbml, use_func_param_for_var_name, add_comments):
-        '''Converts a parsed file into reaction-based SBML'''
-        # Create temp file storing XPP model version
+    def build_reaction_model(self, use_species, name_after_param, add_comments):
+        '''Converts a parsed file into reaction-based SBML.'''
         try:
+            # Create temp file storing XPP model version
             with NamedTemporaryFile(suffix=".ode", delete=False) as xpp_file:
-                [xpp_output, extra] = self.build_model(False,
-                                                       produce_sbml,
-                                                       use_func_param_for_var_name,
-                                                       add_comments)
-                xpp_file.write(xpp_output)
-            files = {'file': open(xpp_file.name)}
+                (output, add, convert) = create_raterule_model(self.parse_results,
+                                                               use_species,
+                                                               "biocham",
+                                                               name_after_param,
+                                                               add_comments)
+                xpp_file.write(output)
+                xpp_file.flush()
+                xpp_file.close()
+                files = {'file': open(xpp_file.name)}
             # Access Biocham to curate and convert equations to reactions
             data = {'exportTo':'sbml', 'curate':'true'}
             response = requests.post(_BIOCHAM_URL, files=files, data=data)
             del files
-            
+
             # We need to post-process the output to deal with
             # limitations in BIOCHAM's translation service.
-            sbml = process_biocham_output(response.content,
-                                          self.parse_results, extra)
+            sbml = process_biocham_output(response.content, self.parse_results,
+                                          post_add=add, post_convert=convert,
+                                          add_comments=add_comments)
             return(sbml)
-        
         except IOError as err:
             print("error: {0}".format(err))
         finally:
             os.unlink(xpp_file.name)
 
 
-    def check_network_connection( self ):
+    def check_network_connection(self):
         '''Connects somewhere to test if a network is available.'''
         try:
             _ = requests.get('http://www.google.com', timeout=5)
