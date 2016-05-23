@@ -36,12 +36,10 @@ here = path.abspath(path.dirname(__file__))
 # If libSBML is not installed, notify user and exit installer
 try:
     import libsbml
-    pass
-
 except(DistributionNotFound):
     print('')
-    print('You do not have libsbml installed')
-    print('Please refer to our quickstart file for instructions on downloading this module')
+    print('It appears you do not have libSBML installed')
+    print('Please refer to the instructions on downloading this module.')
     sys.exit()
 
 with open(path.join(here, 'requirements.txt')) as f:
