@@ -72,11 +72,11 @@ class TestClass:
 
     def test_evaluateCases(self, capsys, input, expected):
         expected_output = read_parsed(expected).replace('\n', '').replace('\r', '')
+        getcontext().prec = 12
         actual_output = parse_matlab_file(input)
         print("--- From solution file ---")
         print(expected_output)
         print("--- Ouput from parser ---")
         print(actual_output)
         print ("\n \n")
-        getcontext().prec = 12
         assert actual_output == Decimal(expected_output)
