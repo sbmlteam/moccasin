@@ -89,22 +89,16 @@ class MatlabContext(object):
                    contain MatlabNode objects.
 
       functions:   A dictionary of functions defined within this context.  The
-                   keys are the function names; the values are Context objects
-                   for the functions.
+                   keys are the function names (as Identifier objects); the
+                   values are MatlabContext objects for the functions.
 
       assignments: A dictionary of the assignment statements within this
-                   context.  For simple variables (a = ...), the keys are the
-                   variable names.  In the case of arrays, the keys are
-                   assumed to be string representations of the array, with
-                   the following features.  If it's a bare matrix, square
-                   braces surround the matrix, semicolons separate rows,
-                   commas separate index terms within rows, and all spaces
-                   are removed.  If it's a matrix reference, it is similar
-                   but starts with a name and uses regular parentheses
-                   instead of square braces.  So, e.g., [a b] is turned into
-                   '[a,b]', '[ a ; b ; c]' is turned into '[a;b;c]', 'foo(1,
-                   2)' is turned into 'foo(1,2)', and so on.  The dict values
-                   are the MatlabNode objects for the RHS.
+                   context.  The keys are MatlabNode objects, such as
+                   Identifier when the assignment is to a simple variable ("a
+                   = ..."), Array when the assignment is to a bare matrix,
+                   and so on.  The dictionary values are, for each key, the
+                   MatlabNode object representing the root of the AST for the
+                   expression on the right-hand side of the assignment.
 
       types:       A dictionary of data types associated with objects.  For
                    example, when MatlabGrammar encounters an assignment
@@ -115,11 +109,12 @@ class MatlabContext(object):
 
       calls:       A dictionary of functions called within this context.  The
                    keys are the function names; the values is a list of the
-                   arguments (as annotated ParseResults objects).
+                   arguments (as `MatlabNode` arguments representing the
+                   expressions handed to the function invocation).
 
-      pr:          The pr object related to this context.  This Context
-                   will contain the stuff from which we constructed this
-                   instance of a Context object.  The representation is awkward
+      pr:          The pr object related to this context.  This Context will
+                   contain the stuff from which we constructed this instance
+                   of a MatlabContext object.  The representation is awkward
                    and not meant to be used by callers, but it's left around
                    for debugging purposes.
 
@@ -129,6 +124,7 @@ class MatlabContext(object):
     Users can access via the normal x.propname approach.
 
     To make a copy of a Context object, use the Python 'copy' module.
+
     """
 
     def __init__(self, name=None, parent=None, nodes=None, parameters=[],
