@@ -5,7 +5,7 @@ Assignment(lhs=Identifier(name='a'), rhs=BinaryOp(op='*', left=Number(value='0.1
 Assignment(lhs=Identifier(name='b'), rhs=BinaryOp(op='*', left=Number(value='0.0058'), right=Number(value='60')))
 Assignment(lhs=Identifier(name='c'), rhs=BinaryOp(op='*', left=Number(value='0.006'), right=Number(value='60')))
 Assignment(lhs=Identifier(name='d'), rhs=BinaryOp(op='*', left=Number(value='0.000192'), right=Number(value='60')))
-Assignment(lhs=Array(is_cell=False, rows=[[Identifier(name='t'), Identifier(name='y')]]), rhs=FunCall(name=Identifier(name='ode45'), args=[FunHandle(name=Identifier(name='g')), Identifier(name='tspan'), Identifier(name='xzero')]))
+Assignment(lhs=Array(is_cell=False, rows=[[Identifier(name='t'), Identifier(name='y')]]), rhs=FunCall(name=Identifier(name='ode45'), args=[FuncHandle(name=Identifier(name='g')), Identifier(name='tspan'), Identifier(name='xzero')]))
 FunCall(name=Identifier(name='figure'), args=None)
 FunCall(name=Identifier(name='plot'), args=[Identifier(name='t'), ArrayRef(is_cell=False, name=Identifier(name='y'), args=[Special(value=':'), Number(value='2')])])
 FunDef(name=Identifier(name='g'), parameters=[Identifier(name='t'), Identifier(name='x')], output=[Identifier(name='y')], body=[Assignment(lhs=Identifier(name='y'), rhs=Array(is_cell=False, rows=[[BinaryOp(op='-', left=Identifier(name='a'), right=BinaryOp(op='*', left=Identifier(name='b'), right=ArrayRef(is_cell=False, name=Identifier(name='x'), args=[Number(value='1')])))], [BinaryOp(op='-', left=BinaryOp(op='*', left=Identifier(name='c'), right=ArrayRef(is_cell=False, name=Identifier(name='x'), args=[Number(value='1')])), right=BinaryOp(op='*', left=Identifier(name='d'), right=ArrayRef(is_cell=False, name=Identifier(name='x'), args=[Number(value='2')])))]]))])

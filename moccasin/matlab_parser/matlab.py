@@ -46,7 +46,7 @@ from collections import defaultdict
 # |  |  +- Array            # Unnamed arrays ("square-bracket" type or cell).
 # |  |  |
 # |  |  +- Handle
-# |  |  |  +- FunHandle     # A function handle, e.g., "@foo"
+# |  |  |  +- FuncHandle    # A function handle, e.g., "@foo"
 # |  |  |  `- AnonFun       # An anonymous function, e.g., "@(x,y)x+y".
 # |  |  |
 # |  |  `- Reference        # Objects that store or return values.
@@ -222,7 +222,7 @@ class MatlabNode(object):
                     return left + ':' + right
             elif isinstance(thing, Transpose):
                 return MatlabNode.as_string(thing.operand) + thing.op
-        elif isinstance(thing, FunHandle):
+        elif isinstance(thing, FuncHandle):
             return str(thing)
         elif isinstance(thing, AnonFun):
             arg_list = row_to_string(thing.args) if thing.args else ''
@@ -347,13 +347,13 @@ class Handle(Entity):
     pass
 
 
-class FunHandle(Handle):
+class FuncHandle(Handle):
     '''A named function handle.'''
     _attr_names = ['name']
     _visitable_attr = ['name']
 
     def __repr__(self):
-        return 'FunHandle(name={})'.format(repr(self.name))
+        return 'FuncHandle(name={})'.format(repr(self.name))
 
     def __str__(self):
         return '{{function @ handle: {}}}'.format(_str_format(self.name))

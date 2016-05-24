@@ -171,13 +171,13 @@ def sanity_check_matlab(parse_results):
     # case where the handle is stored in a variable.
     if isinstance(ode_func, Identifier):
         ode_func = assignment(ode_func, context)
-    if not isinstance(ode_func, AnonFun) and not isinstance(ode_func, FunHandle):
+    if not isinstance(ode_func, AnonFun) and not isinstance(ode_func, FuncHandle):
         fail(UnsupportedInputError,
              'unsupported type of argument to {} call'.format(matlab_func.name))
     if len(parse_results.functions) == 0:
         if isinstance(ode_func, AnonFun):
             return
-        elif isinstance(ode_func, FunHandle):
+        elif isinstance(ode_func, FuncHandle):
             fail(IncompleteInputError,
                  'missing definition of function passed in odeNN call')
 
@@ -196,7 +196,7 @@ def sanity_check_matlab(parse_results):
             fail(UnsupportedInputError,
                  'input file is not structured in a supported form')
         scopes = [parse_results.functions[parse_results.name], parse_results]
-    if isinstance(ode_func, FunHandle):
+    if isinstance(ode_func, FuncHandle):
         if not isinstance(ode_func.name, Identifier):
             fail(UnsupportedInputError,
                  'function passed to odeNN is not a simple handle')
@@ -399,7 +399,7 @@ def func_from_handle(thing, context, underscores):
     #   - body is a function call => return the function name
     #   - body is a matrix
     ignorable_variable = None
-    if isinstance(thing, FunHandle):
+    if isinstance(thing, FuncHandle):
         # Case: ode45(@foo, time, xinit, ...)
         # The item has to be an identifier -- MATLAB won't allow anything else.
         return (None, thing.name)
@@ -408,7 +408,7 @@ def func_from_handle(thing, context, underscores):
         # Look up the value of somevar and see if that's a function handle.
         if thing in context.assignments:
             value = context.assignments[thing]
-            if isinstance(value, FunHandle):
+            if isinstance(value, FuncHandle):
                 # The name of the handle must be an identifier, so dereference it.
                 return (thing, value.name)
             elif isinstance(value, AnonFun):

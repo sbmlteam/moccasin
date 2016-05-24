@@ -75,7 +75,7 @@
 # |  |  +- Array            # Unnamed arrays ("square-bracket" type or cell).
 # |  |  |
 # |  |  +- Handle
-# |  |  |  +- FunHandle     # A function handle, e.g., "@foo"
+# |  |  |  +- FuncHandle    # A function handle, e.g., "@foo"
 # |  |  |  `- AnonFun       # An anonymous function, e.g., "@(x,y)x+y".
 # |  |  |
 # |  |  `- Reference        # Objects that store or return values.
@@ -620,7 +620,7 @@ class ParseResultsTransformer:
     def visit_function_handle(self, pr):
         content = pr['function handle']
         if 'name' in content:
-            return FunHandle(name=self.visit(content['name']))
+            return FuncHandle(name=self.visit(content['name']))
         else:
             if 'parameter list' in content.keys():
                 the_args = self._convert_list(content['parameter list'])
@@ -880,7 +880,7 @@ class NodeTransformer(MatlabNodeVisitor):
                     param = node.parameters[i]
                     if not isinstance(param, Identifier):
                         continue
-                    if isinstance(arg, FunHandle):
+                    if isinstance(arg, FuncHandle):
                         parser._save_type(param, 'function')
 
                     elif (isinstance(arg, Identifier)
@@ -2070,7 +2070,7 @@ class MatlabGrammar:
         for fun_name in (context.calls or []):
             for arglist in context.calls[fun_name]:
                 for arg in (arglist or []):
-                    if isinstance(arg, FunHandle) and name == arg.name:
+                    if isinstance(arg, FuncHandle) and name == arg.name:
                         calls[fun_name].append(arglist)
         if anywhere and context.functions:
             for fun_name, fun_context in context.functions.items():
@@ -2331,7 +2331,7 @@ class MatlabGrammar:
             return compose(aname, thing.args, '()')
         elif isinstance(thing, FunCall):
             return compose(thing.name.name, thing.args, '()')
-        elif (isinstance(thing, StructRef) or isinstance(thing, FunHandle)
+        elif (isinstance(thing, StructRef) or isinstance(thing, FuncHandle)
               or isinstance(thing, AnonFun)):
             # FIXME: we don't have a sensible equivalent in SBML.
             return MatlabNode.as_string(thing)
