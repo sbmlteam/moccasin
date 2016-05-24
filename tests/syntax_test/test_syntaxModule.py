@@ -7,11 +7,14 @@ import glob
 import os
 import codecs
 import platform
+import re
 from string import printable
 sys.path.append('moccasin/')
 sys.path.append('../moccasin')
 sys.path.append('../../moccasin')
 from matlab_parser import MatlabGrammar
+
+_VERSION2 = platform.python_version().startswith('2')
 
 #Generates (multiple) parametrized calls to a test function
 def pytest_generate_tests(metafunc):
@@ -61,7 +64,6 @@ def obtain_params():
 class TestClass:
     # a map specifying multiple argument sets for a test method
     params = obtain_params()
-    version2 = platform.python_version().startswith('2')
 
     def test_syntaxCases(self, capsys, model, parsed):
         build_model(model)
@@ -72,6 +74,9 @@ class TestClass:
 #        output = out.replace('\n', '').replace('\r', '')
 #        test_parsed = read_parsed(parsed).replace('\n', '').replace('\r', '')
         output = out
+        if _VERSION2:
+            output = re.sub(r'\\\\n', '\\n', output)
+
         test_parsed = read_parsed(parsed)
         print("---From solution file---")
         print(repr(test_parsed))
@@ -79,3 +84,4 @@ class TestClass:
         print(repr(output))
         print ("\n \n")
         assert output == test_parsed
+
