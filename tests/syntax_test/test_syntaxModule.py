@@ -64,8 +64,13 @@ class TestClass:
     def test_syntaxCases(self, capsys, model, parsed):
         build_model(model)
         out, err = capsys.readouterr()
-        output = out.replace('\n', '').replace('\r', '')
-        test_parsed = read_parsed(parsed).replace('\n', '').replace('\r', '')
+#        2016-05-23 <mhucka@caltech.edu> taking this out, because i'm having
+#        trouble with Travis-based tests on GitHub and this may be the cause.
+#
+#        output = out.replace('\n', '').replace('\r', '')
+#        test_parsed = read_parsed(parsed).replace('\n', '').replace('\r', '')
+        output = out
+        test_parsed = read_parsed(parsed)
         print("---From solution file---")
         print(repr(test_parsed))
         print("---Ouput from parser---")
