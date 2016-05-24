@@ -74,14 +74,12 @@ class TestClass:
 #        output = out.replace('\n', '').replace('\r', '')
 #        test_parsed = read_parsed(parsed).replace('\n', '').replace('\r', '')
         output = out
-        if _VERSION2:
-            output = re.sub(r'\\\\n', '\\n', output)
-
         test_parsed = read_parsed(parsed)
+        if _VERSION2:
+            test_parsed = re.sub(r'\\\\n', '\\n', test_parsed)
         print("---From solution file---")
         print(repr(test_parsed))
         print("---Ouput from parser---")
         print(repr(output))
         print ("\n \n")
         assert output == test_parsed
-
