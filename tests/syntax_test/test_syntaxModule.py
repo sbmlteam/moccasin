@@ -76,10 +76,11 @@ class TestClass:
         output = out
         test_parsed = read_parsed(parsed)
         if _VERSION2:
-            test_parsed = re.sub(r'\\\\n', '\\n', test_parsed)
+            test_parsed = re.sub(r'\\\\n', '\\\n', test_parsed)
         print("---From solution file---")
         print(repr(test_parsed))
         print("---Ouput from parser---")
         print(repr(output))
         print ("\n \n")
         assert output == test_parsed
+
