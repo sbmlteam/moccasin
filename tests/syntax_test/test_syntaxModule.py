@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 
 from __future__ import print_function
 import pytest
@@ -76,7 +76,7 @@ class TestClass:
         output = out
         test_parsed = read_parsed(parsed)
         if _VERSION2:
-            test_parsed = re.sub(r'\\\n', '\\n', test_parsed)
+            test_parsed = re.sub(r'\\\\n', r'\\n', test_parsed)
         print("---From solution file---")
         print(repr(test_parsed))
         print("---Ouput from parser---")
