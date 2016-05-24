@@ -1,0 +1,44 @@
+Dear Allison:
+
+We are pleased to resubmit for publication the revised version of BIOINF-2015-1877 “MOCCASIN: converting MATLAB ODE models to SBML.” We greatly appreciate the reviewers’ constructive criticism towards improving our submission. We have addressed each of the reviewers’ comments as outlined below, and would be glad to respond to any further questions that they may have.
+
+------------------------------------------------------------
+COMMENTS REVIEWER #1:   
+------------------------------------------------------------
+
+1. A CHEESESHOP (PYPI) ADDITION MIGHT BE WORTH CONSIDERING FOR EASE OF INSTALLATION.
+
+We agree. However, it is currently not possible as the libSBML and wxPython dependencies must be manually installed themselves - either they are not listed on the pypi registry themselves or have dependencies of their own not available via pypi. Despite this, we believe the process is straightforward as once a user has installed the aforementioned dependencies, they can simply type “python setup.py install” to begin using MOCCASIN. In any case, this is obviously an important issue for potential users, and we intend to continue to seek ways to make the installation as easy as possible.
+
+2.  A DOT SEEMS TO BE MISSING BEFORE THE WORD PYTHON IN THE LAST SENTENCE OF THE FIRST PARAGRAPH OF SECTION 2.
+
+Fixed. (page 2, line 16).
+
+------------------------------------------------------------
+COMMENTS REVIEWER #2:   
+------------------------------------------------------------
+
+1. MAYBE A DIFFERENT WORD FOR A, ADVANTAGEOUS?
+
+We took the reviewer's comments to heart, and have now changed MOCCASIN to stand for Model ODE Converter for Creating Automated SBML Interoperability (abstract and page 2, line 2).
+
+2. ABSTRACT, INTO SBML FORMAT -> INTO THE SBML FORMAT.
+
+Fixed.
+
+3. I'M CURIOUS HOW YOU CAN DETERMINE THE DIFFERENCE BETWEEN A SPECIES AND PARAMETER WHEN YOU CONVERT TO A BIOCHEMICAL MODEL.  CAN YOU EXPLAIN?  IS IT ASSUMED THAT ALL CONSTANTS ARE PARAMETERS AND CHANGING VALUES SPECIES?
+
+MOCCASIN applies a heuristic approach, based on the fact that variables are passed as a vector in the second argument position of an ODE function definition “function dy=f(t, y, param1, param2)”.  It uses this convention to extract and translate variables into SBML species definitions. Any other assignments that are present in the ODEs of the system are converted to SBML parameters constructs.
+
+4. I'M CURIOUS ABOUT WHAT YOU DO WITH PARTS OF MATLAB THAT DON'T FIT YOUR SYNTAX.  DO YOU REPORT THIS TO THE USER IN SOME WAY?  IF SO, HOW?  COULDN'T THEY BE OFTEN CONVERTED INTO SBML EVENTS?  HAVE YOU TRIED THIS TOOL ON ANY MODELS PUBLISHED BY OTHERS?  IF SO, HOW OFTEN CAN THEY BE COMPLETELY CONVERTED AND HOW OFTEN ARE PARTS NOT TRANSLATED?
+
+Currently, MOCCASIN input must be set up as a single file containing a system of ordinary differential equations (defined as a function), and a call to one of the MATLAB odeNN family of solvers (e.g., ode45, ode15s, etc.). When improper input is provided, MOCCASIN reports errors; the type of error depends on the problem. We feel that the system could do more, however, to explain to the user how the input differs from assumptions, and we are working on improving error detection and reporting. As it is not its scope, MOCCASIN does not currently attempt to extract or process parts of the input file that don’t involve the ODE system, which include MATLAB constructs for things such as saving/reading .m files, loop statements, plotting operations, reassigning values on multiple iterations, etc.. Nevertheless, we agree that more MATLAB constructs would be useful to translate in some way, and we have already begun work on this front. This functionality will be included in future releases.
+ 
+Though many published models are still beyond the scope of MOCCASIN, the version 1 release was successfully tested on simplified versions of published models such as one by Fribourg et al., (2014). This and other models provided useful feedback and helped established the priorities for future enhancements.
+
+
+REFERENCES
+ 
+Fribourg, M., B. Hartmann, M. Schmolke, et al. (2014) Model of Influenza A Virus Infection: Dynamics of Viral Antagonism and Innate Immune Response. Journal of Theoretical Biology, 351, 47–57.
+
+
