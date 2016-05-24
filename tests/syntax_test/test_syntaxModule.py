@@ -72,8 +72,6 @@ class TestClass:
 #        output = out.replace('\n', '').replace('\r', '')
 #        test_parsed = read_parsed(parsed).replace('\n', '').replace('\r', '')
         output = out
-        if self.version2:
-            output = output.decode('unicode_escape')
         test_parsed = read_parsed(parsed)
         print("---From solution file---")
         print(repr(test_parsed))
