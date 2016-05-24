@@ -356,6 +356,7 @@
 # .............................................................................
 
 from __future__ import print_function
+import codecs
 import copy
 import pdb
 import six
@@ -2249,7 +2250,7 @@ class MatlabGrammar:
         """
         self._reset()
         try:
-            file = open(path, 'r')
+            file = codecs.open(path)
             contents = file.read()
             self._print_debug(print_debug)
             top_context = self._do_parse(contents)
