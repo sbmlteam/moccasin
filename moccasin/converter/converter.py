@@ -1257,7 +1257,14 @@ def process_biocham_output(sbml, parse_results, post_add, post_convert,
     # but as initial assignments instead of assignment rules.
     if not sbml:
         return sbml
-    document = SBMLReader().readSBMLFromString(sbml)
+
+    # python 3 changed the way temporary files read/wrote data
+    # and used bytes that need to encoded/decoded
+    try:
+        document = SBMLReader().readSBMLFromString(sbml)
+    except:
+        document = SBMLReader().readSBMLFromString(sbml.decode())
+
     if not document:
         return sbml
     model = document.getModel()
