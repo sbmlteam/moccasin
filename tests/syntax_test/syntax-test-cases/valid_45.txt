@@ -1,2 +1,0 @@
-{assign: {array: [ {row 1: {identifier: "C"}, {identifier: "h"}} ]} = {function {identifier: "contour"} ( {identifier: "x"}, {identifier: "y"}, {transpose: {identifier: "z"} operator ' }, {identifier: "clines_hgp"}, {string: "k-"}, {string: "LineColor"}, {identifier: "ccolor_hgp"} ) }}
-{command: name {identifier: "hold"} args  off}

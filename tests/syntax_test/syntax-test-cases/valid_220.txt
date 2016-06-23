@@ -1,0 +1,3 @@
+[
+FunDef(name=Identifier(name='main1'), parameters=None, output=None, body=[Assignment(lhs=Identifier(name='x'), rhs=Number(value='5')), FunCall(name=Identifier(name='nestfun1'), args=None), FunDef(name=Identifier(name='nestfun1'), parameters=None, output=None, body=[Comment(content=' Nested function, indented.'), Assignment(lhs=Identifier(name='x'), rhs=BinaryOp(op='+', left=Identifier(name='x'), right=Number(value='1')))])])
+]

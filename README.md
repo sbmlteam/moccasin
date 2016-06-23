@@ -3,7 +3,7 @@ MOCCASIN
 
 <img align="right" src="https://raw.githubusercontent.com/sbmlteam/moccasin/master/docs/project/logo/moccasin_logo_20151002/logo_128.png"> *MOCCASIN* stands for *"Model ODE Converter for Creating Automated SBML INteroperability"*.  MOCCASIN is designed to convert certain basic forms of ODE simulation models written in MATLAB or Octave and translate them into [SBML](http://sbml.org) format.  It thereby enables researchers to convert MATLAB models into an open and widely-used format in systems biology.
 
-[![Build Status](https://travis-ci.org/sbmlteam/moccasin.svg?branch=master)](https://travis-ci.org/sbmlteam/moccasin) [![Coverage Status](https://coveralls.io/repos/sbmlteam/moccasin/badge.svg?branch=master)](https://coveralls.io/r/sbmlteam/moccasin?branch=master)
+[![License](http://img.shields.io/:license-LGPL-blue.svg)](http://doge.LGPL-license.org)  [![Latest version](https://img.shields.io/badge/Latest_version-1.1-brightgreen.svg)](http://shields.io) [![Build Status](https://travis-ci.org/sbmlteam/moccasin.svg?branch=master)](https://travis-ci.org/sbmlteam/moccasin) [![Coverage Status](https://coveralls.io/repos/sbmlteam/moccasin/badge.svg?branch=master)](https://coveralls.io/r/sbmlteam/moccasin?branch=master)
 
 ----
 *Authors*:      [Michael Hucka](http://www.cds.caltech.edu/~mhucka), [Sarah Keating](http://www.ebi.ac.uk/about/people/sarah-keating), and [Harold G&oacute;mez](http://www.bu.edu/computationalimmunology/people/harold-gomez/).
@@ -19,7 +19,20 @@ MOCCASIN
 ⚑ Recent news and activities
 --------------------------
 
-_December 2015_: we have been working on improving the MATLAB parser in MOCCASIN, to rectify limitations in the 1.0 release and expand the coverage of MATLAB constructs. This will lay the groundwork for being able to convert more MATLAB inputs, especially using the approach of converting to Numpy ([Pivotal Tracker item #91874850](https://www.pivotaltracker.com/story/show/91874850)).  The updated MATLAB parser will constitute release 1.1 of MOCCASIN. (The Numpy translation will have to wait to a later release.)
+_June 2016_: The MATLAB parser and the conversion code in MOCCASIN version 1.1 are considerably better than they were in last year's 1.0 release.  The underlying parser now creates a more complete abstract syntax tree representation of the MATLAB input, and the converter also takes advantage of more syntactic features in XPP and BIOCHAM.  The result is better conversions of larger and more complex models.
+
+
+♥️ Please cite the MOCCASIN paper
+---------------------------------
+
+Article citations are **critical** for us to be able to continue support for MOCCASIN.  If you use MOCCASIN and you publish papers about your software, we ask that you **please cite the MOCCASIN paper**:
+
+<dl>
+<dd>
+Harold F. Gómez, Michael Hucka, Sarah M. Keating, German Nudelman, Dagmar Iber and Stuart C. Sealfon.  <a href="http://bioinformatics.oxfordjournals.org/content/32/12/1905">MOCCASIN: converting MATLAB ODE models to SBML</a>. <i>Bioinformatics</i> (2016), 32(12): 1905-1906.
+</dd>
+</dl>
+
 
 ☀ Background
 ----------
@@ -73,7 +86,7 @@ Before installing MOCCASIN, you need to separately install the following softwar
   * `libz-dev`
   * `libbz2-dev`
 
-* and [wxPython](http://wxpython.org/).
+* and [wxPython](http://wxpython.org/).  Note: wxPython is not fully supported for Python 3.4, even with [wxPython-Phoenix](http://wxpython.org/Phoenix/docs/html/index.html), and unfortunately, the MOCCASIN GUI uses features that are not available in wxPython-Phoenix.  Consequently, **to use the GUI interface, you must use Python 2.7**.  If you use the command-line interface for MOCCASIN, you can use Python 2.7 or 3.x.
 
 Once that is done, you can download or clone the MOCCASIN source code base and then run
 
@@ -84,7 +97,7 @@ python setup.py install
 ► Using MOCCASIN
 --------------
 
-You can use MOCCASIN either via the command line or via the GUI interface. To start the MOCCASIN GUI, execute the Python command `moccasin/interfaces/moccasin_GUI.py` in the source directory, or the command `moccasin-GUI` in a shell/terminal. A screenshot of the GUI in action is shown below.
+You can use MOCCASIN either via the command line or via the GUI interface. To start the MOCCASIN GUI, after installation (see above), execute the Python command `moccasin/interfaces/moccasin_GUI.py` in the MOCCASIN source directory, or the command `python -m moccasin-GUI` in a shell/terminal. A screenshot of the GUI in action is shown below.
 
 <img src="https://raw.githubusercontent.com/sbmlteam/moccasin/develop/docs/project/examples/screenshot-01.jpg"
  alt="MOCCASIN GUI" title="MOCCASIN GUI" align="center" />
@@ -116,7 +129,7 @@ The MOCCASIN logo was created by Randy Carlton (<rcarlton@rancar2.com>).
 ☮ Copyright and license
 ---------------------
 
-Copyright (C) 2014-2015 jointly by the California Institute of Technology (Pasadena, California, USA), the Icahn School of Medicine at Mount Sinai (New York, New York, USA), and Boston University (Boston, Massachusetts, USA).
+Copyright (C) 2014-2016 jointly by the California Institute of Technology (Pasadena, California, USA), the Icahn School of Medicine at Mount Sinai (New York, New York, USA), and Boston University (Boston, Massachusetts, USA).
 
 This library is free software; you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation; either version 2.1 of the License, or any later version.
 

@@ -1,0 +1,3 @@
+[
+For(var=Identifier(name='x'), expr=ColonOp(left=String(value='a'), middle=None, right=String(value='d')), body=[Identifier(name='x')])
+]

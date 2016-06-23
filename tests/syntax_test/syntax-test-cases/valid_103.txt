@@ -1,0 +1,3 @@
+[
+FunDef(name=Identifier(name='valid_103'), parameters=[Identifier(name='A'), Identifier(name='xlsfile'), Identifier(name='x1'), Identifier(name='x2')], output=None, body=[ScopeDecl(type='persistent', variables=[Identifier(name='foo'), Identifier(name='bar')]), ScopeDecl(type='persistent', variables=[Identifier(name='biff')]), ScopeDecl(type='global', variables=[Identifier(name='zippy')]), BinaryOp(op='+', left=Number(value='1'), right=Number(value='2'))])
+]

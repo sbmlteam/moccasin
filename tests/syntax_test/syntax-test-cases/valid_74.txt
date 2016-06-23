@@ -1,5 +1,0 @@
-{assign: {identifier: "y"} = {number: 4}}
-{assign: {array: [ {row 1: {identifier: "x"}, {identifier: "y"}} ]} = {array: [ {row 1: {number: 3}, {number: 5}} ]}}
-{assign: {array: [ {row 1: {array {identifier: "z"}: [ {number: 1} ]}, {array {identifier: "z"}: [ {number: 2} ]}} ]} = {array: [ {row 1: {number: 7}, {number: 8}} ]}}
-{assign: {identifier: "z"} = {array: [ {row 1: {number: 9}, {number: 9}} ]}}
-{assign: {array: [ {row 1: {array {identifier: "z"}: [ {number: 1} ]}, {array {identifier: "z"}: [ {number: 2} ]}} ]} = {array: [ {row 1: {number: 7}, {number: 8}} ]}}

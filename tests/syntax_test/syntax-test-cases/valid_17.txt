@@ -1,1 +1,0 @@
-{assign: {identifier: "q"} = ( ( ( {number: 1} {binary op: /} {number: 2} ) {binary op: /} {number: 3} ) {binary op: +} {number: 56.3} )}

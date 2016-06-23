@@ -1,6 +1,0 @@
-{comment:  The following should parse as a cell array reference:}
-( {cell array: {identifier: "a"} [ {number: 1} ]} )
-{comment:  The following should parse as a command called with one argument:}
-{command: name {identifier: "a"} args  {1}}
-{comment:  The following should parse as an array of 3 elements:}
-( {array: [ {row 1: {identifier: "a"}, {cell array: [ {row 1: {number: 1}} ]}, {identifier: "a"}} ]} )

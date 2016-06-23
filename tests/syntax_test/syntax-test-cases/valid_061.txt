@@ -1,0 +1,9 @@
+[
+FunCall(name=Identifier(name='plot'), args=[Ambiguous(name=Identifier(name='r'), args=None)])
+Assignment(lhs=Identifier(name='m'), rhs=FunCall(name=Identifier(name='mean'), args=[Ambiguous(name=Identifier(name='r'), args=None)]))
+FunCall(name=Identifier(name='hold'), args=[String(value='on')])
+FunCall(name=Identifier(name='plot'), args=[Array(is_cell=False, rows=[[Number(value='0'), Ambiguous(name=Identifier(name='n'), args=None)]]), Array(is_cell=False, rows=[[Identifier(name='m'), Identifier(name='m')]])])
+FunCall(name=Identifier(name='hold'), args=[String(value='off')])
+FunCall(name=Identifier(name='title'), args=[String(value='Mean of Random Uniform Data')])
+FunCall(name=Identifier(name='print'), args=[String(value='-dpng'), String(value='magicsquare.png')])
+]

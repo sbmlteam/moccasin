@@ -1,0 +1,3 @@
+[
+Assignment(lhs=Identifier(name='b'), rhs=FunCall(name=Identifier(name='cartToBary'), args=[Ambiguous(name=Identifier(name='dt'), args=None), Transpose(op=''', operand=Array(is_cell=False, rows=[[ColonOp(left=Number(value='1'), middle=None, right=FunCall(name=Identifier(name='length'), args=[Ambiguous(name=Identifier(name='tri'), args=None)]))]])), Ambiguous(name=Identifier(name='cc'), args=None)]))
+]

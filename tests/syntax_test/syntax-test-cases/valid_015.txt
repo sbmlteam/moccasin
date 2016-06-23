@@ -1,0 +1,6 @@
+[
+Assignment(lhs=Identifier(name='n'), rhs=Number(value='10'))
+Assignment(lhs=Identifier(name='f'), rhs=Identifier(name='n'))
+While(cond=BinaryOp(op='>', left=Identifier(name='n'), right=Number(value='1')), body=[Assignment(lhs=Identifier(name='n'), rhs=BinaryOp(op='-', left=Identifier(name='n'), right=Number(value='1'))), Assignment(lhs=Identifier(name='f'), rhs=BinaryOp(op='*', left=Identifier(name='f'), right=Identifier(name='n')))])
+FunCall(name=Identifier(name='disp'), args=[Array(is_cell=False, rows=[[String(value='n! = '), FunCall(name=Identifier(name='num2str'), args=[Identifier(name='f')])]])])
+]

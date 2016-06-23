@@ -1,0 +1,9 @@
+# Parameter id = a, constant.
+par a=0.5
+
+# Species id = y_1, defined by a rate rule.
+init y_1=2
+dy_1/dt=a
+
+done
+

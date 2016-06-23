@@ -1,1 +1,0 @@
-{assign: {array {identifier: "A"}: [ {colon}, {colon}, {number: 2} ]} = {function {identifier: "pascal"} ( {number: 3} ) }}

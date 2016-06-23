@@ -1,0 +1,6 @@
+[
+Assignment(lhs=Identifier(name='a'), rhs=Array(is_cell=True, rows=[]))
+Assignment(lhs=Identifier(name='b'), rhs=Array(is_cell=True, rows=[]))
+Assignment(lhs=Identifier(name='c'), rhs=Array(is_cell=True, rows=[]))
+Assignment(lhs=Identifier(name='d'), rhs=Array(is_cell=True, rows=[]))
+]

@@ -1,0 +1,7 @@
+[
+ArrayRef(is_cell=False, name=Identifier(name='a'), args=[Special(value='end')])
+ArrayRef(is_cell=False, name=Identifier(name='a'), args=[BinaryOp(op='+', left=Special(value='end'), right=Number(value='1'))])
+ArrayRef(is_cell=False, name=Identifier(name='a'), args=[ColonOp(left=Special(value='end'), middle=Number(value='-1'), right=Number(value='1'))])
+ArrayRef(is_cell=False, name=Identifier(name='a'), args=[Special(value='end'), Number(value='1')])
+ArrayRef(is_cell=False, name=Identifier(name='a'), args=[Ambiguous(name=Identifier(name='ending'), args=None)])
+]

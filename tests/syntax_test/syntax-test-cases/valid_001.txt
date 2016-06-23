@@ -1,0 +1,6 @@
+[
+Assignment(lhs=Identifier(name='a'), rhs=Number(value='1'))
+Assignment(lhs=Identifier(name='b'), rhs=BinaryOp(op='+', left=BinaryOp(op='+', left=Number(value='-2'), right=BinaryOp(op='*', left=Number(value='3'), right=BinaryOp(op='^', left=Number(value='2'), right=Number(value='2')))), right=Number(value='10')))
+Assignment(lhs=Identifier(name='c'), rhs=BinaryOp(op='/', left=Number(value='2'), right=Number(value='4')))
+Assignment(lhs=Identifier(name='d'), rhs=Array(is_cell=False, rows=[[Number(value='5')]]))
+]

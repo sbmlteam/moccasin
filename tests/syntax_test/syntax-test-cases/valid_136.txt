@@ -1,0 +1,3 @@
+[
+Assignment(lhs=ArrayRef(is_cell=False, name=Identifier(name='yright'), args=[Special(value=':'), Special(value='end')]), rhs=Ambiguous(name=Identifier(name='y'), args=[Ambiguous(name=Identifier(name='b'), args=None)]))
+]

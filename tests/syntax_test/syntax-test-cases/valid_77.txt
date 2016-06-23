@@ -1,9 +1,0 @@
-{function definition: {identifier: "valid_77"} parameters ( {identifier: "a"} ) output {identifier: "x"}}
-{assign: {identifier: "x"} = {function {identifier: "str2func"} ( {identifier: "a"} ) }}
-{assign: {identifier: "y"} = {function {identifier: "x"} ( {number: 2} ) }}
-{assign: {identifier: "z"} = {function {identifier: "other"} ( {number: 2} ) }}
-{end}
-{function definition: {identifier: "other"} parameters ( {identifier: "y"} ) output {identifier: "x"}}
-{assign: {identifier: "x"} = {identifier: "y"}}
-{end}
-( {function {identifier: "valid_77"} ( {string: "other"} ) } )

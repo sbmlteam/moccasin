@@ -1,2 +1,0 @@
-{assign: {identifier: "g"} = {number: 5}}
-{assign: {identifier: "h"} = {number: 7}}

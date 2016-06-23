@@ -8,7 +8,7 @@
 # This software is part of MOCCASIN, the Model ODE Converter for Creating
 # Automated SBML INteroperability. Visit https://github.com/sbmlteam/moccasin/.
 #
-# Copyright (C) 2014-2015 jointly by the following organizations:
+# Copyright (C) 2014-2016 jointly by the following organizations:
 #  1. California Institute of Technology, Pasadena, CA, USA
 #  2. Icahn School of Medicine at Mount Sinai, New York, NY, USA
 #  3. Boston University, Boston, MA, USA
@@ -22,6 +22,28 @@
 
 # Globals.
 # .............................................................................
+
+# Certain things here are unintuitive (to me, anyway).  For example, it turns
+# out that 'pi' is a function in MATLAB -- a function that takes no arguments.
+# To test what kind of thing something is, you can use the MATLAB 'exist'
+# function.  E.g.,:
+#   exist('pi', 'builtin')
+# The following page describes the meaning of the return values:
+# http://www.mathworks.com/help/matlab/ref/exist.html
+#
+# 0 - name does not exist.
+# 1 - name is a variable in the workspace.
+# 2 - One of the following is true:
+#     name exists on your MATLAB search path as a file with extension .m.
+#     name is the name of an ordinary file on your MATLAB search path.
+#     name is the full pathname to any file.
+# 3 - name exists as a MEX-file on your MATLAB search path.
+# 4 - name exists as a Simulink model or library file on your MATLAB search path.
+# 5 - name is a built-in MATLAB function.
+# 6 - name is a P-file on your MATLAB search path.
+# 7 - name is a folder.
+# 8 - name is a class.
+#     (exist returns 0 for Java classes if you start MATLAB with the -nojvm option.)
 
 matlab_symbols = {
     'abs': 1,
@@ -47,6 +69,7 @@ matlab_symbols = {
     'addTeardown': 1,
     'addcats': 1,
     'addevent': 1,
+    'addframe': 1,
     'addlistener': 1,
     'addmulti': 1,
     'addpath': 1,
@@ -442,6 +465,7 @@ matlab_symbols = {
     'faceNormals': 1,
     'factor': 1,
     'factorial': 1,
+    'false': 1,
     'fclose': 1,
     'feather': 1,
     'featureEdges': 1,
@@ -1409,6 +1433,7 @@ matlab_symbols = {
     'triplot': 1,
     'trisurf': 1,
     'triu': 1,
+    'true': 1,
     'tscollection': 1,
     'tsdata.event': 1,
     'tsearchn': 1,

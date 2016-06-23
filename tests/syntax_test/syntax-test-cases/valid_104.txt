@@ -1,0 +1,7 @@
+[
+Comment(content=' The following should be parsed as two separate commands.')
+FunCall(name=Identifier(name='save'), args=[String(value='foo')])
+FunCall(name=Identifier(name='save'), args=[String(value='bar')])
+Comment(content=' The following should be parsed as one command.')
+FunCall(name=Identifier(name='save'), args=[String(value='foo, save bar')])
+]

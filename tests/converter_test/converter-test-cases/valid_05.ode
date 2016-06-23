@@ -1,0 +1,10 @@
+# Species id = y_1, defined by a rate rule.
+init y_1=0
+dy_1/dt=11
+
+# Species id = y_2, defined by a rate rule.
+init y_2=0
+dy_2/dt=22
+
+done
+

@@ -1,0 +1,10 @@
+[
+Assignment(lhs=Identifier(name='a'), rhs=Array(is_cell=False, rows=[[Number(value='1'), Number(value='2')]]))
+Assignment(lhs=Identifier(name='b'), rhs=Array(is_cell=False, rows=[[Number(value='1'), Number(value='2')]]))
+Assignment(lhs=Identifier(name='c'), rhs=Array(is_cell=False, rows=[[Number(value='1'), Number(value='2')], [Number(value='3'), Number(value='4')]]))
+Assignment(lhs=Identifier(name='d'), rhs=Array(is_cell=False, rows=[[Number(value='1'), Number(value='2')], [Number(value='3'), Number(value='4')]]))
+Assignment(lhs=Identifier(name='e'), rhs=Array(is_cell=False, rows=[[Number(value='1'), Number(value='2')], [Number(value='3'), Number(value='4')]]))
+Assignment(lhs=Identifier(name='m'), rhs=Array(is_cell=False, rows=[[Number(value='1'), Number(value='2')], [Number(value='3'), Number(value='4')]]))
+Assignment(lhs=Identifier(name='n'), rhs=Array(is_cell=False, rows=[[Number(value='1'), Number(value='2')], [Number(value='3'), Number(value='4')]]))
+Assignment(lhs=Identifier(name='l'), rhs=Array(is_cell=False, rows=[[Number(value='1'), Number(value='2'), Number(value='3'), Number(value='4')]]))
+]

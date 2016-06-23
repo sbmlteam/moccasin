@@ -1,0 +1,3 @@
+[
+Assignment(lhs=Identifier(name='x'), rhs=Number(value='-1'))
+]

@@ -1,0 +1,6 @@
+[
+Assignment(lhs=Identifier(name='results_folder'), rhs=String(value='../../results/glucose_glycogen_dependency'))
+Assignment(lhs=Identifier(name='res_file'), rhs=FunCall(name=Identifier(name='strcat'), args=[Identifier(name='results_folder'), String(value='/'), String(value='glucose_glycogen_dependency.mat')]))
+Assignment(lhs=Identifier(name='conversion_factor'), rhs=BinaryOp(op='*', left=Number(value='12.5'), right=Number(value='60')))
+Comment(content=' [mmol/s] -> [µmol/min/kgbw]')
+]

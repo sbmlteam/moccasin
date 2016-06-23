@@ -2,18 +2,17 @@
 <sbml xmlns="http://www.sbml.org/sbml/level3/version1/core" level="3" version="1">
   <model>
     <listOfCompartments>
-      <compartment id="comp1" spatialDimensions="3" size="1" constant="true"/>
+      <compartment id="comp1" name="comp1" spatialDimensions="3" size="1" constant="true"/>
     </listOfCompartments>
     <listOfSpecies>
-      <species id="x_1" compartment="comp1" initialConcentration="0" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"/>
-      <species id="x_2" compartment="comp1" initialConcentration="0" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"/>
+      <species id="x_1" name="x_1" compartment="comp1" initialConcentration="0" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"/>
+      <species id="x_2" name="x_2" compartment="comp1" initialConcentration="0" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"/>
     </listOfSpecies>
     <listOfParameters>
-      <parameter id="a" value="0" constant="true"/>
-      <parameter id="c" value="0" constant="true"/>
-      <parameter id="b" value="0" constant="true"/>
-      <parameter id="d" value="0" constant="true"/>
-      <parameter id="t" value="0" constant="false"/>
+      <parameter id="a" name="a" value="0" constant="true"/>
+      <parameter id="b" name="b" value="0" constant="true"/>
+      <parameter id="c" name="c" value="0" constant="true"/>
+      <parameter id="d" name="d" value="0" constant="true"/>
     </listOfParameters>
     <listOfInitialAssignments>
       <initialAssignment symbol="a">
@@ -25,20 +24,20 @@
           </apply>
         </math>
       </initialAssignment>
-      <initialAssignment symbol="c">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <apply>
-            <times/>
-            <cn> 0.006 </cn>
-            <cn type="integer"> 60 </cn>
-          </apply>
-        </math>
-      </initialAssignment>
       <initialAssignment symbol="b">
         <math xmlns="http://www.w3.org/1998/Math/MathML">
           <apply>
             <times/>
             <cn> 0.0058 </cn>
+            <cn type="integer"> 60 </cn>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="c">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <times/>
+            <cn> 0.006 </cn>
             <cn type="integer"> 60 </cn>
           </apply>
         </math>
@@ -84,11 +83,6 @@
           </apply>
         </math>
       </rateRule>
-      <assignmentRule variable="t">
-        <math xmlns="http://www.w3.org/1998/Math/MathML">
-          <csymbol encoding="text" definitionURL="http://www.sbml.org/sbml/symbols/time"> time </csymbol>
-        </math>
-      </assignmentRule>
     </listOfRules>
   </model>
 </sbml>

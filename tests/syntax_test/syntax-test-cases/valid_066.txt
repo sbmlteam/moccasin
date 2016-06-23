@@ -1,0 +1,3 @@
+[
+Assignment(lhs=Identifier(name='C'), rhs=Array(is_cell=True, rows=[[Ambiguous(name=Identifier(name='A'), args=None), FunCall(name=Identifier(name='sum'), args=[Ambiguous(name=Identifier(name='A'), args=None)]), FunCall(name=Identifier(name='prod'), args=[FunCall(name=Identifier(name='prod'), args=[Ambiguous(name=Identifier(name='A'), args=None)])])]]))
+]

@@ -1,0 +1,8 @@
+[
+Assignment(lhs=Identifier(name='fhandle'), rhs=FuncHandle(name=Identifier(name='humps')))
+Assignment(lhs=Identifier(name='sqr'), rhs=AnonFun(args=[Identifier(name='x')], body=BinaryOp(op='.^', left=Ambiguous(name=Identifier(name='x'), args=None), right=Number(value='2'))))
+Assignment(lhs=StructRef(name=Identifier(name='S'), field=Identifier(name='a'), dynamic=False), rhs=FuncHandle(name=Identifier(name='sin')))
+Assignment(lhs=StructRef(name=Identifier(name='S'), field=Identifier(name='b'), dynamic=False), rhs=FuncHandle(name=Identifier(name='cos')))
+Assignment(lhs=StructRef(name=Identifier(name='S'), field=Identifier(name='c'), dynamic=False), rhs=FuncHandle(name=Identifier(name='tan')))
+FunCall(name=Identifier(name='structfun'), args=[AnonFun(args=[Identifier(name='x')], body=Ambiguous(name=Identifier(name='x'), args=[FunCall(name=Identifier(name='linspace'), args=[Number(value='1'), Number(value='4'), Number(value='3')])])), Identifier(name='S'), String(value='UniformOutput'), FunCall(name=Identifier(name='false'), args=None)])
+]

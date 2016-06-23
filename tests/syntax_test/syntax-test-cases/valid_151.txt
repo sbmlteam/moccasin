@@ -1,0 +1,5 @@
+[
+Array(is_cell=False, rows=[[Number(value='1.2')]])
+Array(is_cell=False, rows=[[Number(value='1'), Number(value='.2')]])
+Array(is_cell=False, rows=[[Number(value='1.'), Number(value='2')]])
+]

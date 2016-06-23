@@ -1,0 +1,3 @@
+[
+Assignment(lhs=StructRef(name=StructRef(name=Identifier(name='count1'), field=Identifier(name='TimeInfo'), dynamic=False), field=Identifier(name='Units'), dynamic=False), rhs=String(value='hours'))
+]

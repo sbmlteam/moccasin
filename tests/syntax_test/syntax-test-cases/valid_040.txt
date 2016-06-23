@@ -1,0 +1,5 @@
+[
+Assignment(lhs=Identifier(name='x'), rhs=Number(value='1'))
+Comment(content="stoichiometry = model_stoichiometry(); \ndydt = stoichiometry * v;\nconst = [\n    1       % 'atp'\n    2       % 'adp'\n    3       % 'amp'\n    8       % 'nad'\n    9       % 'nadh'\n    10      % 'p' \n    12      % 'h20' \n    13      % 'co2'\n    14      % 'h'   \n    17      % 'glyglc'   \n    32      % 'glc_ext'\n    33      % 'lac_ext'\n    34      % 'co2_mito' \n    35      % 'p_mito'\n    38      % 'acoa_mito'\n    40      % 'cit_mito'\n    41      % 'atp_mito' \n    42      % 'adp_mito'\n    45      % 'coa_mito'\n    46      % 'nadh_mito' \n    47      % 'nad_mito' \n    48      % 'h_mito'\n    49      % 'h2o_mito' \n];\ndydt(const) = 0;\n")
+Assignment(lhs=Identifier(name='y'), rhs=Number(value='2'))
+]

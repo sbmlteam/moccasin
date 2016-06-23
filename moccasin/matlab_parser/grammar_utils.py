@@ -8,7 +8,7 @@
 # This software is part of MOCCASIN, the Model ODE Converter for Creating
 # Automated SBML INteroperability. Visit https://github.com/sbmlteam/moccasin/.
 #
-# Copyright (C) 2014-2015 jointly by the following organizations:
+# Copyright (C) 2014-2016 jointly by the following organizations:
 #  1. California Institute of Technology, Pasadena, CA, USA
 #  2. Icahn School of Medicine at Mount Sinai, New York, NY, USA
 #  3. Boston University, Boston, MA, USA
@@ -26,41 +26,17 @@ import sys
 import six
 from pyparsing import ParseResults
 
-
 #
 # Parsing helpers.
 # .............................................................................
 
-# Visitor class for ParseResults.
-
-class ParseResultsVisitor(object):
-    def visit(self, pr):
-        if len(pr) > 1 and not nonempty_dict(pr):
-            # It's a list of items.  Return a list.
-            return [self.visit(item) for item in pr]
-        if not nonempty_dict(pr):
-            # It's an expression.
-            return self.visit_expression(pr)
-        # Not an expression, but an individual, single parse result.
-        # We dispatch to the appropriate transformer by building the name.
-        key = first_key(pr)
-        methname = 'visit_' + '_'.join(key.split())
-        meth = getattr(self, methname, None)
-        if meth is None:
-            meth = self.default_visit
-        return meth(pr)
-
-    def default_visit(self, pr):
-        return pr
-
-
 # makeLRlike -- function used in the definition of our grammar in grammar.py
 
 def makeLRlike(numterms):
-    '''Parse action that will take flat lists of tokens and nest them
+    """Parse action that will take flat lists of tokens and nest them
     as if parsed left-recursively.  Originally written by Paul McGuire as
     a StackOverflow answer here: http://stackoverflow.com/a/4589920/743730
-    '''
+    """
     initlen = {0: 1, 1: 2, 2: 3, 3: 5}[numterms]
     incr = {0: 1, 1: 1, 2: 2, 3: 4}[numterms]
 
@@ -78,6 +54,14 @@ def makeLRlike(numterms):
 
     # Return the closure.
     return pa
+
+
+# From http://pyparsing.wikispaces.com/share/view/41237655
+
+def setVar(varname, varvalue):
+    def parseAction(tokens):
+        tokens[varname] = varvalue
+    return parseAction
 
 
 #
@@ -135,11 +119,15 @@ def parse_debug_helper(f):
 
 def first_key(d):
     if sys.version < '3':
-        return d.keys()[0]
+        return sorted(d.keys())[0]
     else:
-        for key in d.keys():
+        for key in sorted(d.keys()):
             return key
 
 
-def nonempty_dict(d):
-    return (d.keys() and len(list(d.keys())) > 0)
+def num_keys(d):
+    return len(list(d.keys()))
+
+
+def empty_dict(d):
+    return not (d.keys() and len(list(d.keys())) > 0)

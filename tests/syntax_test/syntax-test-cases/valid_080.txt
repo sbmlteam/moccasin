@@ -1,0 +1,5 @@
+[
+ShellCommand(command='vi yearlystats.m', bkgnd=False)
+ShellCommand(command='excel.exe', bkgnd=True)
+ShellCommand(command='echo $PATH', bkgnd=False)
+]

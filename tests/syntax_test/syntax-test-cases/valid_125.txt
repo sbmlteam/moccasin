@@ -1,0 +1,3 @@
+[
+Ambiguous(name=Identifier(name='M'), args=[Array(is_cell=False, rows=[[Number(value='1'), Special(value='end')]]), Array(is_cell=False, rows=[[ColonOp(left=BinaryOp(op='-', left=Special(value='end'), right=Number(value='2')), middle=None, right=Special(value='end'))]])])
+]

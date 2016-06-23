@@ -1,0 +1,3 @@
+[
+While(cond=UnaryOp(op='~', operand=FunCall(name=Identifier(name='feof'), args=[Ambiguous(name=Identifier(name='fid'), args=None)])), body=[Assignment(lhs=Identifier(name='x'), rhs=BinaryOp(op='+', left=Identifier(name='x'), right=Ambiguous(name=Identifier(name='fid'), args=None)))])
+]

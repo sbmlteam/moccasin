@@ -1,3 +1,0 @@
-{function definition: {identifier: "valid_70"} parameters ( {identifier: "x"}, {tilde} ) output [ {tilde}, {identifier: "b"} ]}
-( {function {identifier: "ylabel"} ( {string: "Y Axis"} ) } )
-{end}

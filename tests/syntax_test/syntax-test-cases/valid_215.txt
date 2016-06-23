@@ -1,0 +1,3 @@
+[
+Assignment(lhs=Array(is_cell=False, rows=[[Special(value='~'), Identifier(name='x')]]), rhs=Ambiguous(name=Identifier(name='foo'), args=[]))
+]

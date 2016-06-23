@@ -1,0 +1,3 @@
+[
+While(cond=BinaryOp(op='>', left=Identifier(name='x'), right=Number(value='1')), body=[Assignment(lhs=Identifier(name='x'), rhs=BinaryOp(op='-', left=Identifier(name='x'), right=Number(value='1')))])
+]

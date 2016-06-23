@@ -8,7 +8,7 @@
 # This software is part of MOCCASIN, the Model ODE Converter for Creating
 # Automated SBML INteroperability. Visit https://github.com/sbmlteam/moccasin/.
 #
-# Copyright (C) 2014-2015 jointly by the following organizations:
+# Copyright (C) 2014-2016 jointly by the following organizations:
 #     1. California Institute of Technology, Pasadena, CA, USA
 #     2. Icahn School of Medicine at Mount Sinai, New York, NY, USA
 #     3. Boston University, Boston, MA, USA
@@ -20,4 +20,11 @@
 # available online at https://github.com/sbmlteam/moccasin/.
 # ------------------------------------------------------------------------- -->
 
-__version__= '1.0.3'
+__version__      = '1.1.0'
+__title__        = 'MOCCASIN'
+__url__          = 'https://github.com/sbmlteam/moccasin'
+__author__       = 'Michael Hucka, Sarah Keating, and Harold Gomez'
+__author_email__ = 'moccasin-dev@googlegroups.com'
+__license__      = 'GNU Lesser General Public License, version 2.1'
+__license_url__  = 'https://www.gnu.org/licenses/lgpl.html'
+__help_url__     = 'https://github.com/sbmlteam/moccasin/blob/master/README.md'

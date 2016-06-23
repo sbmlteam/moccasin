@@ -1,0 +1,3 @@
+[
+Assignment(lhs=Identifier(name='y'), rhs=Ambiguous(name=Identifier(name='A'), args=[Array(is_cell=False, rows=[[Number(value='1'), Number(value='2')]]), Array(is_cell=False, rows=[[Number(value='2'), Number(value='4')]])]))
+]

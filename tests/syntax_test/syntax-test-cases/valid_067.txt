@@ -1,0 +1,4 @@
+[
+Assignment(lhs=Identifier(name='p'), rhs=FunCall(name=Identifier(name='fminsearch'), args=[FuncHandle(name=Identifier(name='humps')), Number(value='.5')]))
+Assignment(lhs=Identifier(name='exp_pdf'), rhs=AnonFun(args=[Identifier(name='t')], body=BinaryOp(op='*', left=BinaryOp(op='/', left=Number(value='1'), right=Ambiguous(name=Identifier(name='mu1'), args=None)), right=FunCall(name=Identifier(name='exp'), args=[BinaryOp(op='/', left=UnaryOp(op='-', operand=Ambiguous(name=Identifier(name='t'), args=None)), right=Ambiguous(name=Identifier(name='mu1'), args=None))]))))
+]

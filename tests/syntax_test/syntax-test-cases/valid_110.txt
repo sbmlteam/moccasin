@@ -1,0 +1,10 @@
+[
+Assignment(lhs=Identifier(name='aviobj'), rhs=FunCall(name=Identifier(name='avifile'), args=[String(value='example.avi'), String(value='compression'), String(value='None')]))
+Assignment(lhs=Identifier(name='t'), rhs=FunCall(name=Identifier(name='linspace'), args=[Number(value='0'), BinaryOp(op='*', left=Number(value='2.5'), right=FunCall(name=Identifier(name='pi'), args=None)), Number(value='40')]))
+Assignment(lhs=Identifier(name='fact'), rhs=BinaryOp(op='*', left=Number(value='10'), right=FunCall(name=Identifier(name='sin'), args=[Identifier(name='t')])))
+Assignment(lhs=Identifier(name='fig'), rhs=FunCall(name=Identifier(name='figure'), args=None))
+Assignment(lhs=Array(is_cell=False, rows=[[Identifier(name='x'), Identifier(name='y'), Identifier(name='z')]]), rhs=FunCall(name=Identifier(name='peaks'), args=None))
+For(var=Identifier(name='k'), expr=ColonOp(left=Number(value='1'), middle=None, right=FunCall(name=Identifier(name='length'), args=[Identifier(name='fact')])), body=[Assignment(lhs=Identifier(name='h'), rhs=FunCall(name=Identifier(name='surf'), args=[Identifier(name='x'), Identifier(name='y'), BinaryOp(op='*', left=ArrayRef(is_cell=False, name=Identifier(name='fact'), args=[Identifier(name='k')]), right=Identifier(name='z'))])), FunCall(name=Identifier(name='axis'), args=[Array(is_cell=False, rows=[[Number(value='-3'), Number(value='3'), Number(value='-3'), Number(value='3'), Number(value='-80'), Number(value='80')]])]), FunCall(name=Identifier(name='axis'), args=[String(value='off')]), FunCall(name=Identifier(name='caxis'), args=[Array(is_cell=False, rows=[[Number(value='-90'), Number(value='90')]])]), Assignment(lhs=Identifier(name='F'), rhs=FunCall(name=Identifier(name='getframe'), args=[Identifier(name='fig')])), Assignment(lhs=Identifier(name='aviobj'), rhs=FunCall(name=Identifier(name='addframe'), args=[Identifier(name='aviobj'), Identifier(name='F')]))])
+FunCall(name=Identifier(name='close'), args=[Identifier(name='fig')])
+Assignment(lhs=Identifier(name='aviobj'), rhs=FunCall(name=Identifier(name='close'), args=[Identifier(name='aviobj')]))
+]

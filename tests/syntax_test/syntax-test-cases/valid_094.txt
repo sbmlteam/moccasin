@@ -1,0 +1,4 @@
+[
+Assignment(lhs=Identifier(name='a'), rhs=Ambiguous(name=Identifier(name='aObjArray'), args=None))
+For(var=Identifier(name='k'), expr=Identifier(name='a'), body=[FunCall(name=StructRef(name=Identifier(name='a'), field=Identifier(name='modify'), dynamic=False), args=[])])
+]

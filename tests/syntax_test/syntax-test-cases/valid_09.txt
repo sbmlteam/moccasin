@@ -1,3 +1,0 @@
-{for stmt: var {identifier: "x"} in {colon op: left={string: "a"}, middle=None, right={string: "d"}}}
-( {identifier: "x"} )
-{end}

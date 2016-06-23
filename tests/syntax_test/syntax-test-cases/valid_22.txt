@@ -1,3 +1,0 @@
-{assign: {identifier: "list2"} = {colon op: left={number: 1}, middle={number: 2}, right={number: 10}}}
-{assign: {identifier: "nsamp"} = {number: 5}}
-{assign: {identifier: "sliceOfPi"} = ( {colon op: left={number: 0}, middle=( {number: 1} {binary op: /} ( {identifier: "nsamp"} {binary op: -} {number: 1} ) ), right={number: 1}} {binary op: *} {identifier: "pi"} )}

@@ -1,0 +1,4 @@
+[
+FunDef(name=Identifier(name='valid_76'), parameters=[Identifier(name='a')], output=[Identifier(name='x')], body=[Assignment(lhs=Identifier(name='x'), rhs=Ambiguous(name=Identifier(name='a'), args=[Number(value='3')])), Assignment(lhs=Identifier(name='x'), rhs=FunCall(name=Identifier(name='other'), args=[Number(value='4')]))])
+FunDef(name=Identifier(name='other'), parameters=[Identifier(name='y')], output=[Identifier(name='x')], body=[Assignment(lhs=Identifier(name='x'), rhs=Number(value='10'))])
+]

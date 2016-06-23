@@ -1,3 +1,0 @@
-{assign: {identifier: "str"} = {string: "ones"}}
-{assign: {identifier: "fh"} = {function {identifier: "str2func"} ( {identifier: "str"} ) }}
-( {function {identifier: "fh"} ( {number: 1}, {number: 5} ) } )

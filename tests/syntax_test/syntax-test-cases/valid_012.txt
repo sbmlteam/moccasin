@@ -1,0 +1,4 @@
+[
+Assignment(lhs=StructRef(name=ArrayRef(is_cell=False, name=Identifier(name='somestruct'), args=[Number(value='2')]), field=Identifier(name='somefieldname'), dynamic=False), rhs=FunCall(name=Identifier(name='str2func'), args=[String(value='functionname')]))
+FunCall(name=StructRef(name=ArrayRef(is_cell=False, name=Identifier(name='somestruct'), args=[Number(value='2')]), field=Identifier(name='somefieldname'), dynamic=False), args=[Number(value='42')])
+]

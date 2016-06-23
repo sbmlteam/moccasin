@@ -1,0 +1,11 @@
+[
+Array(is_cell=False, rows=[[Ambiguous(name=Identifier(name='a'), args=None), Number(value='3')]])
+Array(is_cell=False, rows=[[Ambiguous(name=Identifier(name='a'), args=None), Number(value='3')]])
+Array(is_cell=False, rows=[[Ambiguous(name=Identifier(name='a'), args=None), Number(value='3')]])
+Array(is_cell=False, rows=[[Ambiguous(name=Identifier(name='a'), args=None), Number(value='3')]])
+Array(is_cell=False, rows=[[Ambiguous(name=Identifier(name='a'), args=None), Number(value='3')]])
+Array(is_cell=False, rows=[[Ambiguous(name=Identifier(name='a'), args=None), Number(value='3')]])
+Array(is_cell=False, rows=[[Ambiguous(name=Identifier(name='a'), args=[Number(value='3')])]])
+Array(is_cell=False, rows=[[Ambiguous(name=Identifier(name='a'), args=[Number(value='3')])]])
+Array(is_cell=False, rows=[[Ambiguous(name=Identifier(name='a'), args=[Number(value='3')])]])
+]

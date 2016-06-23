@@ -1,0 +1,13 @@
+[
+UnaryOp(op='-', operand=BinaryOp(op='^', left=Number(value='2'), right=Number(value='4')))
+UnaryOp(op='-', operand=BinaryOp(op='^', left=Number(value='2'), right=Number(value='4')))
+UnaryOp(op='-', operand=BinaryOp(op='^', left=Number(value='2'), right=Number(value='4')))
+UnaryOp(op='-', operand=BinaryOp(op='^', left=Number(value='2'), right=Number(value='4')))
+UnaryOp(op='-', operand=BinaryOp(op='^', left=Number(value='2'), right=Number(value='4')))
+UnaryOp(op='-', operand=BinaryOp(op='^', left=Number(value='2'), right=Number(value='-4')))
+UnaryOp(op='-', operand=BinaryOp(op='^', left=Number(value='2'), right=Number(value='-4')))
+UnaryOp(op='-', operand=BinaryOp(op='^', left=Number(value='2'), right=Number(value='-4')))
+UnaryOp(op='-', operand=BinaryOp(op='^', left=Number(value='2'), right=Number(value='-4')))
+UnaryOp(op='-', operand=BinaryOp(op='^', left=Number(value='2'), right=Number(value='-4')))
+UnaryOp(op='-', operand=BinaryOp(op='^', left=Number(value='2'), right=Number(value='-4')))
+]

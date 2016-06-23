@@ -1,19 +1,25 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
-import pytest
 import sys
-import glob
-import os
-from pyparsing import ParseResults
+sys.path.append('moccasin/converter/')
+sys.path.append('../moccasin/converter/')
+sys.path.append('../../moccasin/converter/')
 sys.path.append('moccasin/')
 sys.path.append('../moccasin')
 sys.path.append('../../moccasin')
-from evaluate_formula import *
-from string import printable
-import codecs
 
-#Generates (multiple) parametrized calls to a test function
+import codecs
+from evaluate_formula import *
+import getopt
+import glob
+import os
+from pyparsing import ParseResults
+import pytest
+from string import printable
+
+
+# Generates (multiple) parametrized calls to a test function
 def pytest_generate_tests(metafunc):
     # called once per test function
     funcarglist = metafunc.cls.params[metafunc.function.__name__]
@@ -21,8 +27,8 @@ def pytest_generate_tests(metafunc):
     metafunc.parametrize(argnames, [[funcargs[name] for name in argnames]
             for funcargs in funcarglist],scope='module')
 
-#Parses the file and prints interpreted result(output is captured)                       
-def build_model(path):
+# Parses the file and prints interpreted result(output is captured)
+def parse_matlab_file(path):
     file = open(path,'r')
     contents = file.read()
     try:
@@ -30,16 +36,16 @@ def build_model(path):
         formula_parser = NumericStringParser()
         formula = contents
         if formula is not None and formula != '':
-            results = formula_parser.eval(formula)
-        file.close()
-        print(results)
+            return formula_parser.eval(formula)
     except Exception as e:
         print(e)
+    finally:
+        file.close()
 
 #reads file containing expected parsed model and returns it as string
 def read_parsed(path):
     file = codecs.open(path, encoding='utf-8') 
-    contents = file.read()
+    contents = ''.join(file.readlines())
     file.close()
     return contents
 
@@ -52,27 +58,25 @@ def obtain_params():
     elif os.path.isdir('evaluate-test-cases'):
         path = ['evaluate-test-cases']
     m_path = path + ['valid_*.m']
-    matlab_models = glob.glob(os.path.join(*m_path))
-    parsed_models = [x.rsplit('.')[0] + '.txt' for x in matlab_models]
+    input_files = glob.glob(os.path.join(*m_path))
+    output_files = [x.rsplit('.')[0] + '.txt' for x in input_files]
     pairs = list()
-    for i in range(len(matlab_models)):
-        pairs.append((dict(model = matlab_models[i], parsed = parsed_models[i])))
+    for i in range(len(input_files)):
+        pairs.append((dict(input = input_files[i], expected = output_files[i])))
     parameters = {'test_evaluateCases' : pairs}
     return parameters
 
 class TestClass:
-    # a map specifying multiple argument sets for a test method
+    # A map specifying multiple argument sets for a test method
     params = obtain_params()
-    
-    def test_evaluateCases(self,capsys, model, parsed):
-        build_model(model)
-        out,err=capsys.readouterr()
-        output=out.replace('\n', '').replace('\r', '')
-        test_parsed=read_parsed(parsed).replace('\n', '').replace('\r', '')
-        print("---From solution file---")
-        print(repr(test_parsed))
-        print("---Ouput from parser---")
-        print(repr(output))
-        print ("\n \n")
-        assert output==test_parsed
 
+    def test_evaluateCases(self, capsys, input, expected):
+        expected_output = read_parsed(expected).replace('\n', '').replace('\r', '')
+        getcontext().prec = 12
+        actual_output = parse_matlab_file(input)
+        print("--- From solution file ---")
+        print(expected_output)
+        print("--- Ouput from parser ---")
+        print(actual_output)
+        print ("\n \n")
+        assert actual_output == Decimal(expected_output)

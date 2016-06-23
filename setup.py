@@ -8,7 +8,7 @@
 # This software is part of MOCCASIN, the Model ODE Converter for Creating
 # Automated SBML INteroperability. Visit https://github.com/sbmlteam/moccasin/.
 #
-# Copyright (C) 2014-2015 jointly by the following organizations:
+# Copyright (C) 2014-2016 jointly by the following organizations:
 #  1. California Institute of Technology, Pasadena, CA, USA
 #  2. Icahn School of Medicine at Mount Sinai, New York, NY, USA
 #  3. Boston University, Boston, MA, USA
@@ -29,19 +29,17 @@ from os import path
 import re
 import sys
 import moccasin
-from moccasin import __version__
+from moccasin import __title__, __version__, __url__, __author__, __author_email__, __license__
 
 here = path.abspath(path.dirname(__file__))
 
 # If libSBML is not installed, notify user and exit installer
 try:
     import libsbml
-    pass
-
 except(DistributionNotFound):
     print('')
-    print('You do not have libsbml installed')
-    print('Please refer to our quickstart file for instructions on downloading this module')
+    print('It appears you do not have libSBML installed')
+    print('Please refer to the instructions on downloading this module.')
     sys.exit()
 
 with open(path.join(here, 'requirements.txt')) as f:
@@ -66,18 +64,18 @@ class PyTest(TestCommand):
         sys.exit(errno)
 
 setup(
-    name='moccasin',
+    name=__title__.lower(),
     version=__version__,
-    url='https://github.com/sbmlteam/moccasin/',
-    license='GNU Lesser General Public License',
-    author='Michael Hucka, Sarah Keating, and Harold Gomez',
+    url=__url__,
+    author=__author__,
+    author_email=__author_email__,
+    license=__license__,
     tests_require=['pytest'],
     install_requires=reqs,
     cmdclass={'test': PyTest},
-    author_email='email@sbml.com',
     description='MOCCASIN: the Model ODE Converter for Creating Automated SBML INteroperability, a user-assisted converter that can take MATLAB or Octave ODE-based models in biology and translate them into the SBML format.',
     packages=find_packages(exclude='tests'),
-    package_data={'moccasin': ['docs/*.md','LICENSE.txt', 'requirements.txt']},
+    package_data={'moccasin': ['docs/*.md', 'LICENSE.txt', 'requirements.txt']},
     include_package_data=True,
     platforms='any',
     test_suite='tests',

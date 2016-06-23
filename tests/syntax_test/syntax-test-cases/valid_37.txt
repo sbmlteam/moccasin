@@ -1,3 +1,0 @@
-{function definition: {identifier: "valid_37"} parameters ( {identifier: "r"} ) output [ {identifier: "x"}, {identifier: "y"} ]}
-{assign: {identifier: "x"} = {array: [ {row 1: {identifier: "r"}}; {row 2: {identifier: "r"}} ]}}
-{end}

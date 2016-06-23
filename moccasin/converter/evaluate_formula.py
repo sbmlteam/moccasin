@@ -8,7 +8,7 @@
 # This software is part of MOCCASIN, the Model ODE Converter for Creating
 # Automated SBML INteroperability. Visit https://github.com/sbmlteam/moccasin/.
 #
-# Copyright (C) 2014-2015 jointly by the following organizations:
+# Copyright (C) 2014-2016 jointly by the following organizations:
 #  1. California Institute of Technology, Pasadena, CA, USA
 #  2. Icahn School of Medicine at Mount Sinai, New York, NY, USA
 #  3. Boston University, Boston, MA, USA
@@ -21,10 +21,14 @@
 # ------------------------------------------------------------------------- -->
 
 from __future__ import division
-from pyparsing import (Literal, CaselessLiteral, Word, Combine, Group, Optional,
-                       ZeroOrMore, Forward, nums, alphas, oneOf)
+from decimal import *
+import getopt
 import math
 import operator
+import pdb
+from pyparsing import (Literal, CaselessLiteral, Word, Combine, Group, Optional,
+                       ZeroOrMore, Forward, nums, alphas, oneOf)
+import sys
 
 __source__ = '''http://pyparsing.wikispaces.com/file/view/fourFn.py'''
 
@@ -129,11 +133,11 @@ class NumericStringParser(object):
             "exp": math.exp,  # not working
             "factorial": math.factorial,
             "floor": math.floor,
-            "fix": lambda a: a,  # not working
+            "fix": self.fix,
             "ln": math.log,
             "log": math.log,
             "log10": math.log10,
-            "round": round,
+            "round": self.round,
             "sin": math.sin,
             "sinh": math.sinh,
             "sqrt": math.sqrt,
@@ -150,41 +154,99 @@ class NumericStringParser(object):
             "rem": math.fmod
         }
 
+    def round(self, x):
+        return int(round(x))
+
+    def fix(self, x):
+        return math.floor(x) if (x >= 0) else math.ceil(x)
+
     def evaluate_stack(self, s):
         op = s.pop()
         if op == 'unary -':
             return -self.evaluate_stack(s)
         if op in "+-*/^":
-            op2 = self.evaluate_stack(s)
-            op1 = self.evaluate_stack(s)
-            return self.opn[op](op1, op2)
+            op2 = Decimal(self.evaluate_stack(s))
+            op1 = Decimal(self.evaluate_stack(s))
+            return Decimal(self.opn[op](op1, op2))
         elif op == "PI":
-            return math.pi  # 3.1415926535
+            return Decimal(math.pi)  # 3.1415926535
         elif op == "E":
-            return math.e   # 2.718281828
+            return Decimal(math.e)   # 2.718281828
         elif op in self.fn:
-            return self.fn[op](self.evaluate_stack(s))
+            return Decimal(self.fn[op](self.evaluate_stack(s)))
         elif op in self.bin_fn:
-            op2 = self.evaluate_stack(s)
-            op1 = self.evaluate_stack(s)
-            return self.bin_fn[op](op1, op2)
+            op2 = Decimal(self.evaluate_stack(s))
+            op1 = Decimal(self.evaluate_stack(s))
+            return Decimal(self.bin_fn[op](op1, op2))
         elif op[0].isalpha():
-            return 0
+            return Decimal(0)
         else:
-            return float(op)
+            return Decimal(op)
 
-    def eval(self,num_string, parse_all=True):
+    def eval(self, num_string, parse_all=True):
         self.exprStack = []
         results = None
         try:
             results = self.bnf.parseString(num_string, parse_all)
-
         except Exception as err:
             print(err)
 
         if results is None:
-            val = float('nan')
+            val = Decimal('NaN')
         else:
             val = self.evaluate_stack(self.exprStack[:])
 
-        return val
+        return val.normalize()
+
+
+#
+# The rest of this is a test harness.
+#
+
+def parse_file(path):
+    with open(path,'r') as file:
+        try:
+            contents = file.read()
+            if contents is not None and contents != '':
+                formula_parser = NumericStringParser()
+                return formula_parser.eval(contents)
+        except Exception as e:
+            print(e)
+    return None
+
+
+def get_filename_and_options(argv):
+    """Helper function for parsing command-line arguments."""
+    try:
+        options, path = getopt.getopt(argv[1:], "iq")
+    except:
+        raise SystemExit(main.__doc__)
+    if len(path) != 1 or len(options) > 2:
+        raise SystemExit(main.__doc__)
+    quiet = any(['-q' in y for y in options])
+    interactive_pdb = any(['-i' in y for y in options])
+    return path[0], quiet, interactive_pdb
+
+
+def main(argv):
+    """Usage: evaluate_formula.py [-i] [-q] FILENAME.m
+Arguments:
+  -i   (Optional) Drop into pdb as the final step
+  -q   (Optional) Be quiet -- just print the output
+"""
+    path, quiet, interactive = get_filename_and_options(argv)
+    parsed = parse_file(path)
+    if quiet:
+        print(parsed)
+    else:
+        print("--- Input file ---")
+        with open(path,'r') as file:
+            print(file.read())
+        print("--- Parsed output ---")
+        print(parsed)
+        if interactive:
+            pdb.set_trace()
+
+
+if __name__ == '__main__':
+    main(sys.argv)

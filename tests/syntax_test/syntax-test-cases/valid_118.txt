@@ -1,0 +1,5 @@
+[
+Assignment(lhs=Identifier(name='A'), rhs=FunCall(name=Identifier(name='cat'), args=[Number(value='3'), Array(is_cell=False, rows=[[Number(value='9'), Number(value='2')], [Number(value='6'), Number(value='5')]]), Array(is_cell=False, rows=[[Number(value='7'), Number(value='1')], [Number(value='8'), Number(value='4')]])]))
+Assignment(lhs=Identifier(name='B'), rhs=FunCall(name=Identifier(name='cat'), args=[Number(value='3'), Array(is_cell=False, rows=[[Number(value='3'), Number(value='5')], [Number(value='0'), Number(value='1')]]), Array(is_cell=False, rows=[[Number(value='5'), Number(value='6')], [Number(value='2'), Number(value='1')]])]))
+Assignment(lhs=Identifier(name='C'), rhs=FunCall(name=Identifier(name='cat'), args=[Number(value='4'), Identifier(name='A'), Identifier(name='B'), FunCall(name=Identifier(name='cat'), args=[Number(value='3'), Array(is_cell=False, rows=[[Number(value='1'), Number(value='2')], [Number(value='3'), Number(value='4')]]), Array(is_cell=False, rows=[[Number(value='4'), Number(value='3')], [Number(value='2'), Number(value='1')]])])]))
+]

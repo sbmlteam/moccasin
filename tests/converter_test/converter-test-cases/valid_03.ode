@@ -1,0 +1,12 @@
+# Parameter id = a, constant.
+par a=0.5
+
+# Variable id = b, defined by an assignment rule.
+b=(2 * t)
+
+# Species id = y_1, defined by a rate rule.
+init y_1=2
+dy_1/dt=b
+
+done
+

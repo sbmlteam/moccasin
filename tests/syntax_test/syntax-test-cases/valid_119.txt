@@ -1,0 +1,3 @@
+[
+Assignment(lhs=Identifier(name='K'), rhs=ArrayRef(is_cell=False, name=Identifier(name='C'), args=[Special(value=':'), Special(value=':'), Number(value='1'), Array(is_cell=False, rows=[[Number(value='1'), Number(value='3')]])]))
+]

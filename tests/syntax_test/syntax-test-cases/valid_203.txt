@@ -1,0 +1,3 @@
+[
+Switch(cond=Ambiguous(name=Identifier(name='a'), args=None), case_tuples=[(Number(value='1'), [])], otherwise=None)
+]

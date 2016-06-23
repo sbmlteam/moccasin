@@ -1,3 +1,0 @@
-{function definition: {identifier: "valid_13"} parameters ( {identifier: "x"} ) output {identifier: "y"}}
-{comment:  Comment on the line after the function}
-{comment:  2nd comment}

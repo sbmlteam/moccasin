@@ -1,0 +1,6 @@
+[
+Ambiguous(name=Identifier(name='func'), args=[Number(value='3')])
+FunCall(name=Identifier(name='func'), args=[String(value='4')])
+FunCall(name=Identifier(name='func'), args=[String(value='5')])
+FunCall(name=Identifier(name='func'), args=[String(value='6')])
+]

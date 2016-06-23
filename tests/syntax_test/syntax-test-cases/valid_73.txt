@@ -1,8 +1,0 @@
-{assign: {identifier: "a"} = {array: [ {row 1: {number: 1}, {number: 2}} ]}}
-{assign: {identifier: "b"} = {array {identifier: "a"}: [ {number: 1} ]}}
-{assign: {identifier: "d"} = {function/array: {identifier: "c"} ( {number: 1} )}}
-{function definition: {identifier: "foo"} parameters ( {identifier: "x"} ) output {identifier: "y"}}
-{assign: {identifier: "m"} = {array {identifier: "x"}: [ {number: 1} ]}}
-{assign: {identifier: "n"} = {array {identifier: "y"}: [ {number: 1} ]}}
-{assign: {identifier: "p"} = {function/array: {identifier: "z"} ( {number: 1} )}}
-{end}

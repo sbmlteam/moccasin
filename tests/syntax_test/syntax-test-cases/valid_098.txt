@@ -1,0 +1,5 @@
+[
+Assignment(lhs=Identifier(name='A2'), rhs=FunCall(name=Identifier(name='accumarray'), args=[Ambiguous(name=Identifier(name='subs'), args=None), Ambiguous(name=Identifier(name='val'), args=None), Array(is_cell=False, rows=[]), AnonFun(args=[Identifier(name='x')], body=FunCall(name=Identifier(name='var'), args=[Ambiguous(name=Identifier(name='x'), args=None), Number(value='1')]))]))
+Assignment(lhs=Identifier(name='A'), rhs=FunCall(name=Identifier(name='accumarray'), args=[Ambiguous(name=Identifier(name='subs'), args=None), Ambiguous(name=Identifier(name='val'), args=None), Array(is_cell=False, rows=[]), AnonFun(args=[Identifier(name='x')], body=FunCall(name=Identifier(name='sum'), args=[Ambiguous(name=Identifier(name='x'), args=None), String(value='native')]))]))
+Assignment(lhs=Identifier(name='A'), rhs=FunCall(name=Identifier(name='accumarray'), args=[Ambiguous(name=Identifier(name='subs'), args=None), Ambiguous(name=Identifier(name='val'), args=None), Array(is_cell=False, rows=[]), AnonFun(args=[Identifier(name='x')], body=Array(is_cell=True, rows=[[Ambiguous(name=Identifier(name='x'), args=None)]]))]))
+]

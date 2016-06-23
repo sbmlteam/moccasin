@@ -1,1 +1,0 @@
-{assign: {identifier: "u"} = {array: [ {row 1: {number: 1}, {number: 2}, {number: 3}}; {row 2: {number: 4}, {number: 5}, {number: 6}} ]}}

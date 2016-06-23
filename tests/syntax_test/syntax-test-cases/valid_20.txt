@@ -1,5 +1,0 @@
-{assign: {identifier: "t"} = {colon op: left={number: 0}, middle={number: 0.001}, right={number: 1}}}
-( {function {identifier: "plot"} ( {identifier: "t"}, {function {identifier: "sin"} ( ( ( {number: 2} {binary op: *} {identifier: "pi"} ) {binary op: *} {array: [ {row 1: {identifier: "t"}}; {row 2: ( {identifier: "t"} {binary op: +} {number: 0.25} )} ]} ) ) } ) } )
-( {function {identifier: "xlabel"} ( {string: "t"} ) } )
-( {function {identifier: "ylabel"} ( {string: "$\hat{y}_k=sin 2\pi (t+{k \over 4})$"}, {string: "Interpreter"}, {string: "latex"} ) } )
-( {function {identifier: "legend"} ( {cell array: [ {row 1: {string: "$\hat{y}_0$"}, {string: "$\hat{y}_1$"}} ]}, {string: "Interpreter"}, {string: "latex"} ) } )

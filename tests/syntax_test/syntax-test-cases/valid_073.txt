@@ -1,0 +1,6 @@
+[
+Assignment(lhs=Identifier(name='a'), rhs=Array(is_cell=False, rows=[[Number(value='1'), Number(value='2')]]))
+Assignment(lhs=Identifier(name='b'), rhs=ArrayRef(is_cell=False, name=Identifier(name='a'), args=[Number(value='1')]))
+Assignment(lhs=Identifier(name='d'), rhs=Ambiguous(name=Identifier(name='c'), args=[Number(value='1')]))
+FunDef(name=Identifier(name='foo'), parameters=[Identifier(name='x')], output=[Identifier(name='y')], body=[Assignment(lhs=Identifier(name='m'), rhs=Ambiguous(name=Identifier(name='x'), args=[Number(value='1')])), Assignment(lhs=Identifier(name='n'), rhs=ArrayRef(is_cell=False, name=Identifier(name='y'), args=[Number(value='1')])), Assignment(lhs=Identifier(name='p'), rhs=Ambiguous(name=Identifier(name='z'), args=[Number(value='1')]))])
+]

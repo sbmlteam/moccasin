@@ -1,0 +1,3 @@
+[
+Assignment(lhs=Identifier(name='A'), rhs=FunCall(name=Identifier(name='false'), args=[Number(value='3')]))
+]

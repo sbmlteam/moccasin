@@ -1,0 +1,5 @@
+[
+Assignment(lhs=Identifier(name='d'), rhs=Number(value='.1e3'))
+Assignment(lhs=Identifier(name='e'), rhs=Number(value='1.e-1'))
+Assignment(lhs=Identifier(name='f'), rhs=Number(value='.1e-1'))
+]

@@ -1,1 +1,0 @@
-{assign: {identifier: "r"} = {function/array: {identifier: "f"} ( ( ( {number: 4} {binary op: +} {number: 4} ) {binary op: -} ( {number: 1} {binary op: ^} {number: 3} ) ) )}}

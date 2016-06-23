@@ -8,7 +8,7 @@
 # This software is part of MOCCASIN, the Model ODE Converter for Creating
 # Automated SBML INteroperability. Visit https://github.com/sbmlteam/moccasin/.
 #
-# Copyright (C) 2014-2015 jointly by the following organizations:
+# Copyright (C) 2014-2016 jointly by the following organizations:
 #  1. California Institute of Technology, Pasadena, CA, USA
 #  2. Icahn School of Medicine at Mount Sinai, New York, NY, USA
 #  3. Boston University, Boston, MA, USA
@@ -21,20 +21,72 @@
 # ------------------------------------------------------------------------- -->
 
 from __future__ import print_function
+import inspect
 import sys
 import pdb
 import collections
+from collections import defaultdict
 
 
 # MatlabNode -- base class for all parse tree nodes.
 # .........................................................................
+#
+# There are numerous `MatlabNode` objects and they are hierarchically
+# organized as depicted by the following tree diagram.
+#
+# MatlabNode
+# |
+# +-Expression
+# |  +- Entity
+# |  |  +- Primitive
+# |  |  |  +- Number
+# |  |  |  +- String
+# |  |  |  `- Special       # A colon or tilde character, or the string "end".
+# |  |  |
+# |  |  +- Array            # Unnamed arrays ("square-bracket" type or cell).
+# |  |  |
+# |  |  +- Handle
+# |  |  |  +- FuncHandle    # A function handle, e.g., "@foo"
+# |  |  |  `- AnonFun       # An anonymous function, e.g., "@(x,y)x+y".
+# |  |  |
+# |  |  `- Reference        # Objects that store or return values.
+# |  |     +- Identifier
+# |  |     +- FunCall
+# |  |     +- ArrayRef
+# |  |     +- StructRef
+# |  |     `- Ambiguous
+# |  |
+# |  `- Operator
+# |     +- UnaryOp
+# |     +- BinaryOp
+# |     +- ColonOp
+# |     `- Transpose
+# |
+# +--Definition
+# |  +- FunDef
+# |  +- Assignment
+# |  `- ScopeDecl
+# |
+# +--FlowControl
+# |  +- If
+# |  +- While
+# |  +- For
+# |  +- Switch
+# |  +- Try
+# |  `- Branch
+# |
+# +--ShellCommand
+# |
+# `- Comment
 
 class MatlabNode(object):
+    '''Base class of nodes used to represent MATLAB statements as an AST.'''
+
     _attr_names = None                 # Default set of node attributes.
     _visitable_attr = []               # Default list of visitable attributes.
     _location   = (0, 0)               # Location in file (tuple: line, col).
 
-    # The following is based on code in Section 8.11 of the Python Cookbook,
+    # This clever __init__ is based on Section 8.11 of the Python Cookbook,
     # 3rd ed., by David Beazley and Brian K. Jones (O'Reilly Media, 2013).
     def __init__(self, *args, **kwargs):
         if not self._attr_names:
@@ -64,11 +116,142 @@ class MatlabNode(object):
         return '{MatlabNode}'
 
 
+    def __eq__(self, other):
+        return (isinstance(other, self.__class__)
+                and self.__dict__ == other.__dict__)
+
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+
+    def __gt__(self, other):
+        return not __le__(self, other)
+
+
+    def __ge__(self, other):
+        return not __lt__(self, other)
+
+
+    def __lt__(self, other):
+        # Subclasses may need to override this.
+        if hasattr(self, 'name') and hasattr(other, 'name'):
+            return self.name.lower() < other.name.lower()
+        elif hasattr(self, 'value') and hasattr(other, 'value'):
+            return self.value < other.value
+        else:
+            return repr(self) < repr(other)
+
+
+    def __le__(self, other):
+        # Subclasses may need to override this.
+        if hasattr(self, 'name') and hasattr(other, 'name'):
+            return self.name.lower() <= other.name.lower()
+        elif hasattr(self, 'value') and hasattr(other, 'value'):
+            return self.value <= other.value
+        else:
+            return repr(self) <= repr(other)
+
+
+    def __cmp__(self, other):
+        # Subclasses may need to override this.
+        if hasattr(self, 'name') and hasattr(other, 'name'):
+            return cmp(self.name.lower(), other.name.lower())
+        elif hasattr(self, 'value') and hasattr(other, 'value'):
+            return cmp(self.value, other.value)
+        else:
+            return cmp(repr(self), repr(other))
+
+
+    def __hash__(self):
+        return hash(MatlabNode.as_string(self))
+
+
+    @staticmethod
+    def as_string(thing):
+        """Turns a node structure into a canonical text string form.
+        This is a recursive function, and is meant to be used to convert simple
+        node structures (such as array accesses) into dictionary hash keys.
+        It is unlikely to yield useful results for more complicated node trees.
+        """
+        def row_to_string(row):
+            list = [MatlabNode.as_string(item) for item in row]
+            return ','.join(list)
+
+        if isinstance(thing, str):
+            return thing
+        elif isinstance(thing, Primitive):
+            return str(thing.value)
+        elif isinstance(thing, Identifier):
+            return str(thing.name)
+        elif isinstance(thing, FunCall) or isinstance(thing, Ambiguous):
+            base = MatlabNode.as_string(thing.name)
+            if thing.args == None:
+                maybe_args = ''
+            elif thing.args == []:
+                maybe_args = '()'
+            else:
+                maybe_args = '(' + row_to_string(thing.args) + ')'
+            return base + maybe_args
+        elif isinstance(thing, ArrayRef):
+            base  = MatlabNode.as_string(thing.name)
+            left  = '{' if thing.is_cell else '('
+            right = '}' if thing.is_cell else ')'
+            arg_list = row_to_string(thing.args) if thing.args else ''
+            return base + left + arg_list + right
+        elif isinstance(thing, StructRef):
+            base = MatlabNode.as_string(thing.name)
+            return base + '.' + MatlabNode.as_string(thing.field)
+        elif isinstance(thing, Array):
+            rowlist = [row_to_string(row) for row in thing.rows]
+            return '[' + ';'.join(rowlist) + ']'
+        elif isinstance(thing, Operator):
+            if isinstance(thing, UnaryOp):
+                return thing.op + MatlabNode.as_string(thing.operand)
+            elif isinstance(thing, BinaryOp):
+                left = MatlabNode.as_string(thing.left)
+                right = MatlabNode.as_string(thing.right)
+                return left + thing.op + right
+            elif isinstance(thing, ColonOp):
+                left = MatlabNode.as_string(thing.left)
+                right = MatlabNode.as_string(thing.right)
+                if thing.middle:
+                    middle = MatlabNode.as_string(thing.middle)
+                    return left + ':' + middle + ':' + right
+                else:
+                    return left + ':' + right
+            elif isinstance(thing, Transpose):
+                return MatlabNode.as_string(thing.operand) + thing.op
+        elif isinstance(thing, FuncHandle):
+            return str(thing)
+        elif isinstance(thing, AnonFun):
+            arg_list = row_to_string(thing.args) if thing.args else ''
+            body = MatlabNode.as_string(thing.body)
+            return '@(' + arg_list + ')' + body
+        elif isinstance(thing, Comment) or isinstance(thing, FunDef) \
+             or isinstance(thing, Command):
+            # No reason for as_string called for these things, but must catch
+            # random mayhem before falling through to the final case.
+            return None
+        else:
+            # Something must be wrong if we get here.  Unclear what to do.
+            return None
+
+
+# Expressions -- parent class of operators and other things in expressions.
+# .........................................................................
+
+class Expression(MatlabNode):
+    """Parent class for expressions."""
+    pass
+
+
+
 # Entity -- parent class of things that show up in expressions.
 # .........................................................................
 
-class Entity(MatlabNode):
-    '''Parent class for entities in expressions.'''
+class Entity(Expression):
+    """Parent class for entities in expressions."""
 
     def __repr__(self):
         return 'Entity()'
@@ -81,7 +264,7 @@ class Entity(MatlabNode):
 #
 
 class Primitive(Entity):
-    '''Parent class for primitive terms, such as numbers and strings.'''
+    """Parent class for primitive terms, such as numbers and strings."""
     _attr_names = ['value']
 
     def __repr__(self):
@@ -92,17 +275,12 @@ class Primitive(Entity):
 
 
 class Number(Primitive):
-    '''Any numerical value.  Note that it is stored as a text string.'''
-    pass
-
-
-class Boolean(Primitive):
-    '''A Boolean value.'''
+    """Any numerical value.  Note that it is stored as a text string."""
     pass
 
 
 class String(Primitive):
-    '''A text string.'''
+    """A text string."""
 
     # Overrides default printer to put double quotes around value.
     def __str__(self):
@@ -110,7 +288,7 @@ class String(Primitive):
 
 
 class Special(Primitive):
-    '''A literal ~, :, or "end" used in an array context.'''
+    """A literal ~, :, or "end" used in an array context."""
 
     # This is not strictly necessary, but the old printer/formatter in
     # grammar.py did it this way, so I'm repeating it here to make comparing
@@ -133,7 +311,7 @@ class Special(Primitive):
 #
 
 class Array(Entity):
-    '''The field `is_cell` is True if this is a cell array.'''
+    """The field `is_cell` is True if this is a cell array."""
     _attr_names = ['is_cell', 'rows']
     _visitable_attr = ['rows']
 
@@ -165,21 +343,24 @@ class Array(Entity):
 # values, and because they don't have names.
 
 class Handle(Entity):
+    '''Parent class for function handle objects.'''
     pass
 
 
-class FunHandle(Handle):
+class FuncHandle(Handle):
+    '''A named function handle.'''
     _attr_names = ['name']
     _visitable_attr = ['name']
 
     def __repr__(self):
-        return 'FunHandle(name={})'.format(repr(self.name))
+        return 'FuncHandle(name={})'.format(repr(self.name))
 
     def __str__(self):
         return '{{function @ handle: {}}}'.format(_str_format(self.name))
 
 
 class AnonFun(Handle):
+    '''An anonymous function handle, with an argument list and a body.'''
     _attr_names = ['args', 'body']
     _visitable_attr = ['args', 'body']
 
@@ -205,10 +386,10 @@ class Reference(Entity):
 
 
 class Identifier(Reference):
-    '''Identifiers NOT used in the syntactic context of a function call or
+    """Identifiers NOT used in the syntactic context of a function call or
     array reference.  The value they represent may still be an array or
     function, but where we encountered it, we did not see it used in the
-    manner of an array reference or functon call.'''
+    manner of an array reference or functon call."""
 
     _attr_names = ['name']
 
@@ -219,23 +400,8 @@ class Identifier(Reference):
         return '{{identifier: "{}"}}'.format(self.name)
 
 
-class ArrayOrFunCall(Reference):
-    '''Syntactically looks like either an array reference or a function call.'''
-
-    _attr_names = ['name', 'args']
-    _visitable_attr = ['name', 'args']
-
-    def __repr__(self):
-        return 'ArrayOrFunCall(name={}, args={})'.format(repr(self.name),
-                                                         repr(self.args))
-
-    def __str__(self):
-        return '{{function/array: {} {}}}'.format(_str_format(self.name),
-                                                  _str_format_args(self.args))
-
-
 class FunCall(Reference):
-    '''Objects that are determined to be function calls.'''
+    """Objects that are determined to be function calls."""
 
     _attr_names = ['name', 'args']
     _visitable_attr = ['name', 'args']
@@ -250,8 +416,8 @@ class FunCall(Reference):
 
 
 class ArrayRef(Reference):
-    '''Objects that are determined to be array references.
-    The field `is_cell` is True if this is a cell array.'''
+    """Objects that are determined to be array references.
+    The field `is_cell` is True if this is a cell array."""
 
     _attr_names = ['name', 'args', 'is_cell']
     _visitable_attr = ['name', 'args']
@@ -277,97 +443,160 @@ class ArrayRef(Reference):
 
 
 class StructRef(Reference):
-    '''Objects that are determined to be structure references.
-    Warning: `name` may be an expression, not just an identifier.'''
+    """Objects that are determined to be structure references.
+    Warning: `name` may be an expression, not just an identifier."""
 
-    _attr_names = ['name', 'field']
-    _visitable_attr = ['name']
+    _attr_names = ['name', 'field', 'dynamic']
+    _visitable_attr = ['name', 'field']
 
     def __repr__(self):
-        return 'StructRef(name={}, field={})'.format(repr(self.name), repr(self.field))
+        return 'StructRef(name={}, field={}, dynamic={})'.format(
+            repr(self.name), repr(self.field), repr(self.dynamic))
 
     def __str__(self):
-        return '{{struct: {}.{} }}'.format(_str_format(self.name), _str_format(self.field))
+        return '{{struct: {}.{} using {} access}}'.format(
+            _str_format(self.name), _str_format(self.field),
+            'dynamic' if self.dynamic else 'static')
 
 
-#
-# Operators.
-#
+class Ambiguous(Reference):
+    """An object that could be a variable, function call, or array reference.
+    This can happen in a variety of contexts.  A simple example is:
 
-class Operator(Entity):
-    '''Parent class for operators.'''
-    _attr_names = ['op']
+        if a < 1
+        end
+
+    Here, "a" could be a variable or a function call without arguments, and
+    it may be impossible to tell which it is if "a" has not been seen in an
+    assignment or a function definition in the current file.  Note that if
+    "a" were a known MATLAB function, such as in the following example,
+
+        if rand < 1
+        end
+
+    then the expression could, heuristically, be assumed to involve a
+    function call.  (In that case, the MOCCASIN parser will return a FunCall
+    object instead.)  Another ambiguous situation is
+
+        a(1, 2)
+
+    This could be an array reference or a function call.  Again, if "a" is not
+    a function definition in the current file and is not in the left-hand side
+    of an assignment in the current file, then it is impossible to be certain.
+
+    The attributes on this object obey the following rules:
+
+    1. The 'name' attribute is the name of the reference.  This may be an
+       Identifier object, or it may be a more complex object, for example
+       a structure reference.
+
+    2. The 'args' attribute can have the following values:
+       - the value None => the expression had no parentheses
+       - the value []   => the expression had "()" for the arguments/subscripts
+       - a list         => the expression had nonempty argument/subcripts
+
+    """
+
+    _attr_names = ['name', 'args']
+    _visitable_attr = ['name', 'args']
+
+    def __repr__(self):
+        return 'Ambiguous(name={}, args={})'.format(repr(self.name),
+                                                         repr(self.args))
+
+    def __str__(self):
+        return '{{function/array: {} {}}}'.format(_str_format(self.name),
+                                                  _str_format_args(self.args))
+
+
+# Operators
+# .........................................................................
+
+class Operator(Expression):
+    """Parent class for operators in expressions."""
+    pass
 
 
 class UnaryOp(Operator):
-    def __repr__(self):
-        return 'UnaryOp(op=\'{}\')'.format(self.op)
+    '''Unary operator, such as unary negation.'''
 
-    def __str__(self):
-        return '{{unary op: {}}}'.format(self.op)
-
-
-class BinaryOp(Operator):
-    def __repr__(self):
-        return 'BinaryOp(op=\'{}\')'.format(self.op)
-
-    def __str__(self):
-        return '{{binary op: {}}}'.format(self.op)
-
-
-class TernaryOp(Operator):
-    _attr_names = ['op', 'left', 'middle', 'right']
-    _visitable_attr = ['left', 'middle', 'right']
-
-    def __repr__(self):
-        return 'TernaryOp(op=\'{}\', left={}, middle={}, right={})'.format(
-            self.op, repr(self.left), repr(self.middle), repr(self.right))
-
-    def __str__(self):
-        return '{{colon op: left={}, middle={}, right={}}}'.format(
-            _str_format(self.left), _str_format(self.middle), _str_format(self.right))
-
-
-class Transpose(Operator):
     _attr_names = ['op', 'operand']
     _visitable_attr = ['operand']
 
     def __repr__(self):
-        return 'Transpose(op=\'{}\', operand={})'.format(self.op, repr(self.operand))
+        return 'UnaryOp(op=\'{}\', operand={})'.format(
+            self.op, repr(self.operand))
 
     def __str__(self):
-        return '{{transpose: {} operator {} }}'.format(_str_format(self.operand), self.op)
+        return '{{unary op expression {} operand {}}}'.format(
+            self.op, _str_format(self.operand))
 
 
-# Expressions
-#
-# An expression is represented as a list of nodes of either type Entity or
-# type Expression.  It's always a list, even if there is a single entity
-# inside of it.  Parenthesized expressions are represented as nested
-# Expression objects.
-# .........................................................................
-
-class Expression(MatlabNode):
-    '''The `content` field stores a list of Expression or Entity nodes.'''
-    _attr_names = ['content']
-    _visitable_attr = ['content']
+class BinaryOp(Operator):
+    '''Binary operator.'''
+    _attr_names = ['op', 'left', 'right']
+    _visitable_attr = ['left', 'right']
 
     def __repr__(self):
-        return 'Expression({})'.format(self.content)
+        return 'BinaryOp(op=\'{}\', left={}, right={})'.format(
+            self.op, repr(self.left), repr(self.right))
 
     def __str__(self):
-        return _str_format(self.content)
+        return '{{binary op expression {} left {} right {}}}'.format(
+            self.op, _str_format(self.left), _str_format(self.right))
+
+
+class ColonOp(Operator):
+    '''MATLAB "colon" operator, of the form x:y or x:y:z.'''
+    _attr_names = ['left', 'middle', 'right']
+    _visitable_attr = ['left', 'middle', 'right']
+
+    def __repr__(self):
+        return 'ColonOp(left={}, middle={}, right={})'.format(
+            repr(self.left), repr(self.middle), repr(self.right))
+
+    def __str__(self):
+        return '{{colon op expression: left={}, middle={}, right={}}}'.format(
+            _str_format(self.left), _str_format(self.middle), _str_format(self.right))
+
+
+class Transpose(Operator):
+    '''MATLAB transpose operator.'''
+    _attr_names = ['op', 'operand']
+    _visitable_attr = ['operand']
+
+    def __repr__(self):
+        return 'Transpose(op=\'{}\', operand={})'.format(
+            self.op, repr(self.operand))
+
+    def __str__(self):
+        return '{{transpose expression: {} operator {} }}'.format(
+            _str_format(self.operand), self.op)
 
 
 # Definitions: assignments, function definitions, scripts.
 # .........................................................................
 
 class Definition(MatlabNode):
-    '''Parent class for definitions.'''
+    """Parent class for definitions."""
     pass
 
 
+class ScopeDecl(Definition):
+    '''MATLAB scope declarations (i.e., "global" or "persistent").'''
+    _attr_names = ['type', 'variables']
+    _visitable_attr = ['variables']
+
+    def __repr__(self):
+        return 'ScopeDecl(type={}, variables={})'.format(repr(self.type),
+                                                         repr(self.variables))
+
+    def __str__(self):
+        return '{{scope: {} {}}}'.format(self.type, _str_format(self.variables))
+
+
 class Assignment(Definition):
+    '''Assignment statement.'''
     _attr_names = ['lhs', 'rhs']
     _visitable_attr = ['lhs', 'rhs']
 
@@ -380,7 +609,8 @@ class Assignment(Definition):
 
 
 class FunDef(Definition):
-    _attr_names = ['name', 'parameters', 'output', 'body']
+    '''Function definition, including the whole subcontext.'''
+    _attr_names = ['name', 'parameters', 'output', 'body', 'context']
     _visitable_attr = ['name', 'parameters', 'output', 'body']
 
     def __repr__(self):
@@ -402,15 +632,8 @@ class FunDef(Definition):
             params = _str_format_args(self.parameters)
         else:
             params = '( none )'
-        return '{{function definition: {} parameters {} output {}}}'.format(
-            _str_format(self.name), params, output)
-
-
-# Decided not to do this for now.
-
-# class Script(Definition):
-#     _attr_names = ['name', 'body']
-
+        return '{{function definition: {} parameters {} output {} body {}}}'.format(
+            _str_format(self.name), params, output, _str_format(self.body))
 
 
 # Flow control.
@@ -422,117 +645,86 @@ class FlowControl(MatlabNode):
 
 
 class Try(FlowControl):
-    def __repr__(self):
-        return 'Try()'
-
-    def __str__(self):
-        return '{try}'
-
-
-class Catch(FlowControl):
-    _attr_names = ['var']
-    _visitable_attr = ['var']
+    '''Try-catch statement.'''
+    _attr_names = ['body', 'catch_var', 'catch_body']
+    _visitable_attr = ['body', 'catch_var', 'catch_body']
 
     def __repr__(self):
-        return 'Catch(var={})'.format(repr(self.var))
+        return 'Try(body={}, catch_var={}, catch_body={})'.format(
+            repr(self.body), repr(self.catch_var), repr(self.catch_body))
 
     def __str__(self):
-        return '{{catch: var {}}}'.format(_str_format(self.var))
+        return '{{try: {} catch_var {} catch_body {}}}'.format(
+            _str_format(self.body), _str_format(self.catch_var),
+            _str_format(self.catch_body))
 
 
 class Switch(FlowControl):
-    _attr_names = ['cond']
-    _visitable_attr = ['cond']
+    '''Switch statement.'''
+    _attr_names = ['cond', 'case_tuples', 'otherwise']
+    _visitable_attr = ['cond', 'case_tuples', 'otherwise']
 
     def __repr__(self):
-        return 'Switch(cond={})'.format(repr(self.cond))
+        return 'Switch(cond={}, case_tuples={}, otherwise={})'.format(
+            repr(self.cond), repr(self.case_tuples), repr(self.otherwise))
 
     def __str__(self):
-        return '{{switch stmt: {}}}'.format(_str_format(self.cond))
-
-
-class Case(FlowControl):
-    _attr_names = ['cond']
-    _visitable_attr = ['cond']
-
-    def __repr__(self):
-        return 'Case(cond={})'.format(repr(self.cond))
-
-    def __str__(self):
-        return '{{case: {}}}'.format(_str_format(self.cond))
-
-
-class Otherwise(FlowControl):
-    def __repr__(self):
-        return 'Otherwise()'
-
-    def __str__(self):
-        return '{otherwise}'
+        return '{{switch stmt: {} case_tuples {} otherwise {}}}'.format(
+            _str_format(self.cond), _str_format(self.case_tuples),
+            _str_format(self.otherwise))
 
 
 class If(FlowControl):
-    _attr_names = ['cond']
-    _visitable_attr = ['cond']
+    '''"If" conditional statement.'''
+    _attr_names = ['cond', 'body', 'elseif_tuples', 'else_body']
+    _visitable_attr = ['cond', 'body', 'elseif_tuples', 'else_body']
 
     def __repr__(self):
-        return 'While(cond={})'.format(repr(self.cond))
+        return 'If(cond={}, body={}, elseif_tuples={}, else={})'.format(
+            repr(self.cond), repr(self.body), repr(self.elseif_tuples),
+            repr(self.else_body))
 
     def __str__(self):
-        return '{{while stmt: {}}}'.format(_str_format(self.cond))
-
-
-class Elseif(FlowControl):
-    _attr_names = ['cond']
-    _visitable_attr = ['cond']
-
-    def __repr__(self):
-        return 'Elseif(cond={})'.format(repr(self.cond))
-
-    def __str__(self):
-        return '{{elseif stmt: {}}}'.format(_str_format(self.cond))
-
-
-class Else(FlowControl):
-    def __repr__(self):
-        return 'Else()'
-
-    def __str__(self):
-        return '{else}'
+        return '{{if stmt: {} body {} elseif_tuples {} else {}}}'.format(
+            _str_format(self.cond), _str_format(self.body),
+            _str_format(self.elseif_tuples), _str_format(self.else_body))
 
 
 class While(FlowControl):
-    _attr_names = ['cond']
-    _visitable_attr = ['cond']
+    '''"While" loop statement.'''
+    _attr_names = ['cond', 'body']
+    _visitable_attr = ['cond', 'body']
 
     def __repr__(self):
-        return 'While(cond={})'.format(repr(self.cond))
+        return 'While(cond={}, body={})'.format(repr(self.cond), repr(self.body))
 
     def __str__(self):
-        return '{{while stmt: {}}}'.format(_str_format(self.cond))
+        return '{{while stmt: condition {} body {}}}'.format(
+            _str_format(self.cond), _str_format(self.body))
 
 
 class For(FlowControl):
-    _attr_names = ['var', 'expr']
-    _visitable_attr = ['var', 'expr']
+    '''"For" loop statement.'''
+    _attr_names = ['var', 'expr', 'body']
+    _visitable_attr = ['var', 'expr', 'body']
 
     def __repr__(self):
-        return 'For(var={}, expr={})'.format(repr(self.var), repr(self.expr))
+        return 'For(var={}, expr={}, body={})'.format(repr(self.var),
+                                                      repr(self.expr),
+                                                      repr(self.body))
 
     def __str__(self):
-        return '{{for stmt: var {} in {}}}'.format(_str_format(self.var),
-                                                   _str_format(self.expr))
-
-
-class End(FlowControl):
-    def __repr__(self):
-        return 'End()'
-
-    def __str__(self):
-        return '{end}'
+        return '{{for stmt: var {} in {} do {}}}'.format(_str_format(self.var),
+                                                         _str_format(self.expr),
+                                                         _str_format(self.body))
 
 
 class Branch(FlowControl):
-    __attr_names = ['kind']
+    '''Branch statement: "break", "continue" or "return".'''
+    _attr_names = ['kind']
+
+    def __repr__(self):
+        return 'Branch(kind={})'.format(self.kind)
 
     def __str__(self):
         if self.kind == 'break':
@@ -543,14 +735,11 @@ class Branch(FlowControl):
             return '{return}'
 
 
-# Commands.
+# Shell commands.
 # .........................................................................
 
-class Command(MatlabNode):
-    pass
-
-
-class ShellCommand(Command):
+class ShellCommand(MatlabNode):
+    '''Shell command, of the form "!command".'''
     _attr_names = ['command', 'background']
 
     def __repr__(self):
@@ -562,22 +751,11 @@ class ShellCommand(Command):
         return '{{shell command: {}{}}}'.format(_str_format(self.command), bkgnd)
 
 
-class MatlabCommand(Command):
-    _attr_names = ['command', 'args']
-
-    def __repr__(self):
-        return 'MatlabCommand(command={}, args={})'.format(repr(self.command),
-                                                           repr(self.args))
-
-    def __str__(self):
-        return '{{command: name {} args {}}}'.format(_str_format(self.command),
-                                                     _str_format(self.args))
-
-
 # Comments.
 # .........................................................................
 
 class Comment(MatlabNode):
+    '''Comment, either as a line or a block.'''
     _attr_names = ['content']
 
     def __repr__(self):
@@ -587,49 +765,105 @@ class Comment(MatlabNode):
         return '{{comment: {}}}'.format(self.content)
 
 
-
 # Visitor.
 # .........................................................................
-# This is a mostly standard Python-style Visitor Pattern, except that it
-# designed to work with both individual MatlabNode objects and lists of
-# MatlabNodes.
+# This is a visitor class with special powers:
 #
-# This automatically visits the subcomponents of nodes such as the arguments
-# to function calls, so the caller does not have to include that logic.  It
-# assumes callers return a node if a node is to be transformed (such as
-# changed from one node class to another).  This does depth-first traversal.
+# (1) It works with individual MatlabNode objects as well as lists and tuples
+# of MatlabNodes.
+#
+# (2) When considering whether a 'visit_CLASS()' function exists, the visit()
+# function looks for parent classes of CLASS if 'visit_CLASS()' does not exist.
+# For instance, if a visit_Identifier() is not defined, then upon
+# encountering a node of class Identifier, visit() will still check for
+# a visit_Reference(), visit_Entity(), and visit_Expression(), in that order.
+#
+# Subclasses must (A) make sure to call the __init__() functions in their
+# subclass __init__() functions, and (B) always make sure visit_CLASS()
+# functions return the current node.
+#
+# Here is a skeleton subclass definition to illustrate:
+#
+#     class SampleWalker(MatlabNodeVisitor):
+#         def __init__(self):
+#             super(SampleWalker, self).__init__()
+#             # ... other code ...
+#
+#         def visit_Ambiguous(self, node):
+#             # ... other code here ...
+#             return node
+#
+#         def visit_FlowControl(self, node):
+#             # Note that function this will get called for all subclasses of
+#             # FlowControl, such as If, While, Switch, etc., so make sure to
+#             # plan accordingly.
+#             #
+#             # ... other code here ...
+#             return node
+#
+# Note that no visit_MatlabNode() will ever get called, because there is no
+# point: the method visit() is effectively visit_MatlabNode().
 
 class MatlabNodeVisitor(object):
+    def __init__(self):
+        def catalog(this_class, classes):
+            # Note it doesn't help to put MatlabNode in the path because it
+            # bloats the list and complicates processing later, so we skip it.
+            for subclass in this_class.__subclasses__():
+                if this_class in classes:
+                    classes[subclass] = [this_class] + classes[this_class]
+                elif this_class is not MatlabNode:
+                    classes[subclass] = [this_class]
+                catalog(subclass, classes)
+
+        # Cache the superclass path for every subclass, so that we don't have
+        # to keep walking up the class hierarchy at every call to visit().
+        self._parent_classes = defaultdict(list)
+        catalog(MatlabNode, self._parent_classes)
+
+
     def visit(self, node):
-        if isinstance(node, list):
+        if not node:
+            return node
+        elif isinstance(node, list):
             meth = getattr(self, 'visit_list', None)
             if meth is None:
                 meth = self.default_visit_list
             return meth(node)
+        elif isinstance(node, tuple):
+            return (self.visit(node[0]), self.visit(node[1]))
         else:
-            # Call ourselves on the node attributes that are indicated as
-            # being ones that should be visited recursively.
-            for a in type(node)._visitable_attr:
-                value = getattr(node, a, None)
-                if value:
-                    setattr(node, a, self.visit(value))
-
-            # Now call user's visitor methods and return the final result.
+            # If the user has defined a method for this class of object, call
+            # that; else, look for a method for a superclass, and failing all
+            # that, default to walking the visitable attributes.
             methname = 'visit_' + type(node).__name__
             meth = getattr(self, methname, None)
-            if meth is None:
+            if meth:
+                return meth(node)
+            else:
+                for superclass in self._parent_classes[node.__class__]:
+                    methname = 'visit_' + superclass.__name__
+                    meth = getattr(self, methname, None)
+                    if meth:
+                        return meth(node)
+                # We got 'nothin.  We do the default walk.
                 meth = self.default_visit
-            return meth(node)
+                return meth(node)
 
 
     def default_visit(self, node):
-        '''Default visitor.  Users can redefine this if desired.'''
+        """Default visitor.  Users can redefine this if desired."""
+        for a in type(node)._visitable_attr:
+            value = getattr(node, a, None)
+            if value:
+                setattr(node, a, self.visit(value))
         return node
 
 
     def default_visit_list(self, node):
-        '''Default visitor for lists.  Users can redefine this if desired.'''
-        return [self.visit(item) for item in node]
+        """Default visitor for lists.  Users can redefine this if desired."""
+        visited = [self.visit(item) for item in node]
+        return [x for x in visited if x is not None]
 
 
 # General helpers.
@@ -638,10 +872,7 @@ class MatlabNodeVisitor(object):
 def _str_format(thing, no_parens=False):
     if isinstance(thing, list):
         formatted = ' '.join([_str_format(item) for item in thing])
-        if no_parens:
-            return formatted
-        else:
-            return '( ' + formatted + ' )'
+        return formatted if no_parens else '( ' + formatted + ' )'
     else:
         return str(thing)
 

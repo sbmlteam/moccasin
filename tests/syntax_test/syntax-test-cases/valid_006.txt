@@ -1,0 +1,4 @@
+[
+Comment(content=' comment line 10')
+Assignment(lhs=Identifier(name='k'), rhs=BinaryOp(op='+', left=Ambiguous(name=Identifier(name='a'), args=None), right=Ambiguous(name=Identifier(name='b'), args=None)))
+]

@@ -8,7 +8,7 @@
 # This software is part of MOCCASIN, the Model ODE Converter for Creating
 # Automated SBML INteroperability. Visit https://github.com/sbmlteam/moccasin/.
 #
-# Copyright (C) 2014-2015 jointly by the following organizations:
+# Copyright (C) 2014-2016 jointly by the following organizations:
 #  1. California Institute of Technology, Pasadena, CA, USA
 #  2. Icahn School of Medicine at Mount Sinai, New York, NY, USA
 #  3. Boston University, Boston, MA, USA
@@ -35,7 +35,7 @@ from pyparsing import ParseResults
 # This next class def is based on http://stackoverflow.com/a/7760938/743730
 
 class ContextDict(collections.MutableMapping, dict):
-    '''Class used to implement MatlabContext properties that are dictionaries.'''
+    """Class used to implement MatlabContext properties that are dictionaries."""
 
     def __getitem__(self, key):
         return dict.__getitem__(self, key)
@@ -57,7 +57,7 @@ class ContextDict(collections.MutableMapping, dict):
 
 
 class MatlabContext(object):
-    '''Class for tracking our interpretation of MATLAB parsing results.  Most
+    """Class for tracking our interpretation of MATLAB parsing results.  Most
     properties of objects of this class are used to store things that are
     also in one of our annotated ParseResults structures, but designed to
     make it easier to access data that we need for our MATLAB translation
@@ -66,11 +66,15 @@ class MatlabContext(object):
 
     The properties are:
 
-      name:        The name of this context.  If this context represents a
-                   function definition, it will be the function name; otherwise,
-                   it will be something else indicating the context.
+      topmost:     Boolean; True if this is the topmost context in the file.
 
-      parent:      The parent context object.
+      name:        The name of this context.  If this context represents a
+                   function definition, it will be the function name.  If this
+                   is the topmost context, the name will be the name of the
+                   first function defined in the file.
+
+      parent:      The parent context object.  If this is the topmost context
+                   in the file, this value will be None.
 
       nodes:       The parsed representation of the MATLAB code within this
                    context, expressed as a list of MatlabNode objects.  If this
@@ -79,28 +83,22 @@ class MatlabContext(object):
                    the function's body.
 
       parameters:  If this is a function, a list of the parameters it takes.
-                   This list contains just symbol names, not parse objects.
+                   The list will contain MatlabNode objects.
 
-      returns:     If this is a function, its return values.  This list
-                   contains just symbol names, not parse objects.
+      returns:     If this is a function, its return values.  The list will
+                   contain MatlabNode objects.
 
       functions:   A dictionary of functions defined within this context.  The
-                   keys are the function names; the values are Context objects
-                   for the functions.
+                   keys are the function names (as Identifier objects); the
+                   values are MatlabContext objects for the functions.
 
       assignments: A dictionary of the assignment statements within this
-                   context.  For simple variables (a = ...), the keys are the
-                   variable names.  In the case of arrays, the keys are
-                   assumed to be string representations of the array, with
-                   the following features.  If it's a bare matrix, square
-                   braces surround the matrix, semicolons separate rows,
-                   commas separate index terms within rows, and all spaces
-                   are removed.  If it's a matrix reference, it is similar
-                   but starts with a name and uses regular parentheses
-                   instead of square braces.  So, e.g., [a b] is turned into
-                   '[a,b]', '[ a ; b ; c]' is turned into '[a;b;c]', 'foo(1,
-                   2)' is turned into 'foo(1,2)', and so on.  The dict values
-                   are the ParseResults objects for the RHS.
+                   context.  The keys are MatlabNode objects, such as
+                   Identifier when the assignment is to a simple variable ("a
+                   = ..."), Array when the assignment is to a bare matrix,
+                   and so on.  The dictionary values are, for each key, the
+                   MatlabNode object representing the root of the AST for the
+                   expression on the right-hand side of the assignment.
 
       types:       A dictionary of data types associated with objects.  For
                    example, when MatlabGrammar encounters an assignment
@@ -111,11 +109,12 @@ class MatlabContext(object):
 
       calls:       A dictionary of functions called within this context.  The
                    keys are the function names; the values is a list of the
-                   arguments (as annotated ParseResults objects).
+                   arguments (as `MatlabNode` arguments representing the
+                   expressions handed to the function invocation).
 
-      pr:          The ParseResults object related to this context.  This Context
-                   will contain the stuff from which we constructed this
-                   instance of a Context object.  The representation is awkward
+      pr:          The pr object related to this context.  This Context will
+                   contain the stuff from which we constructed this instance
+                   of a MatlabContext object.  The representation is awkward
                    and not meant to be used by callers, but it's left around
                    for debugging purposes.
 
@@ -125,22 +124,20 @@ class MatlabContext(object):
     Users can access via the normal x.propname approach.
 
     To make a copy of a Context object, use the Python 'copy' module.
-    '''
 
-    def __init__(self, name='', parent=None, nodes=None, parameters=[],
+    """
+
+    def __init__(self, name=None, parent=None, nodes=None, parameters=[],
                  returns=[], pr=None, file=None, topmost=False):
-        self.topmost        = topmost   # Whether this is the top context.
-        if topmost:
-            self.name       = '(topmost context)'
-        else:
-            self.name       = name      # Name of this context.
-        self.parameters     = parameters  # If this is a function, its arg list.
-        self.returns        = returns  # If this is a function, return values.
-        self.comments       = []       # Comments ahead of this function.
-        self.parent         = parent   # Parent context containing this one.
-        self.nodes          = nodes    # The list of MatlabNode objects.
-        self.parse_results  = pr       # The corresponding ParseResults obj.
-        self.file           = file     # The path to the file, if any.
+        self.topmost        = topmost    # Whether this is the top context.
+        self.name           = name       # Name of this context.
+        self.parameters     = parameters # Arg list, if this is a function.
+        self.returns        = returns    # If this is a function, return values.
+        self.comments       = []         # Comments ahead of this function.
+        self.parent         = parent     # Parent context containing this one.
+        self.nodes          = nodes      # The list of MatlabNode objects.
+        self.parse_results  = pr         # The corresponding ParseResults obj.
+        self.file           = file       # The path to the file, if any.
         self._functions     = ContextDict()
         self._assignments   = ContextDict()
         self._calls         = ContextDict()
@@ -149,16 +146,20 @@ class MatlabContext(object):
 
     def __repr__(self):
         parent_name = ''
-        if self.parent:
-            parent_name = self.parent.name
-        s = '<context "{0}": {1} func defs, {2} assignments, {3} calls, parent = "{4}", file = "{5}">'
-        return s.format(self.name, len(self._functions), len(self._assignments),
+        if not self.topmost:
+            if self.parent and self.parent.topmost:
+                parent_name = "(top)"
+            else:
+                parent_name = self.parent.name
+        s = '<context {}: {} func, {} assign, {} calls, parent = "{}", file = "{}">'
+        return s.format("(top)" if self.topmost else '"{}"'.format(self.name),
+                        len(self._functions), len(self._assignments),
                         len(self._calls), parent_name, self.file)
 
 
     @property
     def functions(self):
-        '''Allows access to the 'functions' property as a dictionary.'''
+        """Allows access to the 'functions' property as a dictionary."""
         return self._functions
 
 
@@ -177,7 +178,7 @@ class MatlabContext(object):
 
     @property
     def assignments(self):
-        '''Allows access to the 'assignments' property as a dictionary.'''
+        """Allows access to the 'assignments' property as a dictionary."""
         return self._assignments
 
 
@@ -193,7 +194,7 @@ class MatlabContext(object):
 
     @property
     def calls(self):
-        '''Allows access to the 'calls' property as a dictionary.'''
+        """Allows access to the 'calls' property as a dictionary."""
         return self._calls
 
 
@@ -209,7 +210,7 @@ class MatlabContext(object):
 
     @property
     def types(self):
-        '''Allows access to the 'types' property as a dictionary.'''
+        """Allows access to the 'types' property as a dictionary."""
         return self._types
 
 

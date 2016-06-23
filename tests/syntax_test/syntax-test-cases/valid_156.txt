@@ -1,0 +1,17 @@
+[
+FunCall(name=Identifier(name='cmd'), args=[String(value=''), String(value="a'a'a'a'")])
+FunCall(name=Identifier(name='cmd'), args=[String(value="a'a"), String(value="a'a'")])
+FunCall(name=Identifier(name='cmd'), args=[String(value='a'), String(value="a''a'a'")])
+FunCall(name=Identifier(name='cmd'), args=[String(value='a'), String(value="a'a''a'")])
+FunCall(name=Identifier(name='cmd'), args=[String(value='a'), String(value="a'a'a''")])
+FunCall(name=Identifier(name='cmd'), args=[String(value="a'''a'a'a'")])
+FunCall(name=Identifier(name='cmd'), args=[String(value="a''a''a'a'")])
+FunCall(name=Identifier(name='cmd'), args=[String(value="a''a'a''a'")])
+FunCall(name=Identifier(name='cmd'), args=[String(value="a''a'a'a''")])
+FunCall(name=Identifier(name='cmd'), args=[String(value="a'a'''a'a'")])
+FunCall(name=Identifier(name='cmd'), args=[String(value="a'a''a''a'")])
+FunCall(name=Identifier(name='cmd'), args=[String(value="a'a''a'a''")])
+FunCall(name=Identifier(name='cmd'), args=[String(value="a'a'a'''a'")])
+FunCall(name=Identifier(name='cmd'), args=[String(value="a'a'a''a''")])
+FunCall(name=Identifier(name='cmd'), args=[String(value="a'a'a'a'''")])
+]

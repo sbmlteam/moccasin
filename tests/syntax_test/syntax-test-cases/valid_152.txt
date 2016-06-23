@@ -1,0 +1,6 @@
+[
+Array(is_cell=False, rows=[[Ambiguous(name=Identifier(name='a'), args=None)], [Ambiguous(name=Identifier(name='b'), args=None)]])
+Array(is_cell=False, rows=[[Ambiguous(name=Identifier(name='a'), args=None)]])
+Array(is_cell=False, rows=[[Ambiguous(name=Identifier(name='a'), args=None)], [Ambiguous(name=Identifier(name='b'), args=None)]])
+Array(is_cell=False, rows=[[Ambiguous(name=Identifier(name='a'), args=None)], [Ambiguous(name=Identifier(name='b'), args=None)]])
+]

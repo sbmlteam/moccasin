@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3.4
 #
 # @file    test.py
 # @brief   Simple test driver for MatlabGrammar class.
@@ -8,7 +8,7 @@
 # This software is part of MOCCASIN, the Model ODE Converter for Creating
 # Automated SBML INteroperability. Visit https://github.com/sbmlteam/moccasin/.
 #
-# Copyright (C) 2014-2015 jointly by the following organizations:
+# Copyright (C) 2014-2016 jointly by the following organizations:
 #  1. California Institute of Technology, Pasadena, CA, USA
 #  2. Icahn School of Medicine at Mount Sinai, New York, NY, USA
 #  3. Boston University, Boston, MA, USA
@@ -44,59 +44,61 @@ import sys
 import getopt
 from grammar import *
 
-
 def get_filename_and_options(argv):
-    '''Helper function for parsing command-line arguments.'''
+    """Helper function for parsing command-line arguments."""
     try:
-        options, path = getopt.getopt(argv[1:], "dpq")
+        options, path = getopt.getopt(argv[1:], "dpqi")
     except:
         raise SystemExit(main.__doc__)
     if len(path) != 1 or len(options) > 2:
         raise SystemExit(main.__doc__)
-    debug = any(['-d' in y for y in options])
-    do_print = any(['-p' in y for y in options])
+    print_debug = any(['-d' in y for y in options])
+    print_old = any(['-p' in y for y in options])
     quiet = any(['-q' in y for y in options])
-    return path[0], debug, do_print, quiet
+    interactive_pdb = any(['-i' in y for y in options])
+    return path[0], print_debug, print_old, quiet, interactive_pdb
 
 
 def main(argv):
-    '''Usage: matlab_parser.py [-p] [-d] [-q] FILENAME.m
+    """Usage: matlab_parser.py [-d] [-i] [-p] [-q] FILENAME.m
 Arguments:
-  -q   (Optional) Be quiet -- just print the output
+  -d   (Optional) Print extremely detailed debug output during parsing
+  -i   (Optional) Drop into pdb as the final step
   -p   (Optional) Print a representation of the output in the "old" format
-  -d   (Optional) Drop into pdb as the final step
-'''
+  -q   (Optional) Be quiet -- just print the output
+"""
 
-    path, debug, print_old_format, quiet = get_filename_and_options(argv)
+    path, debug, print_old, quiet, interactive = get_filename_and_options(argv)
 
-    file = open(path, 'r')
-    if not quiet: print('----- file ' + path + ' ' + '-'*30)
-    contents = file.read()
-    if not quiet: print(contents)
+    with open(path, 'r') as file:
+        if not quiet: print('----- file ' + path + ' ' + '-'*30)
+        contents = file.read()
+        if not quiet: print(contents)
+        file.close()
 
-    parser  = MatlabGrammar()
-    # This uses parse_string() instead of parse_file() because the file has
-    # already been opened.  This is a minor performance improvement in case
-    # someone tries to read a really huge file -- no sense reading it twice.
-    results = parser.parse_string(contents)
-    # parse_string() doesn't set the name of the file in the context object,
-    # so let's do it ourselves as a convenience to the user.
-    results.file = path
-    if not print_old_format:
-        if not quiet: print('----- raw parse results ' + '-'*50)
-        parser.print_parse_results(results, print_raw=True)
-    else:
-        if not quiet:
-            print('----- raw parse results ' + '-'*50)
+    with MatlabGrammar() as parser:
+        # This uses parse_string() instead of parse_file() because the file has
+        # already been opened.  This is a minor performance improvement in case
+        # someone tries to read a really huge file -- no sense reading it twice.
+        results = parser.parse_string(contents, print_debug=debug)
+        # parse_string() doesn't set the name of the file in the context object,
+        # so let's do it ourselves as a convenience to the user.
+        results.file = path
+        if not print_old:
+            if not quiet: print('----- raw parse results ' + '-'*50)
             parser.print_parse_results(results, print_raw=True)
-        if not quiet: print('----- old format ' + '-'*50)
-        parser.print_parse_results(results)
+        else:
+            if not quiet:
+                print('----- raw parse results ' + '-'*50)
+                parser.print_parse_results(results, print_raw=True)
+            if not quiet: print('----- old format ' + '-'*50)
+            parser.print_parse_results(results)
 
-    if debug:
-        print('-'*60)
-        print('Debug reminder: parsed results are in variable `results`')
-        print('-'*60)
-        pdb.set_trace()
+        if interactive:
+            print('-'*60)
+            print('Debug reminder: parsed results are in variable `results`')
+            print('-'*60)
+            pdb.set_trace()
 
 
 if __name__ == '__main__':

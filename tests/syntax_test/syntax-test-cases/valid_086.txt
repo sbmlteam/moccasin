@@ -1,0 +1,5 @@
+[
+Assignment(lhs=Identifier(name='x'), rhs=Array(is_cell=False, rows=[[Number(value='12'), Number(value='64'), Number(value='24')]]))
+Assignment(lhs=Identifier(name='plottype'), rhs=String(value='pie3'))
+Switch(cond=Identifier(name='plottype'), case_tuples=[(String(value='bar'), [FunCall(name=Identifier(name='bar'), args=[Identifier(name='x')]), FunCall(name=Identifier(name='title'), args=[String(value='Bar Graph')])]), (Array(is_cell=True, rows=[[String(value='pie'), String(value='pie3')]]), [FunCall(name=Identifier(name='pie3'), args=[Identifier(name='x')]), FunCall(name=Identifier(name='title'), args=[String(value='Pie Chart')])])], otherwise=[FunCall(name=Identifier(name='warning'), args=[String(value='Unexpected plot type. No plot created.')])])
+]

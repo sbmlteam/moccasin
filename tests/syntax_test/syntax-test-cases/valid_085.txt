@@ -1,0 +1,4 @@
+[
+Assignment(lhs=Identifier(name='n'), rhs=FunCall(name=Identifier(name='input'), args=[String(value='Enter a number: ')]))
+Switch(cond=Identifier(name='n'), case_tuples=[(Number(value='-1'), [FunCall(name=Identifier(name='disp'), args=[String(value='negative one')])]), (Number(value='0'), [FunCall(name=Identifier(name='disp'), args=[String(value='zero')])]), (Number(value='1'), [FunCall(name=Identifier(name='disp'), args=[String(value='positive one')])])], otherwise=[FunCall(name=Identifier(name='disp'), args=[String(value='other value')])])
+]

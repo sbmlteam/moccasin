@@ -9,21 +9,20 @@ sys.path.append('../../moccasin/')
 from matlab_parser import *
 from converter import *
 
+sys.setrecursionlimit(10000)
+
 def main(argv):
 
     #Flag values used for testing
     debug=False
     quiet=False
     print_parse=True
-    use_species=True
-    output_sbml=True
-    additional = ''
-    
+
     for path in glob.glob("converter-test-cases/valid*.m"):
         file = open(path, 'r')
         file_contents = file.read()
         file.close()
-    
+
         if not quiet:
             print('----- file ' + path + ' ' + '-'*30)
             print(file_contents)
@@ -31,8 +30,8 @@ def main(argv):
         if debug:
             pdb.set_trace()
         try:
-            parser = MatlabGrammar()
-            parse_results = parser.parse_string(file_contents)
+            with MatlabGrammar() as parser:
+                parse_results = parser.parse_string(file_contents)
         except ParseException as err:
             print("error: {0}".format(err))
 
@@ -45,10 +44,12 @@ def main(argv):
             print('')
             print('----- SBML output ' + '-'*50)
 
-        [sbml, additional] = create_raterule_model(parse_results, use_species,output_sbml)
+        [sbml, _, _] = create_raterule_model(parse_results,
+                                             use_species=True,
+                                             output_format="sbml",
+                                             name_vars_after_param=False,
+                                             add_comments=False)
         print(sbml)
-
-        print(additional)
 
 
 if __name__ == '__main__':
