@@ -65,6 +65,7 @@ class MatlabRewriter(MatlabNodeVisitor):
 
 
     def visit_FunCall(self, node):
+        node.args = self.visit(node.args)
         if isinstance(node.name, Identifier):
             methname = 'matlab_' + node.name.name
             meth = getattr(self, methname, None)
@@ -132,3 +133,12 @@ class MatlabRewriter(MatlabNodeVisitor):
             return FunCall(name=Identifier(name="ln"), args=[args[0]])
         # Fall back: make sure to return *something*.
         return thing
+
+
+    def matlab_pi(self, thing):
+        # When pi is encountered, it is turned into a function call with no
+        # arguments (good), but this is then not recognized by libSBML's
+        # parser as being a reference to the predefined constant 'pi' (bad).
+        # LibSBML is not at fault here -- this is a quirk because Matlab uses
+        # a function for pi, rather than a variable.  We patch things up here.
+        return Identifier(name='pi')
