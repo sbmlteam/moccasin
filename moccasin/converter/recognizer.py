@@ -40,7 +40,7 @@ class MatlabRecognizer(MatlabNodeVisitor):
         self._context = context
 
         # Add new variations on identifiers as values of the lists here.
-        self._identifier_mapping = {'time': ['t']}
+        self._identifier_mapping = {'time': ['t'], 'pi': ['pi']}
 
         # The rest below should not need to change.
         self._found = dict.fromkeys(self._identifier_mapping.keys(), [])
@@ -81,7 +81,7 @@ class MatlabRecognizer(MatlabNodeVisitor):
                 return node
         for key, value in self._identifier_mapping.items():
             if node.name in value:
-                self._found['time'].append(node)
+                self._found[key].append(node)
                 break
         return node
 
