@@ -10,3 +10,4 @@ build/
 dist/
 .git/COMMIT_EDITMSG
 TAGS
+.idea/

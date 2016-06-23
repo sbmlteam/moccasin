@@ -81,7 +81,13 @@ class Controller():
                                                                "biocham",
                                                                name_after_param,
                                                                add_comments)
-                xpp_file.write(output)
+
+                # python 3 changed the way temporary files read/wrote data
+                # and used bytes that need to encoded/decoded
+                try:
+                    xpp_file.write(output)
+                except:
+                    xpp_file.write(output.encode('UTF-8'))
                 xpp_file.flush()
                 xpp_file.close()
                 files = {'file': open(xpp_file.name)}
