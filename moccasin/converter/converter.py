@@ -374,14 +374,14 @@ def num_underscores(context):
     return longest
 
 
-def time_referenced(context):
+def ref_name(name, context):
     '''Looks through assignments to see if time is ever referenced explicitly.'''
     searcher = MatlabRecognizer(context)
     # The principle here is that it wouldn't make sense for a model to assign
     # to time, so we only need to check if time is referenced in the RHS.
     for lhs, rhs in context.assignments.items():
         searcher.visit(rhs)
-        if searcher.found('time'):
+        if searcher.found(name):
             return True
     return False
 
@@ -1013,7 +1013,7 @@ def create_raterule_model(parse_results, use_species=True, output_format="sbml",
                         translations, document, underscores)
 
     # Deal with final quirks.
-    if time_referenced(working_context) or time_referenced(function_context):
+    if ref_name('time', working_context) or ref_name('time', function_context):
         # XPP assumes 't' is time, so we only need to handle it for SBML.
         if output_format == 'sbml':
             create_assigned_parameter(document, 't', 'time', True)
