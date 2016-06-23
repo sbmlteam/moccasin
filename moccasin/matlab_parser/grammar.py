@@ -2308,7 +2308,7 @@ class MatlabGrammar:
         """
         def compose(name, args, delimiters=None):
             list = [MatlabGrammar.make_formula(arg, spaces, parens, atrans)
-                    for arg in args]
+                    for arg in (args or [])]
             sep = ' ' if spaces else ''
             front = name if name else ''
             left = delimiters[0] if delimiters else ''
