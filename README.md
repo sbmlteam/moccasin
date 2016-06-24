@@ -3,7 +3,7 @@ MOCCASIN
 
 <img align="right" src="https://raw.githubusercontent.com/sbmlteam/moccasin/master/docs/project/logo/moccasin_logo_20151002/logo_128.png"> *MOCCASIN* stands for *"Model ODE Converter for Creating Automated SBML INteroperability"*.  MOCCASIN is designed to convert certain basic forms of ODE simulation models written in MATLAB or Octave and translate them into [SBML](http://sbml.org) format.  It thereby enables researchers to convert MATLAB models into an open and widely-used format in systems biology.
 
-[![License](http://img.shields.io/:license-LGPL-blue.svg)](http://doge.LGPL-license.org)  [![Latest version](https://img.shields.io/badge/Latest_version-1.1-brightgreen.svg)](http://shields.io) [![Build Status](https://travis-ci.org/sbmlteam/moccasin.svg?branch=master)](https://travis-ci.org/sbmlteam/moccasin) [![Coverage Status](https://coveralls.io/repos/sbmlteam/moccasin/badge.svg?branch=master)](https://coveralls.io/r/sbmlteam/moccasin?branch=master)
+[![License](http://img.shields.io/:license-LGPL-blue.svg)](http://doge.LGPL-license.org)  [![Latest version](https://img.shields.io/badge/Latest_version-1.1-brightgreen.svg)](http://shields.io) [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.56374.svg)](http://dx.doi.org/10.5281/zenodo.56374) [![Build Status](https://travis-ci.org/sbmlteam/moccasin.svg?branch=master)](https://travis-ci.org/sbmlteam/moccasin) [![Coverage Status](https://coveralls.io/repos/sbmlteam/moccasin/badge.svg?branch=master)](https://coveralls.io/r/sbmlteam/moccasin?branch=master)
 
 ----
 *Authors*:      [Michael Hucka](http://www.cds.caltech.edu/~mhucka), [Sarah Keating](http://www.ebi.ac.uk/about/people/sarah-keating), and [Harold G&oacute;mez](http://www.bu.edu/computationalimmunology/people/harold-gomez/).
@@ -22,8 +22,8 @@ MOCCASIN
 _June 2016_: The MATLAB parser and the conversion code in MOCCASIN version 1.1 are considerably better than they were in last year's 1.0 release.  The underlying parser now creates a more complete abstract syntax tree representation of the MATLAB input, and the converter also takes advantage of more syntactic features in XPP and BIOCHAM.  The result is better conversions of larger and more complex models.
 
 
-♥️ Please cite the MOCCASIN paper
----------------------------------
+♥️ Please cite the MOCCASIN paper and the version you use
+---------------------------------------------------------
 
 Article citations are **critical** for us to be able to continue support for MOCCASIN.  If you use MOCCASIN and you publish papers about your software, we ask that you **please cite the MOCCASIN paper**:
 
@@ -33,6 +33,9 @@ Harold F. Gómez, Michael Hucka, Sarah M. Keating, German Nudelman, Dagmar Iber 
 </dd>
 </dl>
 
+Please also indicate the specific version of MOCCASIN you use, to improve other people's ability to reproduce your results. You can use the Zenodo DOIs we provide for this purpose:
+
+* MOCCASIN release 1.1.0 &rArr; [10.5281/zenodo.56374](http://dx.doi.org/10.5281/zenodo.56374)
 
 ☀ Background
 ----------
