@@ -100,10 +100,15 @@ python setup.py install
 ► Using MOCCASIN
 --------------
 
-You can use MOCCASIN either via the command line or via the GUI interface. To start the MOCCASIN GUI, after installation (see above), execute the Python command `moccasin/interfaces/moccasin_GUI.py` in the MOCCASIN source directory, or the command `python -m moccasin-GUI` in a shell/terminal. A screenshot of the GUI in action is shown below.
+You can use MOCCASIN either via the command line or via the GUI interface.  To start the MOCCASIN GUI, after installation (see above), execute the Python file `moccasin/interfaces/moccasin_GUI.py` (relative to the MOCCASIN source directory), or in a shell terminal, type the command
 
-<img src="https://raw.githubusercontent.com/sbmlteam/moccasin/develop/docs/project/examples/screenshot-01.jpg"
- alt="MOCCASIN GUI" title="MOCCASIN GUI" align="center" />
+```
+python -m moccasin-GUI
+```
+
+Once the GUI window opens, the first thing you will probably want to do is click the *Browse* button in the upper right of the window, to find the MATLAB file you want to convert on your computer.  Once you do this, you can select a few options, and click the *Convert* button.  After some time (depending on the size of the file), you should eventually get SBML output in the lowest panel of the GUI.  The animation below illustrates the whole process:
+
+<img src="https://cloud.githubusercontent.com/assets/1450019/16715437/44c33744-4694-11e6-9f81-ebbe64788ac1.gif" alt="MOCCASIN GUI" title="MOCCASIN GUI" align="center" />
 
 
 ⁇ Getting Help
