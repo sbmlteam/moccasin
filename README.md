@@ -108,8 +108,9 @@ python -m moccasin-GUI
 
 Once the GUI window opens, the first thing you will probably want to do is click the *Browse* button in the upper right of the window, to find the MATLAB file you want to convert on your computer.  Once you do this, you can select a few options, and click the *Convert* button.  After some time (depending on the size of the file), you should eventually get SBML output in the lowest panel of the GUI.  The animation below illustrates the whole process:
 
-<img src="https://cloud.githubusercontent.com/assets/1450019/16715437/44c33744-4694-11e6-9f81-ebbe64788ac1.gif" alt="MOCCASIN GUI" title="MOCCASIN GUI" align="center" />
-
+<p align="center">
+<img src="https://cloud.githubusercontent.com/assets/1450019/16715437/44c33744-4694-11e6-9f81-ebbe64788ac1.gif" alt="MOCCASIN GUI" title="MOCCASIN GUI"/>
+</p>
 
 ⁇ Getting Help
 ------------
