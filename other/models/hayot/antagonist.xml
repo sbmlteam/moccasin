@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version1/core" level="3" version="1">
+  <model>
+    <listOfCompartments>
+      <compartment id="comp1" spatialDimensions="3" size="1" constant="true"/>
+    </listOfCompartments>
+    <listOfSpecies>
+      <species id="ys_1" compartment="comp1" initialConcentration="0" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"/>
+      <species id="ys_2" compartment="comp1" initialConcentration="0" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"/>
+      <species id="ys_3" compartment="comp1" initialConcentration="0" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"/>
+      <species id="ys_4" compartment="comp1" initialConcentration="0" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"/>
+    </listOfSpecies>
+    <listOfParameters>
+      <parameter id="KK3" value="0.0043" constant="true"/>
+      <parameter id="KK2" value="0.002" constant="true"/>
+      <parameter id="b4" value="0.2" constant="true"/>
+      <parameter id="b1" value="0.4" constant="true"/>
+      <parameter id="myf" value="0" constant="false"/>
+      <parameter id="k11" value="0.00036" constant="true"/>
+      <parameter id="vmax2" value="0" constant="true"/>
+      <parameter id="NA" value="6.02e+23" constant="true"/>
+      <parameter id="ts" value="0" constant="true"/>
+      <parameter id="k3" value="0" constant="true"/>
+      <parameter id="k5" value="3600" constant="true"/>
+      <parameter id="k4" value="0" constant="true"/>
+      <parameter id="te" value="10" constant="true"/>
+      <parameter id="C" value="500000" constant="true"/>
+      <parameter id="myfs" value="0" constant="false"/>
+      <parameter id="r4" value="0" constant="true"/>
+      <parameter id="r0" value="0.003" constant="true"/>
+      <parameter id="r1" value="0" constant="true"/>
+      <parameter id="r2" value="0" constant="true"/>
+      <parameter id="r3" value="0" constant="true"/>
+      <parameter id="TJtot" value="0.0001" constant="true"/>
+      <parameter id="tao6" value="1" constant="true"/>
+      <parameter id="tao3" value="0.56" constant="true"/>
+      <parameter id="tao1" value="2.5" constant="true"/>
+      <parameter id="k1" value="0" constant="true"/>
+      <parameter id="t" value="0" constant="false"/>
+    </listOfParameters>
+    <listOfInitialAssignments>
+      <initialAssignment symbol="vmax2">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <times/>
+            <cn type="integer"> 20 </cn>
+            <cn type="integer"> 3600 </cn>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="k3">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <divide/>
+            <apply>
+              <ln/>
+              <cn type="integer"> 2 </cn>
+            </apply>
+            <ci> tao3 </ci>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="k4">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <divide/>
+            <apply>
+              <ln/>
+              <cn type="integer"> 2 </cn>
+            </apply>
+            <ci> tao6 </ci>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="r4">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <ci> k11 </ci>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="r1">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <ci> r0 </ci>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="r2">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <divide/>
+            <apply>
+              <times/>
+              <cn type="e-notation"> 1 <sep/> 9 </cn>
+              <ci> C </ci>
+              <ci> vmax2 </ci>
+            </apply>
+            <ci> NA </ci>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="r3">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <times/>
+            <ci> TJtot </ci>
+            <ci> k5 </ci>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="k1">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <divide/>
+            <apply>
+              <ln/>
+              <cn type="integer"> 2 </cn>
+            </apply>
+            <ci> tao1 </ci>
+          </apply>
+        </math>
+      </initialAssignment>
+    </listOfInitialAssignments>
+    <listOfRules>
+      <rateRule variable="ys_1">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <minus/>
+            <apply>
+              <times/>
+              <ci> r1 </ci>
+              <ci> myf </ci>
+            </apply>
+            <apply>
+              <times/>
+              <ci> k1 </ci>
+              <ci> ys_1 </ci>
+            </apply>
+          </apply>
+        </math>
+      </rateRule>
+      <rateRule variable="ys_2">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <divide/>
+            <apply>
+              <times/>
+              <ci> r2 </ci>
+              <ci> ys_1 </ci>
+            </apply>
+            <apply>
+              <plus/>
+              <ci> KK2 </ci>
+              <ci> ys_1 </ci>
+            </apply>
+          </apply>
+        </math>
+      </rateRule>
+      <rateRule variable="ys_3">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <minus/>
+            <apply>
+              <divide/>
+              <apply>
+                <times/>
+                <ci> r3 </ci>
+                <ci> ys_2 </ci>
+              </apply>
+              <apply>
+                <plus/>
+                <ci> KK3 </ci>
+                <ci> ys_2 </ci>
+              </apply>
+            </apply>
+            <apply>
+              <times/>
+              <ci> k3 </ci>
+              <ci> ys_3 </ci>
+            </apply>
+          </apply>
+        </math>
+      </rateRule>
+      <rateRule variable="ys_4">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <minus/>
+            <apply>
+              <times/>
+              <ci> r4 </ci>
+              <ci> ys_3 </ci>
+              <ci> myfs </ci>
+            </apply>
+            <apply>
+              <times/>
+              <ci> k4 </ci>
+              <ci> ys_4 </ci>
+            </apply>
+          </apply>
+        </math>
+      </rateRule>
+      <assignmentRule variable="myf">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <exp/>
+            <apply>
+              <times/>
+              <apply>
+                <minus/>
+                <ci> b1 </ci>
+              </apply>
+              <ci> t </ci>
+            </apply>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="myfs">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <exp/>
+            <apply>
+              <times/>
+              <apply>
+                <minus/>
+                <ci> b4 </ci>
+              </apply>
+              <ci> t </ci>
+            </apply>
+          </apply>
+        </math>
+      </assignmentRule>
+      <assignmentRule variable="t">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <csymbol encoding="text" definitionURL="http://www.sbml.org/sbml/symbols/time"> time </csymbol>
+        </math>
+      </assignmentRule>
+    </listOfRules>
+  </model>
+</sbml>
