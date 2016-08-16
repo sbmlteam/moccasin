@@ -3,7 +3,7 @@ MOCCASIN
 
 <img align="right" src="https://raw.githubusercontent.com/sbmlteam/moccasin/master/docs/project/logo/moccasin_logo_20151002/logo_128.png"> *MOCCASIN* stands for *"Model ODE Converter for Creating Automated SBML INteroperability"*.  MOCCASIN is designed to convert certain basic forms of ODE simulation models written in MATLAB or Octave and translate them into [SBML](http://sbml.org) format.  It thereby enables researchers to convert MATLAB models into an open and widely-used format in systems biology.
 
-[![License](http://img.shields.io/:license-LGPL-blue.svg)](http://doge.LGPL-license.org)  [![Latest version](https://img.shields.io/badge/Latest_version-1.1-brightgreen.svg)](http://shields.io) [![Build Status](https://travis-ci.org/sbmlteam/moccasin.svg?branch=master)](https://travis-ci.org/sbmlteam/moccasin) [![Coverage Status](https://coveralls.io/repos/sbmlteam/moccasin/badge.svg?branch=master)](https://coveralls.io/r/sbmlteam/moccasin?branch=master)
+[![License](http://img.shields.io/:license-LGPL-blue.svg)](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html)  [![Latest version](https://img.shields.io/badge/Latest_version-1.1-brightgreen.svg)](http://shields.io) [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.56374.svg)](http://dx.doi.org/10.5281/zenodo.56374) [![Build Status](https://travis-ci.org/sbmlteam/moccasin.svg?branch=master)](https://travis-ci.org/sbmlteam/moccasin) [![Coverage Status](https://coveralls.io/repos/sbmlteam/moccasin/badge.svg?branch=master)](https://coveralls.io/r/sbmlteam/moccasin?branch=master)
 
 ----
 *Authors*:      [Michael Hucka](http://www.cds.caltech.edu/~mhucka), [Sarah Keating](http://www.ebi.ac.uk/about/people/sarah-keating), and [Harold G&oacute;mez](http://www.bu.edu/computationalimmunology/people/harold-gomez/).
@@ -16,14 +16,14 @@ MOCCASIN
 
 *Pivotal tracker*: [https://www.pivotaltracker.com/n/projects/977060](https://www.pivotaltracker.com/n/projects/977060)
 
-⚑ Recent news and activities
---------------------------
+🏁 Recent news and activities
+------------------------------
 
 _June 2016_: The MATLAB parser and the conversion code in MOCCASIN version 1.1 are considerably better than they were in last year's 1.0 release.  The underlying parser now creates a more complete abstract syntax tree representation of the MATLAB input, and the converter also takes advantage of more syntactic features in XPP and BIOCHAM.  The result is better conversions of larger and more complex models.
 
 
-♥️ Please cite the MOCCASIN paper
----------------------------------
+♥️ Please cite the MOCCASIN paper and the version you use
+---------------------------------------------------------
 
 Article citations are **critical** for us to be able to continue support for MOCCASIN.  If you use MOCCASIN and you publish papers about your software, we ask that you **please cite the MOCCASIN paper**:
 
@@ -33,13 +33,16 @@ Harold F. Gómez, Michael Hucka, Sarah M. Keating, German Nudelman, Dagmar Iber 
 </dd>
 </dl>
 
+Please also indicate the specific version of MOCCASIN you use, to improve other people's ability to reproduce your results. You can use the Zenodo DOIs we provide for this purpose:
+
+* MOCCASIN release 1.1.0 &rArr; [10.5281/zenodo.56374](http://dx.doi.org/10.5281/zenodo.56374)
 
 ☀ Background
 ----------
 
 Computation modeling has become a crucial aspect of biological research, and [SBML](http://sbml.org) (the Systems Biology Markup Language) has become the de facto standard open format for exchanging models between software tools in systems biology. [MATLAB](http://www.mathworks.com) and [Octave](http://www.gnu.org/software/octave/) are popular numerical computing environments used by modelers in biology, but while toolboxes for using SBML exist, many researchers either have legacy models or do not learn about the toolboxes before starting their work and then find it discouragingly difficult to export their MATLAB/Octave models to SBML.
 
-The goal of this project is to develop software that uses a combination of heuristics and user assistance to help researchers export models written as ordinary MATLAB and Octave scripts. MOCCASIN (*"Model ODE Converter for Creating Automated SBML INteroperability"*) helps researchers take ODE (ordinary different equation) models written in MATLAB and Octave and export them as SBML files.  Although its scope is limited to MATLAB written with certain assumptions, and general conversion of MATLAB models is impossible, MOCCASIN nevertheless *can* translate some common forms of models into SBML.
+The goal of this project is to develop software that uses a combination of heuristics and user assistance to help researchers export models written as ordinary MATLAB and Octave scripts. MOCCASIN (*"Model ODE Converter for Creating Automated SBML INteroperability"*) helps researchers take ODE (ordinary differential equation) models written in MATLAB and Octave and export them as SBML files.  Although its scope is limited to MATLAB written with certain assumptions, and general conversion of MATLAB models is impossible, MOCCASIN nevertheless *can* translate some common forms of models into SBML.
 
 MOCCASIN is written in Python and does _not_ require MATLAB to run.  It requires [libSBML](http://sbml.org/Software/libSBML) and a number of common Python libraries to run, and is compatible with Python 2.7 and 3.3.
 
@@ -50,10 +53,10 @@ MOCCASIN uses an algorithm developed by Fages, Gay and Soliman described in the 
 
 Currently, MOCCASIN is limited to MATLAB inputs in which a model is contained in a single file.  The file must set up a system of differential equations as a function defined in the file, and make a call to one of the MATLAB `odeNN` family of solvers (e.g., `ode45`, `ode15s`, etc.).  The following is a simple but complete example:
 
-```
-# Various parameter settings.  The specifics here are unimportant; this
-# is just an example of a real input file.
-#
+```matlab
+% Various parameter settings.  The specifics here are unimportant; this
+% is just an example of a real input file.
+%
 tspan  = [0 300];
 xinit  = [0; 0];
 a      = 0.01 * 60;
@@ -61,18 +64,18 @@ b      = 0.0058 * 60;
 c      = 0.006 * 60;
 d      = 0.000192 * 60;
 
-# A call to a MATLAB ODE solver
-#
+% A call to a MATLAB ODE solver
+%
 [t, x] = ode45(@f, tspan, xinit);
 
-# A function that defines the ODEs of the model.
-#
+% A function that defines the ODEs of the model.
+%
 function dx = f(t, x)
   dx = [a - b * x(1); c * x(1) - d * x(2)];
 end
 ```
 
-You can view the SBML output for this example [in a separate file](docs/project/examples/example.xml).  MOCCASIN assumes that the second parameter in the ODE function definition determines the variables that should identify the SBML species; thus, the output generated by MOCCASIN will have SBML species named `x_1` and `x_2` by default.  (The use of suffixes is necessary because plain SBML does not support arrays or vectors.)  The output will also not capture any information about the particular ODE solver or the start/stop/configuration parameters used in the file, because that kind of information is not meant to be stored in SBML files anyway.  (A future verion of MOCCASIN will hopefully translate the additional run information into [SED-ML](http://sed-ml.org) format.)
+You can view the SBML output for this example [in a separate file](docs/project/examples/example.xml).  MOCCASIN assumes that the second parameter in the ODE function definition determines the variables that should identify the SBML species; thus, the output generated by MOCCASIN will have SBML species named `x_1` and `x_2` by default.  (The use of suffixes is necessary because plain SBML does not support arrays or vectors.)  The output will also not capture any information about the particular ODE solver or the start/stop/configuration parameters used in the file, because that kind of information is not meant to be stored in SBML files anyway.  (A future version of MOCCASIN will hopefully translate the additional run information into [SED-ML](http://sed-ml.org) format.)
 
 
 ☛ Installation
@@ -97,11 +100,17 @@ python setup.py install
 ► Using MOCCASIN
 --------------
 
-You can use MOCCASIN either via the command line or via the GUI interface. To start the MOCCASIN GUI, after installation (see above), execute the Python command `moccasin/interfaces/moccasin_GUI.py` in the MOCCASIN source directory, or the command `python -m moccasin-GUI` in a shell/terminal. A screenshot of the GUI in action is shown below.
+You can use MOCCASIN either via the command line or via the GUI interface.  To start the MOCCASIN GUI, after installation (see above), execute the Python file `moccasin/interfaces/moccasin_GUI.py` (relative to the MOCCASIN source directory), or in a shell terminal, type the command
 
-<img src="https://raw.githubusercontent.com/sbmlteam/moccasin/develop/docs/project/examples/screenshot-01.jpg"
- alt="MOCCASIN GUI" title="MOCCASIN GUI" align="center" />
+```
+python -m moccasin-GUI
+```
 
+Once the GUI window opens, the first thing you will probably want to do is click the *Browse* button in the upper right of the window, to find the MATLAB file you want to convert on your computer.  Once you do this, you can select a few options, and click the *Convert* button.  After some time (depending on the size of the file), you should eventually get SBML output in the lowest panel of the GUI.  The animation below illustrates the whole process:
+
+<p align="center">
+<img src="https://cloud.githubusercontent.com/assets/1450019/16715437/44c33744-4694-11e6-9f81-ebbe64788ac1.gif" alt="MOCCASIN GUI" title="MOCCASIN GUI"/>
+</p>
 
 ⁇ Getting Help
 ------------
