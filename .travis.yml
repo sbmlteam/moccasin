@@ -27,9 +27,9 @@ install:
     - pip install coverage
     - pip install coveralls
 env:
-    - TEST_CASES=converter_test
-    - TEST_CASES=evaluate_test
-    - TEST_CASES=syntax_test
+    - TEST_CASES=tests/converter_test
+    - TEST_CASES=tests/evaluate_test
+    - TEST_CASES=tests/syntax_test
 script: 
     - coverage run setup.py test -t $TEST_CASES
 after_success:
