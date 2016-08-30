@@ -31,6 +31,6 @@ env:
     - TEST_CASES=evaluate_test
     - TEST_CASES=syntax_test
 script: 
-    - coverage run setup.py test $TEST_CASES
+    - coverage run setup.py test -t $TEST_CASES
 after_success:
     coveralls
