@@ -46,7 +46,7 @@ with open(path.join(here, 'requirements.txt')) as f:
     reqs = f.read().rstrip().encode("utf-8").splitlines()
 
 class PyTest(TestCommand):
-    # user_options = [('pytest-args=', 'vv', "Arguments to pass to py.test")]
+    user_options = [('test-suite=', 't', "Tests to run")]
 
     def initialize_options(self):
         TestCommand.initialize_options(self)
@@ -58,9 +58,14 @@ class PyTest(TestCommand):
         self.test_suite = True
 
     def run_tests(self):
-        # import here, cause outside the eggs aren't loaded
+        # import here, because outside the eggs aren't loaded
         import pytest
-        errno = pytest.main(self.pytest_args)
+        # I couldn't get the documented example to work, so here's my version
+        # of passing arguments.
+        if sys.argv[-1].startswith('tests'):
+            errno = pytest.main(sys.argv[-1])
+        else:
+            errno = pytest.main(self.pytest_args)
         sys.exit(errno)
 
 setup(
@@ -70,10 +75,10 @@ setup(
     author=__author__,
     author_email=__author_email__,
     license=__license__,
-    tests_require=['pytest'],
     install_requires=reqs,
-    cmdclass={'test': PyTest},
     description='MOCCASIN: the Model ODE Converter for Creating Automated SBML INteroperability, a user-assisted converter that can take MATLAB or Octave ODE-based models in biology and translate them into the SBML format.',
+    tests_require=['pytest'],
+    cmdclass={'test': PyTest},
     packages=find_packages(exclude='tests'),
     package_data={'moccasin': ['docs/*.md', 'LICENSE.txt', 'requirements.txt']},
     include_package_data=True,
