@@ -40,7 +40,7 @@ Please also indicate the specific version of MOCCASIN you use, to improve other 
 ☀ Background
 ----------
 
-Computation modeling has become a crucial aspect of biological research, and [SBML](http://sbml.org) (the Systems Biology Markup Language) has become the de facto standard open format for exchanging models between software tools in systems biology. [MATLAB](http://www.mathworks.com) and [Octave](http://www.gnu.org/software/octave/) are popular numerical computing environments used by modelers in biology, but while toolboxes for using SBML exist, many researchers either have legacy models or do not learn about the toolboxes before starting their work and then find it discouragingly difficult to export their MATLAB/Octave models to SBML.
+Computational modeling has become a crucial aspect of biological research, and [SBML](http://sbml.org) (the Systems Biology Markup Language) has become the de facto standard open format for exchanging models between software tools in systems biology. [MATLAB](http://www.mathworks.com) and [Octave](http://www.gnu.org/software/octave/) are popular numerical computing environments used by modelers in biology, but while toolboxes for using SBML exist, many researchers either have legacy models or do not learn about the toolboxes before starting their work and then find it discouragingly difficult to export their MATLAB/Octave models to SBML.
 
 The goal of this project is to develop software that uses a combination of heuristics and user assistance to help researchers export models written as ordinary MATLAB and Octave scripts. MOCCASIN (*"Model ODE Converter for Creating Automated SBML INteroperability"*) helps researchers take ODE (ordinary differential equation) models written in MATLAB and Octave and export them as SBML files.  Although its scope is limited to MATLAB written with certain assumptions, and general conversion of MATLAB models is impossible, MOCCASIN nevertheless *can* translate some common forms of models into SBML.
 
@@ -91,7 +91,7 @@ Before installing MOCCASIN, you need to separately install the following softwar
 
 * and [wxPython](http://wxpython.org/).  Note: wxPython is not fully supported for Python 3.4, even with [wxPython-Phoenix](http://wxpython.org/Phoenix/docs/html/index.html), and unfortunately, the MOCCASIN GUI uses features that are not available in wxPython-Phoenix.  Consequently, **to use the GUI interface, you must use Python 2.7**.  If you use the command-line interface for MOCCASIN, you can use Python 2.7 or 3.x.
 
-Once that is done, you can download or clone the MOCCASIN source code base and then run
+Once that is done, you can download or clone the MOCCASIN source code base and then run the following:
 
 ```
 python setup.py install

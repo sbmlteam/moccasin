@@ -41,3 +41,9 @@ Contributing to MOCCASIN
 ---------------------------
 
 In order to ensure a smooth multi-developer effort and monitor testing results, code coverage and build correctness throughout development, MOCCASIN uses **TravisCI** for continuous integration of changes into the code base.
+
+
+### Random Tips
+
+* We had trouble with tests taking very long on the [Travis CI](https://travis-ci.com) service connected to GitHub.  Running the whole suite of tests (3 test sets for *converter_test*, *evaluate_test* and *syntax_test*) that the overall builds failed because they exceeded the time limit imposed by Travis CI.  We discovered a way to split up the Travis CI builds such that [different parts of the tests were run in parallel](https://docs.travis-ci.com/user/speeding-up-the-build/).  This didn't solve the problem of how slowly the tests ran on Travis CI, but it made it so that the individual processes did not exceed the maximum timeout.
+

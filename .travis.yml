@@ -2,30 +2,47 @@
 # @file    .travis.yml
 # @brief   Travis CI configuration file for MOCCASIN
 # @author  Harold Gomez
+# @author  Michael Hucka
 #
 # This software is part of MOCCASIN, the Model ODE Converter for Creating
 # Automated SBML INteroperability. Visit https://github.com/sbmlteam/moccasin/.
-#
+
 language: python
+
 python:
     - "2.7"
+
+cache:
+    # Based on https://docs.travis-ci.com/user/caching/, the default is 3 min.
+    # Set it to 96 hrs because our libsbml dependency doesn't change quickly,
+    # but it does take a very long time to install that particular pip package.
+    timeout: 345600
+    pip: true
+    directories:
+        - $HOME/.cache/pip
+
+before_cache:
+  - rm -f $HOME/.cache/pip/log/debug.log
+
+sudo: false
+
 virtualenv:
     system_site_packages: true
-before_install:
-    - sudo wget http://download.opensuse.org/repositories/home:fbergman:libsbml/xUbuntu_14.04/Release.key
-    - sudo apt-key add - < Release.key  
-    - sudo sh -c "echo 'deb http://download.opensuse.org/repositories/home:/fbergman:/libsbml/xUbuntu_14.04/ /' >> /etc/apt/sources.list.d/python-libsbml.list"
-    - sudo apt-key update
-    - sudo apt-get update -qq
-    - sudo apt-get install -y libxml2-dev
-    - sudo apt-get install -y libz-dev
-    - sudo apt-get install -y libbz2-dev
-    - sudo apt-get install -y --force-yes python-libsbml
+
 install: 
-    - pip install -r requirements.txt --use-mirrors
+    - pip install -U pip wheel
+    - pip install --requirement=$TRAVIS_BUILD_DIR/requirements.txt
+    - pip install python-libsbml
     - pip install coverage
     - pip install coveralls
+
+env:
+    - TEST_CASES=tests/converter_test
+    - TEST_CASES=tests/evaluate_test
+    - TEST_CASES=tests/syntax_test
+
 script: 
-    - coverage run setup.py test
+    - coverage run setup.py test -t $TEST_CASES
+
 after_success:
     coveralls
