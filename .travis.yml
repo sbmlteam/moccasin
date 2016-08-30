@@ -6,12 +6,26 @@
 #
 # This software is part of MOCCASIN, the Model ODE Converter for Creating
 # Automated SBML INteroperability. Visit https://github.com/sbmlteam/moccasin/.
-#
+
 language: python
+
 python:
     - "2.7"
+
+cache:
+    # Based on https://docs.travis-ci.com/user/caching/, the default is 3 min.
+    # Set it to 2 hrs because our py.test tests take a very long time.
+    timeout: 7200
+    pip: true
+    directories:
+        - $HOME/.cache/pip
+
+before_cache:
+  - rm -f $HOME/.cache/pip/log/debug.log
+
 virtualenv:
     system_site_packages: true
+
 before_install:
     - sudo wget http://download.opensuse.org/repositories/home:fbergman:libsbml/xUbuntu_14.04/Release.key
     - sudo apt-key add - < Release.key  
@@ -22,15 +36,19 @@ before_install:
     - sudo apt-get install -y libz-dev
     - sudo apt-get install -y libbz2-dev
     - sudo apt-get install -y --force-yes python-libsbml
+
 install: 
-    - pip install -r requirements.txt --use-mirrors
+    - pip install -r requirements.txt --use-mirrors --download-cache "$HOME/.cache"
     - pip install coverage
     - pip install coveralls
+
 env:
     - TEST_CASES=tests/converter_test
     - TEST_CASES=tests/evaluate_test
     - TEST_CASES=tests/syntax_test
+
 script: 
     - coverage run setup.py test -t $TEST_CASES
+
 after_success:
     coveralls
