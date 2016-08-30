@@ -31,7 +31,7 @@ virtualenv:
 
 install: 
     - pip install -U pip wheel
-    - pip install -r requirements.txt --download-cache "$HOME/.cache"
+    - pip install --requirements=$TRAVIS_BUILD_DIR/requirements.txt
     - pip install python-libsbml
     - pip install coverage
     - pip install coveralls
