@@ -16,9 +16,17 @@ cache:
     # Based on https://docs.travis-ci.com/user/caching/, the default is 3 min.
     # Set it to 2 hrs because our py.test tests take a very long time.
     timeout: 7200
+    apt: true
     pip: true
     directories:
         - $HOME/.cache/pip
+
+addons:
+    apt:
+        packages:
+            - libxml2-dev
+            - libz-dev
+            - libbz2-dev
 
 before_cache:
   - rm -f $HOME/.cache/pip/log/debug.log
@@ -26,19 +34,20 @@ before_cache:
 virtualenv:
     system_site_packages: true
 
-before_install:
-    - sudo wget http://download.opensuse.org/repositories/home:fbergman:libsbml/xUbuntu_14.04/Release.key
-    - sudo apt-key add - < Release.key  
-    - sudo sh -c "echo 'deb http://download.opensuse.org/repositories/home:/fbergman:/libsbml/xUbuntu_14.04/ /' >> /etc/apt/sources.list.d/python-libsbml.list"
-    - sudo apt-key update
-    - sudo apt-get update -qq
-    - sudo apt-get install -y libxml2-dev
-    - sudo apt-get install -y libz-dev
-    - sudo apt-get install -y libbz2-dev
-    - sudo apt-get install -y --force-yes python-libsbml
+# before_install:
+#     - sudo wget http://download.opensuse.org/repositories/home:fbergman:libsbml/xUbuntu_14.04/Release.key
+#     - sudo apt-key add - < Release.key  
+#     - sudo sh -c "echo 'deb http://download.opensuse.org/repositories/home:/fbergman:/libsbml/xUbuntu_14.04/ /' >> /etc/apt/sources.list.d/python-libsbml.list"
+#     - sudo apt-key update
+#     - sudo apt-get update -qq
+#     - sudo apt-get install -y libxml2-dev
+#     - sudo apt-get install -y libz-dev
+#     - sudo apt-get install -y libbz2-dev
+#     - sudo apt-get install -y --force-yes python-libsbml
 
 install: 
     - pip install -r requirements.txt --use-mirrors --download-cache "$HOME/.cache"
+    - pip install python-libsbml
     - pip install coverage
     - pip install coveralls
 
