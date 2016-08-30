@@ -24,6 +24,8 @@ cache:
 before_cache:
   - rm -f $HOME/.cache/pip/log/debug.log
 
+sudo: false
+
 virtualenv:
     system_site_packages: true
 
