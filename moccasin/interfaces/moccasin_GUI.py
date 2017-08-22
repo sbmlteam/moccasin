@@ -156,6 +156,26 @@ def initializePrintingDefaults(self):
         self.pdata.SetOrientation(wx.PORTRAIT)
         self.margins = (wx.Point(15,15), wx.Point(15,15))
 
+_WX4 = wx.__version__.startswith('4')
+
+def wxAppendItem(menu, thing):
+    if _WX4:
+        menu.Append( thing )
+    else:
+        menu.AppendItem( thing )
+
+def wxAppendMenu(menu, *args):
+    if _WX4:
+        menu.Append(*args)
+    else:
+        menu.AppendMenu(*args)
+
+def wxSetToolTip(item, text):
+    if _WX4:
+        item.SetToolTip(text)
+    else:
+        self.statusBar.SetToolTipString( text )
+
 
 # -----------------------------------------------------------------------------
 # Global configuration constants
@@ -179,16 +199,23 @@ class MainFrame ( wx.Frame ):
                                     title = "Welcome to " + __title__,
                                     pos = wx.DefaultPosition, size = wx.Size( 780,790 ),
                                     style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
-                self.SetSizeHintsSz( wx.Size( 760,-1 ))
+
+                if _WX4:
+                    self.SetSizeHints( wx.Size( 760,-1 ))
+                else:
+                    self.SetSizeHintsSz( wx.Size( 760,-1 ))
                 self.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_BTNFACE ) )
 
                 #Interface with the back-end
                 self.controller = Controller()
 
                 #Construct a status bar
-                self.statusBar = self.CreateStatusBar(5, wx.ST_SIZEGRIP|wx.ALWAYS_SHOW_SB|wx.RAISED_BORDER, wx.ID_ANY )
+                if _WX4:
+                    self.statusBar = self.CreateStatusBar(5, wx.ALWAYS_SHOW_SB|wx.RAISED_BORDER, wx.ID_ANY )
+                else:
+                    self.statusBar = self.CreateStatusBar(5, wx.ST_SIZEGRIP|wx.ALWAYS_SHOW_SB|wx.RAISED_BORDER, wx.ID_ANY )
                 self.statusBar.SetFieldsCount(5)
-                self.statusBar.SetToolTipString( "Status" )
+                wxSetToolTip( self.statusBar, "Status" )
                 self.statusBar.SetStatusText("Ready",0)
                 self.statusBar.SetStatusText('Version ' + _VERSION ,4)
 
@@ -197,7 +224,7 @@ class MainFrame ( wx.Frame ):
 
                 self.fileMenu = wx.Menu()
                 self.openFile = wx.MenuItem( self.fileMenu, wx.ID_OPEN, "Open"+ "\t" + "Ctrl+O", wx.EmptyString, wx.ITEM_NORMAL )
-                self.fileMenu.AppendItem( self.openFile )
+                wxAppendItem( self.fileMenu, self.openFile )
 
                 self.fileHistory = wx.FileHistory(8)
                 self.config = wx.Config(__title__ + "_local", style=wx.CONFIG_USE_LOCAL_FILE)
@@ -206,55 +233,55 @@ class MainFrame ( wx.Frame ):
                 recent = wx.Menu()
                 self.fileHistory.UseMenu(recent)
                 self.fileHistory.AddFilesToMenu()
-                self.fileMenu.AppendMenu(wx.ID_ANY, "&Recent Files", recent)
+                wxAppendMenu(self.fileMenu, wx.ID_ANY, "&Recent Files", recent)
                 self.fileMenu.AppendSeparator()
 
                 self.saveFile = wx.MenuItem( self.fileMenu, wx.ID_SAVE, "Save"+ "\t" + "Ctrl+S", wx.EmptyString, wx.ITEM_NORMAL )
-                self.fileMenu.AppendItem( self.saveFile )
+                wxAppendItem( self.fileMenu, self.saveFile )
                 self.fileMenu.AppendSeparator()
 
                 self.pageSetup = wx.MenuItem( self.fileMenu, wx.ID_PAGE_SETUP, "Page Setup"+ "\t" + "F5", wx.EmptyString, wx.ITEM_NORMAL )
-                self.fileMenu.AppendItem( self.pageSetup )
+                wxAppendItem( self.fileMenu, self.pageSetup )
                 self.printOption = wx.MenuItem( self.fileMenu, wx.ID_PRINT, "Print"+ "\t" + "F8", wx.EmptyString, wx.ITEM_NORMAL )
-                self.fileMenu.AppendItem( self.printOption )
+                wxAppendItem( self.fileMenu, self.printOption )
                 self.fileMenu.AppendSeparator()
                 initializePrintingDefaults(self)# initialize the print data and set some default values
 
                 self.exit = wx.MenuItem( self.fileMenu, wx.ID_EXIT, "Exit"+ "\t" + "Alt+F4", wx.EmptyString, wx.ITEM_NORMAL )
-                self.fileMenu.AppendItem( self.exit )
+                wxAppendItem( self.fileMenu, self.exit )
 
                 self.menuBar.Append( self.fileMenu, "File" )
 
                 self.editMenu = wx.Menu()
                 self.clear = wx.MenuItem( self.editMenu, wx.ID_CLEAR, "Clear"+ "\t" + "Ctrl+L", wx.EmptyString, wx.ITEM_NORMAL )
-                self.editMenu.AppendItem( self.clear )
+                wxAppendItem( self.editMenu, self.clear )
 
                 self.menuBar.Append( self.editMenu, "Edit" )
 
                 self.runMenu = wx.Menu()
                 self.convertFile = wx.MenuItem( self.runMenu, wx.ID_ANY, "Convert"+ "\t" + "Ctrl+C", wx.EmptyString, wx.ITEM_NORMAL )
                 self.convertFile.Enable(0)
-                self.runMenu.AppendItem( self.convertFile )
+                wxAppendItem( self.runMenu, self.convertFile )
 
                 self.menuBar.Append( self.runMenu, "Run" )
 
                 self.windowMenu = wx.Menu()
                 self.close = wx.MenuItem( self.windowMenu, wx.ID_CLOSE, "CloseAll", wx.EmptyString, wx.ITEM_NORMAL )
-                self.windowMenu.AppendItem( self.close )
+                wxAppendItem( self.windowMenu, self.close )
 
                 self.menuBar.Append( self.windowMenu, "Window" )
 
                 self.helpMenu = wx.Menu()
                 self.helpItem = wx.MenuItem( self.helpMenu, wx.ID_HELP, __title__ + " Help"+ "\t" + "F1", wx.EmptyString, wx.ITEM_NORMAL )
-                self.helpMenu.AppendItem( self.helpItem )
+                wxAppendItem( self.helpMenu, self.helpItem )
 
                 self.helpMenu.AppendSeparator()
 
                 self.license = wx.MenuItem( self.helpMenu, wx.ID_ANY, "GNU Lesser General Public License", wx.EmptyString, wx.ITEM_NORMAL )
-                self.helpMenu.AppendItem( self.license )
+                wxAppendItem( self.helpMenu, self.license )
 
                 self.about = wx.MenuItem( self.helpMenu, wx.ID_ABOUT, "About " + __title__, wx.EmptyString, wx.ITEM_NORMAL )
-                self.helpMenu.AppendItem( self.about )
+                wxAppendItem( self.helpMenu, self.about )
 
                 self.menuBar.Append( self.helpMenu, "Help" )
 
@@ -263,9 +290,10 @@ class MainFrame ( wx.Frame ):
                 #Add sizers(3) and elements for matlab and translated text
                 mainSizer = wx.BoxSizer( wx.VERTICAL )
                 mainSizer.SetMinSize( wx.Size( 1,5 ) )
-                mainSizer.AddSpacer( ( 0, 1), 0, wx.EXPAND|wx.TOP, 5 ) #Diff
-
-
+                if _WX4:
+                    mainSizer.AddSpacer( 1 )
+                else:
+                    mainSizer.AddSpacer( ( 0, 1), 0, wx.EXPAND|wx.TOP, 5 ) #Diff
                 #Top sizer
                 labelFont = wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 90, False, wx.EmptyString )
                 topPanelSizer = wx.GridSizer( 2, 1, 0, 0 )
@@ -278,7 +306,7 @@ class MainFrame ( wx.Frame ):
                 self.filePicker = wx.FilePickerCtrl( self, wx.ID_ANY, wx.EmptyString, "Select a file", "*.m", wx.DefaultPosition, wx.DefaultSize, wx.FLP_DEFAULT_STYLE )
                 self.filePicker.SetMinSize( wx.Size( 350,-1 ) )
                 self.filePicker.SetFont( labelFont )
-                fileConvSizer1.Add( self.filePicker, 6, wx.ALL, 7 )
+                fileConvSizer1.Add( self.filePicker, 6, wx.ALL, 1 )
                 topPanelSizer.Add( fileConvSizer1, 1, wx.ALL|wx.EXPAND, 1 )
 
                 sbSizer9 = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "File conversion" ), wx.VERTICAL )
@@ -292,8 +320,12 @@ class MainFrame ( wx.Frame ):
                 optionLayoutSizer.Add( self.varsAsSpecies, 0, wx.ALL, 8 )
                 self.varsAsParams = wx.RadioButton( self, wx.ID_ANY, "SBML Parameters", wx.DefaultPosition, wx.DefaultSize, 0 )
                 optionLayoutSizer.Add( self.varsAsParams, 0, wx.ALL, 8 )
-                optionLayoutSizer.AddSpacer( ( 0, 0), 1, wx.ALL|wx.EXPAND, 2 )
-                optionLayoutSizer.AddSpacer( ( 0, 0), 1, wx.ALL|wx.EXPAND, 2 )
+                if _WX4:
+                    optionLayoutSizer.AddSpacer( 1 )
+                    optionLayoutSizer.AddSpacer( 1 )
+                else:
+                    optionLayoutSizer.AddSpacer( ( 0, 0), 1, wx.ALL|wx.EXPAND, 2 )
+                    optionLayoutSizer.AddSpacer( ( 0, 0), 1, wx.ALL|wx.EXPAND, 2 )
                 self.convertButton = wx.Button( self, wx.ID_ANY, "Convert", wx.DefaultPosition, wx.DefaultSize, 0 )
                 self.convertButton.SetFont(labelFont)
                 self.convertButton.Disable()
@@ -324,7 +356,7 @@ class MainFrame ( wx.Frame ):
                 midPanelSizer = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "MATLAB File" ), wx.VERTICAL )
                 self.matlabWebView = wx.html2.WebView.New( self, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND  )
                 self.matlabWebView.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
-                self.matlabWebView.SetToolTipString( "Input file for conversion" )
+                wxSetToolTip( self.matlabWebView, "Input file for conversion" )
                 self.matlabWebView.SetFont( panelTextFont )
                 self.matlabWebView.SetPage(_EMPTY_PAGE, "")
                 midPanelSizer.Add( self.matlabWebView, 1, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND, 5 )
@@ -335,7 +367,7 @@ class MainFrame ( wx.Frame ):
                 self.convertedWebView = wx.html2.WebView.New( self, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND )
                 self.convertedWebView.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
                 self.convertedWebView.SetFont( panelTextFont )
-                self.convertedWebView.SetToolTipString( "Output file after conversion" )
+                wxSetToolTip( self.convertedWebView, "Output file after conversion" )
                 self.convertedWebView.SetPage(_EMPTY_PAGE, "")
                 bottomPanelSizer.Add( self.convertedWebView, 1, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND, 5 )
                 mainSizer.Add( bottomPanelSizer, 2, wx.ALL|wx.EXPAND, 5 )
@@ -362,8 +394,8 @@ class MainFrame ( wx.Frame ):
                 self.Bind( wx.EVT_MENU_RANGE, self.onFileHistory, id=wx.ID_FILE1, id2=wx.ID_FILE9)
                 self.Bind( wx.EVT_CLOSE, self.onClose )
 
-                def __del__( self ):
-                        pass
+        def __del__( self ):
+                pass
 
 # -----------------------------------------------------------------------------
 # Virtual Event Handlers
