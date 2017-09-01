@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created by MOCCASIN version 1.1.0 on 2017-08-31 20:56 with libSBML version 5.15.0. -->
+<sbml xmlns="http://www.sbml.org/sbml/level3/version1/core" level="3" version="1">
+  <model id="Model_generated_by_BIOCHAM">
+    <listOfCompartments>
+      <compartment id="compartmentOne" spatialDimensions="3" size="1" constant="true"/>
+    </listOfCompartments>
+    <listOfSpecies>
+      <species id="x_1" name="x_1" compartment="compartmentOne" initialConcentration="0" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"/>
+      <species id="x_2" name="x_2" compartment="compartmentOne" initialConcentration="0" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"/>
+    </listOfSpecies>
+    <listOfParameters>
+      <parameter id="a" name="a" value="0" constant="true"/>
+      <parameter id="b" name="b" value="0" constant="true"/>
+      <parameter id="c" name="c" value="0" constant="true"/>
+      <parameter id="d" name="d" value="0" constant="true"/>
+    </listOfParameters>
+    <listOfInitialAssignments>
+      <initialAssignment symbol="a">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <times/>
+            <cn> 0.01 </cn>
+            <cn type="integer"> 60 </cn>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="b">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <times/>
+            <cn> 0.0058 </cn>
+            <cn type="integer"> 60 </cn>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="c">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <times/>
+            <cn> 0.006 </cn>
+            <cn type="integer"> 60 </cn>
+          </apply>
+        </math>
+      </initialAssignment>
+      <initialAssignment symbol="d">
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+          <apply>
+            <times/>
+            <cn> 0.000192 </cn>
+            <cn type="integer"> 60 </cn>
+          </apply>
+        </math>
+      </initialAssignment>
+    </listOfInitialAssignments>
+    <listOfReactions>
+      <reaction id="R_1" reversible="false" fast="false">
+        <listOfReactants>
+          <speciesReference species="x_1" stoichiometry="0.348" constant="true"/>
+        </listOfReactants>
+        <listOfProducts>
+          <speciesReference species="x_2" stoichiometry="0.36" constant="true"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <ci> x_1 </ci>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="R_2" reversible="false" fast="false">
+        <listOfReactants>
+          <speciesReference species="x_2" stoichiometry="0.01152" constant="true"/>
+        </listOfReactants>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <ci> x_2 </ci>
+          </math>
+        </kineticLaw>
+      </reaction>
+      <reaction id="R_3" reversible="false" fast="false">
+        <listOfProducts>
+          <speciesReference species="x_1" stoichiometry="0.6" constant="true"/>
+        </listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <cn> 1 </cn>
+          </math>
+        </kineticLaw>
+      </reaction>
+    </listOfReactions>
+  </model>
+</sbml>
