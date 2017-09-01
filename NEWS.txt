@@ -1,6 +1,14 @@
            MOCCASIN NEWS -- History of user-visible changes
 
 ====================================================================
+1.1.2
+====================================================================
+
+Release 1.1.2 fixes a bug that caused MOCCASIN to fail on some scripts
+that did not have an enclosing function.  Issues resolved: #19, #20.
+
+
+====================================================================
 1.1.1
 ====================================================================
 
