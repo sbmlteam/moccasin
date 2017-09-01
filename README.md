@@ -130,6 +130,8 @@ A lot remains to be done on MOCCASIN in many areas, from improving the interpret
 
 A quick way to find out what is currently on people's plates and our near-term plans is to look at the  [Pivotal Tracker](https://www.pivotaltracker.com/n/projects/977060) for this project.
 
+Everyone is asked to read and respect the [code of conduct](CONDUCT.md) when participating in this project.
+
 
 ☺ Acknowledgments
 -----------------------
