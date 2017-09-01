@@ -19,7 +19,7 @@ MOCCASIN
 🏁 Recent news and activities
 ------------------------------
 
-_August 2017_: Release 1.1.1 fixes [issue #15](https://github.com/sbmlteam/moccasin/issues/15) and allows MOCCASIN to work with wxPython [version 4.0.0](https://www.wxpython.org/news/wxpython-4.0.0b1-release/index.html).
+_August 2017_: Release 1.1.2 fixed a bug that caused MOCCASIN to fail on some scripts that did not have an enclosing function.  Issues resolved: [#19](https://github.com/sbmlteam/moccasin/issues/19), [#20](https://github.com/sbmlteam/moccasin/issues/20).  Also in August, release 1.1.1 fixed [issue #15](https://github.com/sbmlteam/moccasin/issues/15) and allows MOCCASIN to work with wxPython [version 4.0.0](https://www.wxpython.org/news/wxpython-4.0.0b1-release/index.html).
 
 _June 2016_: The MATLAB parser and the conversion code in MOCCASIN version 1.1 are considerably better than they were in last year's 1.0 release.  The underlying parser now creates a more complete abstract syntax tree representation of the MATLAB input, and the converter also takes advantage of more syntactic features in XPP and BIOCHAM.  The result is better conversions of larger and more complex models.
 
