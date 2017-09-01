@@ -1305,7 +1305,7 @@ def process_biocham_output(sbml, parse_results, post_add, post_convert,
         document.getModel().getSpecies(i - 1).unsetSubstanceUnits()
 
     # Set the model id & name.
-    if parse_results.functions:
+    if parse_results.functions and parse_results.name:
         id = parse_results.functions[parse_results.name].name.name
         model.setId(id)
         model.setName(id + ' translated by MOCCASIN')
