@@ -14,8 +14,6 @@ MOCCASIN
 
 *Developers' discussion group*: [https://groups.google.com/forum/#!forum/moccasin-dev](https://groups.google.com/forum/#!forum/moccasin-dev)
 
-*Pivotal tracker*: [https://www.pivotaltracker.com/n/projects/977060](https://www.pivotaltracker.com/n/projects/977060)
-
 🏁 Recent news and activities
 ------------------------------
 
@@ -128,7 +126,7 @@ MOCCASIN is under active development by a distributed team.  If you have any que
 
 A lot remains to be done on MOCCASIN in many areas, from improving the interpretation of MATLAB to adding support for SED-ML.  We would be happy to receive your help and participation if you are interested.  Please feel free to contact the developers.
 
-A quick way to find out what is currently on people's plates and our near-term plans is to look at the  [Pivotal Tracker](https://www.pivotaltracker.com/n/projects/977060) for this project.
+A quick way to find out what is currently on people's plates and our near-term plans is to look at the [GitHub issue tracker](https://github.com/sbmlteam/moccasin/issues) for this project.
 
 Everyone is asked to read and respect the [code of conduct](CONDUCT.md) when participating in this project.
 
