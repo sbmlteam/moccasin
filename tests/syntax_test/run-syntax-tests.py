@@ -31,7 +31,7 @@ from matlab_parser import *
 
 
 def main(argv):
-    '''Usage: run-syntax-tests.py [-d] [-v]
+    '''Usage: run-syntax-tests.py [-n] [-v]
     Arguments:
       -n  (Optional) Don't drop into pdb upon a parsing exception -- keep going.
       -v  (Optional) Print intermediate debugging output.
