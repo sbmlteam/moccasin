@@ -144,7 +144,7 @@ The MOCCASIN logo was created by Randy Carlton (<rcarlton@rancar2.com>).
 ☮ Copyright and license
 ---------------------
 
-Copyright (C) 2014-2016 jointly by the California Institute of Technology (Pasadena, California, USA), the Icahn School of Medicine at Mount Sinai (New York, New York, USA), and Boston University (Boston, Massachusetts, USA).
+Copyright (C) 2014-2017 jointly by the California Institute of Technology (Pasadena, California, USA), the Icahn School of Medicine at Mount Sinai (New York, New York, USA), and Boston University (Boston, Massachusetts, USA).
 
 This library is free software; you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation; either version 2.1 of the License, or any later version.
 
