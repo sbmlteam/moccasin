@@ -28,7 +28,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from controller import Controller
 
 # This prevents exceeding recursion depth in some cases.
-sys.setrecursionlimit(1500)
+sys.setrecursionlimit(5000)
 
 # -----------------------------------------------------------------------------
 # Main function - driver
