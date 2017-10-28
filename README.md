@@ -136,6 +136,12 @@ You can use the `-h` option to `moccasin_CLI.py` to find out the available comma
 MOCCASIN is under active development by a distributed team.  If you have any questions, please feel free to post or email on the developer's discussion group  ([https://groups.google.com/forum/#!forum/moccasin-dev](https://groups.google.com/forum/#!forum/moccasin-dev)) or contact the main developers directly.
 
 
+★ Do you like it?
+------------------
+
+If you like this software, don't forget to give this repo a star on GitHub to show your support!
+
+
 ♬ Contributing &mdash; info for developers
 ------------------------------------------
 
