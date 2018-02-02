@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 #
 # @file    Moccasin_GUI.py
 # @brief   Graphical User Interface (GUI) for Moccasin
@@ -174,7 +174,7 @@ def wxSetToolTip(item, text):
     if _WX4:
         item.SetToolTip(text)
     else:
-        self.statusBar.SetToolTipString( text )
+        item.SetToolTipString( text )
 
 
 # -----------------------------------------------------------------------------
