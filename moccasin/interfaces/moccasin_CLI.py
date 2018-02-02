@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 #
 # @file    moccasin.py
 # @brief   Command-line interface for Moccasin
