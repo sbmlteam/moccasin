@@ -20,7 +20,7 @@
 # available online at https://github.com/sbmlteam/moccasin/.
 # ------------------------------------------------------------------------- -->
 
-__version__      = '1.1.0'
+__version__      = '1.2.0'
 __title__        = 'MOCCASIN'
 __url__          = 'https://github.com/sbmlteam/moccasin'
 __author__       = 'Michael Hucka, Sarah Keating, and Harold Gomez'
