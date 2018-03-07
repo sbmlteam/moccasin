@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# @file    version.py
+# @file    __version__.py
 # @brief   MOCCASIN version info
 # @author  Michael Hucka
 #
