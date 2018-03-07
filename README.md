@@ -90,8 +90,10 @@ Before installing MOCCASIN, you need to separately install the following softwar
   * `libxml2-dev`
   * `libz-dev`
   * `libbz2-dev`
-
-* and [wxPython](http://wxpython.org/).  Note: wxPython is not fully supported for Python 3.4, even with [wxPython-Phoenix](http://wxpython.org/Phoenix/docs/html/index.html), and unfortunately, the MOCCASIN GUI uses features that are not available in wxPython-Phoenix.  Consequently, **to use the GUI interface, you must use Python 2.7**.  If you use the command-line interface for MOCCASIN, you can use Python 2.7 or 3.x.
+* [wxPython](http://wxpython.org/).  Note: wxPython is not fully supported for Python 3.4, even with [wxPython-Phoenix](http://wxpython.org/Phoenix/docs/html/index.html), and unfortunately, the MOCCASIN GUI uses features not available in wxPython-Phoenix.  Consequently, **to use the GUI interface, you must use Python 2.7**.  (If you only use the command-line interface, you can use Python 2.7 or 3.x.)
+* [plac](https://micheles.github.io/plac/)
+* [pyparsing](http://pyparsing.wikispaces.com)
+* a few other Python modules (e.g., `requests`) that should be already available in your Python installation.
 
 Once that is done, you can download or clone the MOCCASIN source code base and then run the following:
 
