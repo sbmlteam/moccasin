@@ -44,10 +44,10 @@ import sys
 import getopt
 from grammar import *
 
-def get_filename_and_options(argv):
+def get_options(argv):
     """Helper function for parsing command-line arguments."""
     try:
-        options, path = getopt.getopt(argv[1:], "dpqi")
+        options, path = getopt.getopt(argv[1:], "dpqit")
     except:
         raise SystemExit(main.__doc__)
     if len(path) != 1 or len(options) > 2:
@@ -56,25 +56,32 @@ def get_filename_and_options(argv):
     print_old = any(['-p' in y for y in options])
     quiet = any(['-q' in y for y in options])
     interactive_pdb = any(['-i' in y for y in options])
-    return path[0], print_debug, print_old, quiet, interactive_pdb
+    profile = any(['-t' in y for y in options])
+    return path[0], print_debug, print_old, quiet, interactive_pdb, profile
 
 
 def main(argv):
-    """Usage: matlab_parser.py [-d] [-i] [-p] [-q] FILENAME.m
+    """Usage: test.py [-d] [-i] [-p] [-q] [-t] FILENAME.m
 Arguments:
   -d   (Optional) Print extremely detailed debug output during parsing
   -i   (Optional) Drop into pdb as the final step
   -p   (Optional) Print a representation of the output in the "old" format
   -q   (Optional) Be quiet -- just print the output
+  -t   (Optional) Profile/time internal function execution
 """
 
-    path, debug, print_old, quiet, interactive = get_filename_and_options(argv)
+    path, debug, print_old, quiet, run_pdb, profile = get_options(argv)
 
     with open(path, 'r') as file:
         if not quiet: print('----- file ' + path + ' ' + '-'*30)
         contents = file.read()
         if not quiet: print(contents)
         file.close()
+
+    if profile:
+        import cProfile, pstats, io
+        pr = cProfile.Profile()
+        pr.enable()
 
     with MatlabGrammar() as parser:
         # This uses parse_string() instead of parse_file() because the file has
@@ -94,12 +101,19 @@ Arguments:
             if not quiet: print('----- old format ' + '-'*50)
             parser.print_parse_results(results)
 
-        if interactive:
+        if run_pdb:
             print('-'*60)
             print('Debug reminder: parsed results are in variable `results`')
             print('-'*60)
             pdb.set_trace()
 
+    if profile:
+        pr.disable()
+        s = io.StringIO()
+        sortby = 'cumulative'
+        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        ps.print_stats()
+        print(s.getvalue())
 
 if __name__ == '__main__':
     main(sys.argv)
