@@ -1,8 +1,9 @@
 #!/usr/bin/env python2
 #
 # @file    Moccasin_GUI.py
-# @brief   Graphical User Interface (GUI) for Moccasin
+# @brief   Graphical User Interface (GUI) for MOCCASIN
 # @author  Harold Gomez
+# @author  Michael Hucka
 #
 # <!---------------------------------------------------------------------------
 # This software is part of MOCCASIN, the Model ODE Converter for Creating
@@ -18,7 +19,7 @@
 # Software Foundation.  A copy of the license agreement is provided in the
 # file named "COPYING.txt" included with this software distribution and also
 # available online at https://github.com/sbmlteam/moccasin/.
-#
+# ------------------------------------------------------------------------- -->
 
 import os
 import webbrowser
@@ -31,8 +32,7 @@ import re
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from printDialog import PrintDialog
 from controller import Controller
-from version import __title__, __version__, __url__, __author__, __help_url__, \
-    __license__, __license_url__
+import __version__
 
 # We need wx.html2, which was introduced in wxPython 2.9.
 from distutils.version import LooseVersion
@@ -48,13 +48,31 @@ from pygments.formatters import HtmlFormatter
 import wx.lib.dialogs
 from pkg_resources import get_distribution, DistributionNotFound
 
+import wx.adv
+
+
+# -----------------------------------------------------------------------------
+# Global configuration constants
+# -----------------------------------------------------------------------------
+
+_TITLE           = __version__.__title__
+_URL             = __version__.__url__
+_HELP_URL        = __version__.__help_url__
+_LICENSE         = __version__.__license__
+_LICENSE_URL     = __version__.__license_url__
+_VERSION         = __version__.__version__
+_IS_OUTPUT_SAVED = False
+_SAVEAS_ODE      = False #Used to save the right file format
+_EMPTY_PAGE      ='''<HTML lang=en><HEAD></HEAD>
+<BODY><!-- empty page --></BODY> </HTML> ''' #Used as empty value to clear the empty WebView text field
+
 
 # -----------------------------------------------------------------------------
 # Helper functions
 # -----------------------------------------------------------------------------
 
 def getPackageVersion():
-        project = __title__
+        project = _TITLE
         version = None  # required for initialization of globals
         try:
                 version = 'Version ' + __version__
@@ -101,7 +119,7 @@ def saveFile( self, event):
 
 def checkSaveOutput( self, event ):
         '''Checks that converted output is saved'''
-        msg = __title__ + " output may be lost. Do you want to save the file first?"
+        msg = _TITLE + " output may be lost. Do you want to save the file first?"
         dlg = wx.MessageDialog(self, msg, "Warning", wx.YES_NO | wx.ICON_WARNING)
 
         if ( not _IS_OUTPUT_SAVED and not isOuputEmpty (self)):
@@ -178,25 +196,12 @@ def wxSetToolTip(item, text):
 
 
 # -----------------------------------------------------------------------------
-# Global configuration constants
-# -----------------------------------------------------------------------------
-
-_HELP_URL = __help_url__
-_LICENSE_URL = __license_url__
-_VERSION = __version__
-_IS_OUTPUT_SAVED = False
-_SAVEAS_ODE = False #Used to save the right file format
-_EMPTY_PAGE='''<HTML lang=en><HEAD></HEAD>
-                <BODY><!-- empty page --></BODY> </HTML> ''' #Used as empty value to clear the empty WebView text field
-
-
-# -----------------------------------------------------------------------------
 # Graphical User Interface (GUI) definition
 # -----------------------------------------------------------------------------
 class MainFrame ( wx.Frame ):
         def __init__( self, parent ):
                 wx.Frame.__init__ ( self, parent, id = wx.ID_ANY,
-                                    title = "Welcome to " + __title__,
+                                    title = _TITLE,
                                     pos = wx.DefaultPosition, size = wx.Size( 780,790 ),
                                     style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
 
@@ -227,7 +232,7 @@ class MainFrame ( wx.Frame ):
                 wxAppendItem( self.fileMenu, self.openFile )
 
                 self.fileHistory = wx.FileHistory(8)
-                self.config = wx.Config(__title__ + "_local", style=wx.CONFIG_USE_LOCAL_FILE)
+                self.config = wx.Config(_TITLE + "_local", style=wx.CONFIG_USE_LOCAL_FILE)
                 self.fileHistory.Load(self.config)
 
                 recent = wx.Menu()
@@ -272,15 +277,15 @@ class MainFrame ( wx.Frame ):
                 self.menuBar.Append( self.windowMenu, "Window" )
 
                 self.helpMenu = wx.Menu()
-                self.helpItem = wx.MenuItem( self.helpMenu, wx.ID_HELP, __title__ + " Help"+ "\t" + "F1", wx.EmptyString, wx.ITEM_NORMAL )
+                self.helpItem = wx.MenuItem( self.helpMenu, wx.ID_HELP, _TITLE + " Help"+ "\t" + "F1", wx.EmptyString, wx.ITEM_NORMAL )
                 wxAppendItem( self.helpMenu, self.helpItem )
 
                 self.helpMenu.AppendSeparator()
 
-                self.license = wx.MenuItem( self.helpMenu, wx.ID_ANY, "GNU Lesser General Public License", wx.EmptyString, wx.ITEM_NORMAL )
+                self.license = wx.MenuItem( self.helpMenu, wx.ID_ANY, _LICENSE, wx.EmptyString, wx.ITEM_NORMAL )
                 wxAppendItem( self.helpMenu, self.license )
 
-                self.about = wx.MenuItem( self.helpMenu, wx.ID_ABOUT, "About " + __title__, wx.EmptyString, wx.ITEM_NORMAL )
+                self.about = wx.MenuItem( self.helpMenu, wx.ID_ABOUT, "About " + _TITLE, wx.EmptyString, wx.ITEM_NORMAL )
                 wxAppendItem( self.helpMenu, self.about )
 
                 self.menuBar.Append( self.helpMenu, "Help" )
@@ -531,23 +536,21 @@ class MainFrame ( wx.Frame ):
 
 
         def onAbout( self, event ):
-                dlg = wx.AboutDialogInfo()
-                dlg.SetName(__title__)
-                dlg.SetVersion(__version__)
-                dlg.SetLicense(__license__)
+                dlg = wx.adv.AboutDialogInfo()
+                dlg.SetIcon(wx.Icon("../../docs/project/logo/moccasin_logo_20151002/logo_64.png", wx.BITMAP_TYPE_PNG))
+                dlg.SetName(_TITLE)
+                dlg.SetVersion(_VERSION)
+                dlg.SetLicense(_LICENSE)
                 dlg.SetDescription('\n'.join(textwrap.wrap(
-                        __title__ + " is the Model ODE Converter for Creating Automated "
+                        _TITLE + " is the Model ODE Converter for Creating Automated "
                         "SBML INteroperability.  It is a user-assisted converter "
                         "that can take MATLAB or Octave ODE-based models in "
                         "biology and translate them into the SBML format.", 81)))
-                dlg.SetWebSite(__url__)
-                dlg.SetDevelopers([
-                        "Michael Hucka (California Institute of Technology)",
-                        "Sarah Keating (European Bioinformatics Institute)",
-                        "Harold Gomez (Boston University)"
-                ])
-
-                wx.AboutBox(dlg)
+                dlg.SetWebSite(_URL)
+                dlg.AddDeveloper(u"Michael Hucka (California Institute of Technology)")
+                dlg.AddDeveloper(u"\nSarah Keating (European Bioinformatics Institute)")
+                dlg.AddDeveloper(u"\nHarold G\u00f3mez (ETH Zurich)")
+                wx.adv.AboutBox(dlg)
 
 
         def onClose( self, event ):
@@ -577,7 +580,7 @@ class MainFrame ( wx.Frame ):
                 data = wx.PrintDialogData(self.pdata)
                 printer = wx.Printer(data)
                 text = self.convertedWebView.GetPageText()
-                printout = PrintDialog(text, __title__ + " output", self.margins)
+                printout = PrintDialog(text, _TITLE + " output", self.margins)
                 useSetupDialog = True
                 if not printer.Print(self, printout, useSetupDialog) \
                    and printer.GetLastError() == wx.PRINTER_ERROR:
@@ -597,6 +600,7 @@ class MainFrame ( wx.Frame ):
 
 def gui_main():
         app = wx.App(False)
+        app.SetAppName(_TITLE)
         frame = MainFrame(None)
         frame.Show()
         app.MainLoop()
