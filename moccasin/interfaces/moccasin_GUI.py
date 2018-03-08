@@ -66,121 +66,123 @@ _SAVEAS_ODE      = False #Used to save the right file format
 _EMPTY_PAGE      ='''<HTML lang=en><HEAD></HEAD>
 <BODY><!-- empty page --></BODY> </HTML> ''' #Used as empty value to clear the empty WebView text field
 
+_icon_file       = "../../docs/project/logo/moccasin_logo_20151002/logo_64.png"
+
 
 # -----------------------------------------------------------------------------
 # Helper functions
 # -----------------------------------------------------------------------------
 
 def getPackageVersion():
-        project = _TITLE
-        version = None  # required for initialization of globals
-        try:
-                version = 'Version ' + __version__
-        except DistributionNotFound:
-                version = '(local)'
-        return version
+    project = _TITLE
+    version = None  # required for initialization of globals
+    try:
+        version = 'Version ' + __version__
+    except DistributionNotFound:
+        version = '(local)'
+    return version
 
 
-#Cleans up the converted text stored in convertedWebView and checks if empty
-def isOuputEmpty( self ):
-        outputText=(re.sub(r"\s+", "", self.convertedWebView.GetPageSource(), flags=re.UNICODE)).encode('utf8')
-        initText=(re.sub(r"\s+", "", _EMPTY_PAGE))
-        if outputText == initText:
-               return True
-        return False
+# Cleans up the converted text stored in convertedWebView and checks if empty
+def isOuputEmpty(self):
+    content = self.convertedWebView.GetPageSource()
+    outputText = (re.sub(r"\s+", "", content, flags=re.UNICODE)).encode('utf8')
+    initText = re.sub(r"\s+", "", _EMPTY_PAGE)
+    if outputText == initText:
+        return True
+    return False
 
 
-def saveFile( self, event):
-        '''Saves converted output to file'''
-        global _IS_OUTPUT_SAVED
-        global _SAVEAS_ODE
-        msg = None
-        fileFormat = None
+def saveFile(self, event):
+    '''Saves converted output to file'''
+    global _IS_OUTPUT_SAVED
+    global _SAVEAS_ODE
+    msg = None
+    fileFormat = None
 
-        if _SAVEAS_ODE:
-                msg = "Save ODE File"
-                fileFormat = "ODE files (*.ODE)|*.ode"
-        elif isOuputEmpty (self):
-                msg = "Save File As"
-                fileFormat = "All files (*.*)|*.*"
-        else:
-                msg = "Save SBML File"
-                fileFormat = "SBML files (*.xml)|*.xml"
+    if _SAVEAS_ODE:
+        msg = "Save ODE File"
+        fileFormat = "ODE files (*.ODE)|*.ode"
+    elif isOuputEmpty (self):
+        msg = "Save File As"
+        fileFormat = "All files (*.*)|*.*"
+    else:
+        msg = "Save SBML File"
+        fileFormat = "SBML files (*.xml)|*.xml"
 
-        dlg = wx.FileDialog(self, msg, "", "", fileFormat, wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
-        if dlg.ShowModal() == wx.ID_CANCEL:
-                return
-        else:
-                output = open(dlg.GetPath(), 'w')
-                output.write(self.convertedWebView.GetPageText().replace("\n",""))
-                output.close()
-                _IS_OUTPUT_SAVED = True
-
-
-def checkSaveOutput( self, event ):
-        '''Checks that converted output is saved'''
-        msg = _TITLE + " output may be lost. Do you want to save the file first?"
-        dlg = wx.MessageDialog(self, msg, "Warning", wx.YES_NO | wx.ICON_WARNING)
-
-        if ( not _IS_OUTPUT_SAVED and not isOuputEmpty (self)):
-                if dlg.ShowModal() == wx.ID_YES:
-                        saveFile( self, event )
-        dlg.Destroy()
+    dlg = wx.FileDialog(self, msg, "", "", fileFormat, wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+    if dlg.ShowModal() == wx.ID_CANCEL:
+        return
+    else:
+        output = open(dlg.GetPath(), 'w')
+        output.write(self.convertedWebView.GetPageText().replace("\n",""))
+        output.close()
+        _IS_OUTPUT_SAVED = True
 
 
-def report( self, event, msg ):
-        '''Serves to give feedback to the user in case of failure'''
-        dlg = wx.lib.dialogs.ScrolledMessageDialog(self, msg, "Error")
-        dlg.ShowModal()
+def checkSaveOutput(self, event):
+    '''Checks that converted output is saved'''
+    msg = _TITLE + " output may be lost. Do you want to save the file first?"
+    dlg = wx.MessageDialog(self, msg, "Warning", wx.YES_NO | wx.ICON_WARNING)
+    if (not _IS_OUTPUT_SAVED and not isOuputEmpty (self)):
+        if dlg.ShowModal() == wx.ID_YES:
+            saveFile(self, event)
+    dlg.Destroy()
 
 
-def modifyHistory( self, event, path ):
-        '''Saves opened files to the recent list menu'''
-        self.fileHistory.AddFileToHistory(path)
-        self.fileHistory.Save(self.config)
-        self.config.Flush() # Only necessary for Linux systems
+def report(self, event, msg):
+    '''Serves to give feedback to the user in case of failure'''
+    dlg = wx.lib.dialogs.ScrolledMessageDialog(self, msg, "Error")
+    dlg.ShowModal()
 
 
-def openFile( self, event, path):
-        '''Deals with importing matlab files'''
-        try:
-                f = open(path, 'r')
-                self.file_contents = f.read()
-                self.matlabWebView.SetPage(tokenize(self.file_contents, "matlab", "igor"),"")
-                f.close()
-        except IOError as err:
-                report( self, event, "IOError: {0}".format(err))
-
-#Uses the pygments package to tokenize and format text for display
-def tokenize( input_file, file_format, text_style ):
-        lexer = get_lexer_by_name(file_format, stripall=True)
-        formatter = HtmlFormatter(noclasses=True,nobackground= True,style=text_style)
-        return (highlight(input_file,lexer,formatter))
+def modifyHistory(self, event, path):
+    '''Saves opened files to the recent list menu'''
+    self.fileHistory.AddFileToHistory(path)
+    self.fileHistory.Save(self.config)
+    self.config.Flush() # Only necessary for Linux systems
 
 
-def resetOnOpen( self, event ):
-        '''Resets graphical components when opening a new file '''
-        self.convertButton.Enable()
-        self.convertFile.Enable(1)
-        self.convertedWebView.SetPage(_EMPTY_PAGE, "")
-        self.matlabWebView.SetPage(_EMPTY_PAGE,"")
-        self.statusBar.SetStatusText( "Ready",0 )
+def openFile(self, event, path):
+    '''Deals with importing matlab files'''
+    try:
+        f = open(path, 'r')
+        self.file_contents = f.read()
+        self.matlabWebView.SetPage(tokenize(self.file_contents, "matlab", "igor"), "")
+        f.close()
+    except IOError as err:
+        report(self, event, "IOError: {0}".format(err))
+
+# Uses the pygments package to tokenize and format text for display
+def tokenize(input_file, file_format, text_style):
+    lexer = get_lexer_by_name(file_format, stripall=True)
+    formatter = HtmlFormatter(noclasses=True,nobackground= True,style=text_style)
+    return (highlight(input_file,lexer,formatter))
+
+
+def resetOnOpen(self, event):
+    '''Resets graphical components when opening a new file '''
+    self.convertButton.Enable()
+    self.convertFile.Enable(1)
+    self.convertedWebView.SetPage(_EMPTY_PAGE, "")
+    self.matlabWebView.SetPage(_EMPTY_PAGE, "")
+    self.statusBar.SetStatusText("Ready", 0)
 
 
 def initializePrintingDefaults(self):
-        '''Initializes printing parameters for printing'''
-        self.pdata = wx.PrintData()
-        self.pdata.SetPaperId(wx.PAPER_LETTER)
-        self.pdata.SetOrientation(wx.PORTRAIT)
-        self.margins = (wx.Point(15,15), wx.Point(15,15))
+    '''Initializes printing parameters for printing'''
+    self.pdata = wx.PrintData()
+    self.pdata.SetPaperId(wx.PAPER_LETTER)
+    self.pdata.SetOrientation(wx.PORTRAIT)
+    self.margins = (wx.Point(15,15), wx.Point(15,15))
 
 _WX4 = wx.__version__.startswith('4')
 
 def wxAppendItem(menu, thing):
     if _WX4:
-        menu.Append( thing )
+        menu.Append(thing)
     else:
-        menu.AppendItem( thing )
+        menu.AppendItem(thing)
 
 def wxAppendMenu(menu, *args):
     if _WX4:
@@ -192,417 +194,464 @@ def wxSetToolTip(item, text):
     if _WX4:
         item.SetToolTip(text)
     else:
-        item.SetToolTipString( text )
+        item.SetToolTipString(text)
 
 
 # -----------------------------------------------------------------------------
 # Graphical User Interface (GUI) definition
 # -----------------------------------------------------------------------------
-class MainFrame ( wx.Frame ):
-        def __init__( self, parent ):
-                wx.Frame.__init__ ( self, parent, id = wx.ID_ANY,
-                                    title = _TITLE,
-                                    pos = wx.DefaultPosition, size = wx.Size( 780,790 ),
-                                    style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL )
+class MainFrame (wx.Frame):
+    def __init__(self, parent):
+        wx.Frame.__init__(self, parent, id = wx.ID_ANY,
+                          title = _TITLE,
+                          pos = wx.DefaultPosition, size = wx.Size(780,790),
+                          style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL)
 
-                if _WX4:
-                    self.SetSizeHints( wx.Size( 760,-1 ))
-                else:
-                    self.SetSizeHintsSz( wx.Size( 760,-1 ))
-                self.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_BTNFACE ) )
+        if _WX4:
+            self.SetSizeHints(wx.Size(760,-1))
+        else:
+            self.SetSizeHintsSz(wx.Size(760,-1))
+        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE))
 
-                #Interface with the back-end
-                self.controller = Controller()
+        # Interface with the back-end
+        self.controller = Controller()
 
-                #Construct a status bar
-                if _WX4:
-                    self.statusBar = self.CreateStatusBar(5, wx.ALWAYS_SHOW_SB|wx.RAISED_BORDER, wx.ID_ANY )
-                else:
-                    self.statusBar = self.CreateStatusBar(5, wx.ST_SIZEGRIP|wx.ALWAYS_SHOW_SB|wx.RAISED_BORDER, wx.ID_ANY )
-                self.statusBar.SetFieldsCount(5)
-                wxSetToolTip( self.statusBar, "Status" )
-                self.statusBar.SetStatusText("Ready",0)
-                self.statusBar.SetStatusText('Version ' + _VERSION ,4)
+        # Construct a status bar
+        if _WX4:
+            self.statusBar = self.CreateStatusBar(
+                5, wx.ALWAYS_SHOW_SB|wx.RAISED_BORDER, wx.ID_ANY)
+        else:
+            self.statusBar = self.CreateStatusBar(
+                5, wx.ST_SIZEGRIP|wx.ALWAYS_SHOW_SB|wx.RAISED_BORDER, wx.ID_ANY)
+        self.statusBar.SetFieldsCount(5)
+        wxSetToolTip(self.statusBar, "Status")
+        self.statusBar.SetStatusText("Ready", 0)
+        self.statusBar.SetStatusText('Version ' + _VERSION, 4)
 
-                #Construct a menu bar
-                self.menuBar = wx.MenuBar( 0 )
+        # Construct a menu bar
+        self.menuBar = wx.MenuBar(0)
 
-                self.fileMenu = wx.Menu()
-                self.openFile = wx.MenuItem( self.fileMenu, wx.ID_OPEN, "Open"+ "\t" + "Ctrl+O", wx.EmptyString, wx.ITEM_NORMAL )
-                wxAppendItem( self.fileMenu, self.openFile )
+        self.fileMenu = wx.Menu()
+        self.openFile = wx.MenuItem(self.fileMenu, wx.ID_OPEN,
+                                    "Open"+ "\t" + "Ctrl+O",
+                                    wx.EmptyString, wx.ITEM_NORMAL)
+        wxAppendItem(self.fileMenu, self.openFile)
 
-                self.fileHistory = wx.FileHistory(8)
-                self.config = wx.Config(_TITLE + "_local", style=wx.CONFIG_USE_LOCAL_FILE)
-                self.fileHistory.Load(self.config)
+        self.fileHistory = wx.FileHistory(8)
+        self.config = wx.Config(_TITLE + "_local", style = wx.CONFIG_USE_LOCAL_FILE)
+        self.fileHistory.Load(self.config)
 
-                recent = wx.Menu()
-                self.fileHistory.UseMenu(recent)
-                self.fileHistory.AddFilesToMenu()
-                wxAppendMenu(self.fileMenu, wx.ID_ANY, "&Recent Files", recent)
-                self.fileMenu.AppendSeparator()
+        recent = wx.Menu()
+        self.fileHistory.UseMenu(recent)
+        self.fileHistory.AddFilesToMenu()
+        wxAppendMenu(self.fileMenu, wx.ID_ANY, "&Recent Files", recent)
+        self.fileMenu.AppendSeparator()
 
-                self.saveFile = wx.MenuItem( self.fileMenu, wx.ID_SAVE, "Save"+ "\t" + "Ctrl+S", wx.EmptyString, wx.ITEM_NORMAL )
-                wxAppendItem( self.fileMenu, self.saveFile )
-                self.fileMenu.AppendSeparator()
+        self.saveFile = wx.MenuItem(self.fileMenu, wx.ID_SAVE,
+                                    "Save"+ "\t" + "Ctrl+S",
+                                    wx.EmptyString, wx.ITEM_NORMAL)
+        wxAppendItem(self.fileMenu, self.saveFile)
+        self.fileMenu.AppendSeparator()
 
-                self.pageSetup = wx.MenuItem( self.fileMenu, wx.ID_PAGE_SETUP, "Page Setup"+ "\t" + "F5", wx.EmptyString, wx.ITEM_NORMAL )
-                wxAppendItem( self.fileMenu, self.pageSetup )
-                self.printOption = wx.MenuItem( self.fileMenu, wx.ID_PRINT, "Print"+ "\t" + "F8", wx.EmptyString, wx.ITEM_NORMAL )
-                wxAppendItem( self.fileMenu, self.printOption )
-                self.fileMenu.AppendSeparator()
-                initializePrintingDefaults(self)# initialize the print data and set some default values
+        self.pageSetup = wx.MenuItem(self.fileMenu, wx.ID_PAGE_SETUP,
+                                     "Page Setup"+ "\t" + "F5",
+                                     wx.EmptyString, wx.ITEM_NORMAL)
+        wxAppendItem(self.fileMenu, self.pageSetup)
+        self.printOption = wx.MenuItem(self.fileMenu, wx.ID_PRINT,
+                                       "Print"+ "\t" + "F8",
+                                       wx.EmptyString, wx.ITEM_NORMAL)
+        wxAppendItem(self.fileMenu, self.printOption)
+        self.fileMenu.AppendSeparator()
+        initializePrintingDefaults(self)# initialize the print data and set some default values
 
-                self.exit = wx.MenuItem( self.fileMenu, wx.ID_EXIT, "Exit"+ "\t" + "Alt+F4", wx.EmptyString, wx.ITEM_NORMAL )
-                wxAppendItem( self.fileMenu, self.exit )
+        self.exit = wx.MenuItem(self.fileMenu, wx.ID_EXIT,
+                                "Exit"+ "\t" + "Alt+F4",
+                                wx.EmptyString, wx.ITEM_NORMAL)
+        wxAppendItem(self.fileMenu, self.exit)
 
-                self.menuBar.Append( self.fileMenu, "File" )
+        self.menuBar.Append(self.fileMenu, "File")
 
-                self.editMenu = wx.Menu()
-                self.clear = wx.MenuItem( self.editMenu, wx.ID_CLEAR, "Clear"+ "\t" + "Ctrl+L", wx.EmptyString, wx.ITEM_NORMAL )
-                wxAppendItem( self.editMenu, self.clear )
+        self.editMenu = wx.Menu()
+        self.clear = wx.MenuItem(self.editMenu, wx.ID_CLEAR,
+                                 "Clear"+ "\t" + "Ctrl+L",
+                                 wx.EmptyString, wx.ITEM_NORMAL)
+        wxAppendItem(self.editMenu, self.clear)
 
-                self.menuBar.Append( self.editMenu, "Edit" )
+        self.menuBar.Append(self.editMenu, "Edit")
 
-                self.runMenu = wx.Menu()
-                self.convertFile = wx.MenuItem( self.runMenu, wx.ID_ANY, "Convert"+ "\t" + "Ctrl+C", wx.EmptyString, wx.ITEM_NORMAL )
-                self.convertFile.Enable(0)
-                wxAppendItem( self.runMenu, self.convertFile )
+        self.runMenu = wx.Menu()
+        self.convertFile = wx.MenuItem(self.runMenu, wx.ID_ANY,
+                                       "Convert"+ "\t" + "Ctrl+C",
+                                       wx.EmptyString, wx.ITEM_NORMAL)
+        self.convertFile.Enable(0)
+        wxAppendItem(self.runMenu, self.convertFile)
 
-                self.menuBar.Append( self.runMenu, "Run" )
+        self.menuBar.Append(self.runMenu, "Run")
 
-                self.windowMenu = wx.Menu()
-                self.close = wx.MenuItem( self.windowMenu, wx.ID_CLOSE, "CloseAll", wx.EmptyString, wx.ITEM_NORMAL )
-                wxAppendItem( self.windowMenu, self.close )
+        self.windowMenu = wx.Menu()
+        self.close = wx.MenuItem(self.windowMenu, wx.ID_CLOSE,
+                                 "CloseAll",
+                                 wx.EmptyString, wx.ITEM_NORMAL)
+        wxAppendItem(self.windowMenu, self.close)
 
-                self.menuBar.Append( self.windowMenu, "Window" )
+        self.menuBar.Append(self.windowMenu, "Window")
 
-                self.helpMenu = wx.Menu()
-                self.helpItem = wx.MenuItem( self.helpMenu, wx.ID_HELP, _TITLE + " Help"+ "\t" + "F1", wx.EmptyString, wx.ITEM_NORMAL )
-                wxAppendItem( self.helpMenu, self.helpItem )
+        self.helpMenu = wx.Menu()
+        self.helpItem = wx.MenuItem(self.helpMenu, wx.ID_HELP,
+                                    _TITLE + " Help"+ "\t" + "F1",
+                                    wx.EmptyString, wx.ITEM_NORMAL)
+        wxAppendItem(self.helpMenu, self.helpItem)
 
-                self.helpMenu.AppendSeparator()
+        self.helpMenu.AppendSeparator()
 
-                self.license = wx.MenuItem( self.helpMenu, wx.ID_ANY, _LICENSE, wx.EmptyString, wx.ITEM_NORMAL )
-                wxAppendItem( self.helpMenu, self.license )
+        self.license = wx.MenuItem(self.helpMenu, wx.ID_ANY,
+                                   _LICENSE,
+                                   wx.EmptyString, wx.ITEM_NORMAL)
+        wxAppendItem(self.helpMenu, self.license)
 
-                self.about = wx.MenuItem( self.helpMenu, wx.ID_ABOUT, "About " + _TITLE, wx.EmptyString, wx.ITEM_NORMAL )
-                wxAppendItem( self.helpMenu, self.about )
+        self.about = wx.MenuItem(self.helpMenu, wx.ID_ABOUT,
+                                 "About " + _TITLE,
+                                 wx.EmptyString, wx.ITEM_NORMAL)
+        wxAppendItem(self.helpMenu, self.about)
 
-                self.menuBar.Append( self.helpMenu, "Help" )
+        self.menuBar.Append(self.helpMenu, "Help")
 
-                self.SetMenuBar( self.menuBar )
+        self.SetMenuBar(self.menuBar)
 
-                #Add sizers(3) and elements for matlab and translated text
-                mainSizer = wx.BoxSizer( wx.VERTICAL )
-                mainSizer.SetMinSize( wx.Size( 1,5 ) )
-                if _WX4:
-                    mainSizer.AddSpacer( 1 )
-                else:
-                    mainSizer.AddSpacer( ( 0, 1), 0, wx.EXPAND|wx.TOP, 5 ) #Diff
-                #Top sizer
-                labelFont = wx.Font( wx.NORMAL_FONT.GetPointSize(), 70, 90, 90, False, wx.EmptyString )
-                topPanelSizer = wx.GridSizer( 2, 1, 0, 0 )
+        # Add sizers(3) and elements for matlab and translated text
+        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        mainSizer.SetMinSize(wx.Size(1,5))
+        if _WX4:
+            mainSizer.AddSpacer(1)
+        else:
+            mainSizer.AddSpacer((0, 1), 0, wx.EXPAND|wx.TOP, 5) # Diff
+        # Top sizer
+        labelFont = wx.Font(wx.NORMAL_FONT.GetPointSize(), 70, 90, 90,
+                            False, wx.EmptyString)
+        topPanelSizer = wx.GridSizer(2, 1, 0, 0)
 
-                fileConvSizer1 = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "File selection" ), wx.HORIZONTAL )
-                self.m_staticText6 = wx.StaticText( self, wx.ID_ANY, "Choose a file for conversion:", wx.DefaultPosition, wx.DefaultSize, 0 )
-                self.m_staticText6.Wrap( -1 )
-                self.m_staticText6.SetFont( labelFont )
-                fileConvSizer1.Add( self.m_staticText6, 1, wx.ALL, 10 )
-                self.filePicker = wx.FilePickerCtrl( self, wx.ID_ANY, wx.EmptyString, "Select a file", "*.m", wx.DefaultPosition, wx.DefaultSize, wx.FLP_DEFAULT_STYLE )
-                self.filePicker.SetMinSize( wx.Size( 350,-1 ) )
-                self.filePicker.SetFont( labelFont )
-                fileConvSizer1.Add( self.filePicker, 6, wx.ALL, 1 )
-                topPanelSizer.Add( fileConvSizer1, 1, wx.ALL|wx.EXPAND, 1 )
+        fileConvSizer1 = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "File selection"), wx.HORIZONTAL)
+        self.m_staticText6 = wx.StaticText(self, wx.ID_ANY,
+                                           "Choose a file for conversion:",
+                                           wx.DefaultPosition, wx.DefaultSize, 0)
+        self.m_staticText6.Wrap(-1)
+        self.m_staticText6.SetFont(labelFont)
+        fileConvSizer1.Add(self.m_staticText6, 1, wx.ALL, 10)
+        self.filePicker = wx.FilePickerCtrl(self, wx.ID_ANY, wx.EmptyString,
+                                            "Select a file", "*.m", wx.DefaultPosition,
+                                            wx.DefaultSize, wx.FLP_DEFAULT_STYLE)
+        self.filePicker.SetMinSize(wx.Size(350,-1))
+        self.filePicker.SetFont(labelFont)
+        fileConvSizer1.Add(self.filePicker, 6, wx.ALL, 1)
+        topPanelSizer.Add(fileConvSizer1, 1, wx.ALL|wx.EXPAND, 1)
 
-                sbSizer9 = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "File conversion" ), wx.VERTICAL )
-                optionLayoutSizer = wx.GridSizer( 1, 6, 0, 40 )
-                self.staticTextOpt = wx.StaticText( self, wx.ID_ANY, "Variable encoding: ", wx.DefaultPosition, wx.DefaultSize, 0 )
-                self.staticTextOpt.Wrap( -1 )
-                self.staticTextOpt.SetFont(labelFont)
-                optionLayoutSizer.Add( self.staticTextOpt, 0, wx.ALL, 8 )
-                self.varsAsSpecies = wx.RadioButton( self, wx.ID_ANY, "SBML Species", wx.DefaultPosition, wx.DefaultSize, wx.RB_GROUP )
-                self.varsAsSpecies.SetValue( True )
-                optionLayoutSizer.Add( self.varsAsSpecies, 0, wx.ALL, 8 )
-                self.varsAsParams = wx.RadioButton( self, wx.ID_ANY, "SBML Parameters", wx.DefaultPosition, wx.DefaultSize, 0 )
-                optionLayoutSizer.Add( self.varsAsParams, 0, wx.ALL, 8 )
-                if _WX4:
-                    optionLayoutSizer.AddSpacer( 1 )
-                    optionLayoutSizer.AddSpacer( 1 )
-                else:
-                    optionLayoutSizer.AddSpacer( ( 0, 0), 1, wx.ALL|wx.EXPAND, 2 )
-                    optionLayoutSizer.AddSpacer( ( 0, 0), 1, wx.ALL|wx.EXPAND, 2 )
-                self.convertButton = wx.Button( self, wx.ID_ANY, "Convert", wx.DefaultPosition, wx.DefaultSize, 0 )
-                self.convertButton.SetFont(labelFont)
-                self.convertButton.Disable()
-                optionLayoutSizer.Add( self.convertButton, 1, wx.ALIGN_LEFT|wx.ALIGN_RIGHT|wx.ALL, 5 )
-                sbSizer9.Add( optionLayoutSizer, 0, wx.EXPAND, 5 )
-                gSizer7 = wx.GridSizer( 0, 6, 0, 40 )
+        sbSizer9 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "File conversion"),
+                                     wx.VERTICAL)
+        optionLayoutSizer = wx.GridSizer(1, 6, 0, 40)
+        self.staticTextOpt = wx.StaticText(self, wx.ID_ANY, "Variable encoding: ",
+                                           wx.DefaultPosition, wx.DefaultSize, 0)
+        self.staticTextOpt.Wrap(-1)
+        self.staticTextOpt.SetFont(labelFont)
+        optionLayoutSizer.Add(self.staticTextOpt, 0, wx.ALL, 8)
+        self.varsAsSpecies = wx.RadioButton(self, wx.ID_ANY, "SBML Species",
+                                            wx.DefaultPosition, wx.DefaultSize, wx.RB_GROUP)
+        self.varsAsSpecies.SetValue(True)
+        optionLayoutSizer.Add(self.varsAsSpecies, 0, wx.ALL, 8)
+        self.varsAsParams = wx.RadioButton(self, wx.ID_ANY, "SBML Parameters",
+                                           wx.DefaultPosition, wx.DefaultSize, 0)
+        optionLayoutSizer.Add(self.varsAsParams, 0, wx.ALL, 8)
+        if _WX4:
+            optionLayoutSizer.AddSpacer(1)
+            optionLayoutSizer.AddSpacer(1)
+        else:
+            optionLayoutSizer.AddSpacer((0, 0), 1, wx.ALL|wx.EXPAND, 2)
+            optionLayoutSizer.AddSpacer((0, 0), 1, wx.ALL|wx.EXPAND, 2)
+        self.convertButton = wx.Button(self, wx.ID_ANY, "Convert",
+                                       wx.DefaultPosition, wx.DefaultSize, 0)
+        self.convertButton.SetFont(labelFont)
+        self.convertButton.Disable()
+        optionLayoutSizer.Add(self.convertButton, 1, wx.ALIGN_LEFT|wx.ALIGN_RIGHT|wx.ALL, 5)
+        sbSizer9.Add(optionLayoutSizer, 0, wx.EXPAND, 5)
+        gSizer7 = wx.GridSizer(0, 6, 0, 40)
 
-                self.modeType = wx.StaticText( self, wx.ID_ANY, "Output format: ", wx.DefaultPosition, wx.DefaultSize, 0 )
-                self.modeType.Wrap( -1 )
-                self.modeType.SetFont(labelFont)
-                gSizer7.Add( self.modeType, 0, wx.ALL, 8 )
-                self.reactionBasedModel = wx.RadioButton( self, wx.ID_ANY, "SBML (reactions)", wx.DefaultPosition, wx.DefaultSize, wx.RB_GROUP )
-                self.reactionBasedModel.SetValue( True )
-                gSizer7.Add( self.reactionBasedModel, 0, wx.ALL, 8 )
-                self.equationBasedModel = wx.RadioButton( self, wx.ID_ANY, "SBML (equations)", wx.DefaultPosition, wx.DefaultSize, 0 )
-                gSizer7.Add( self.equationBasedModel, 0, wx.ALL, 8 )
-                self.xppModel = wx.RadioButton( self, wx.ID_ANY, "XPP/XPPAUT", wx.DefaultPosition, wx.DefaultSize, 0 )
-                gSizer7.Add( self.xppModel, 0, wx.ALL, 8 )
-                sbSizer9.Add( gSizer7, 0, wx.EXPAND, 5 )
-                topPanelSizer.Add( sbSizer9, 2, wx.ALL|wx.EXPAND, 1 )
+        self.modeType = wx.StaticText(self, wx.ID_ANY, "Output format: ",
+                                      wx.DefaultPosition, wx.DefaultSize, 0)
+        self.modeType.Wrap(-1)
+        self.modeType.SetFont(labelFont)
+        gSizer7.Add(self.modeType, 0, wx.ALL, 8)
+        self.reactionBasedModel = wx.RadioButton(self, wx.ID_ANY, "SBML (reactions)",
+                                                 wx.DefaultPosition, wx.DefaultSize, wx.RB_GROUP)
+        self.reactionBasedModel.SetValue(True)
+        gSizer7.Add(self.reactionBasedModel, 0, wx.ALL, 8)
+        self.equationBasedModel = wx.RadioButton(self, wx.ID_ANY, "SBML (equations)",
+                                                 wx.DefaultPosition, wx.DefaultSize, 0)
+        gSizer7.Add(self.equationBasedModel, 0, wx.ALL, 8)
+        self.xppModel = wx.RadioButton(self, wx.ID_ANY, "XPP/XPPAUT",
+                                       wx.DefaultPosition, wx.DefaultSize, 0)
+        gSizer7.Add(self.xppModel, 0, wx.ALL, 8)
+        sbSizer9.Add(gSizer7, 0, wx.EXPAND, 5)
+        topPanelSizer.Add(sbSizer9, 2, wx.ALL|wx.EXPAND, 1)
 
-                mainSizer.Add( topPanelSizer, 1, wx.ALL|wx.EXPAND, 5 )
+        mainSizer.Add(topPanelSizer, 1, wx.ALL|wx.EXPAND, 5)
 
 
-                #Mid sizer
-                panelTextFont = wx.Font( wx.NORMAL_FONT.GetPointSize() -1, 70, 90, wx.FONTWEIGHT_NORMAL, False, wx.EmptyString )
+        # Mid sizer
+        panelTextFont = wx.Font(wx.NORMAL_FONT.GetPointSize() -1, 70, 90,
+                                wx.FONTWEIGHT_NORMAL, False, wx.EmptyString)
 
-                midPanelSizer = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "MATLAB File" ), wx.VERTICAL )
-                self.matlabWebView = wx.html2.WebView.New( self, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND  )
-                self.matlabWebView.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
-                wxSetToolTip( self.matlabWebView, "Input file for conversion" )
-                self.matlabWebView.SetFont( panelTextFont )
-                self.matlabWebView.SetPage(_EMPTY_PAGE, "")
-                midPanelSizer.Add( self.matlabWebView, 1, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND, 5 )
-                mainSizer.Add( midPanelSizer, 2, wx.ALL|wx.EXPAND, 5 )
+        midPanelSizer = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "MATLAB File"),
+                                          wx.VERTICAL)
+        self.matlabWebView = wx.html2.WebView.New(self, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND )
+        self.matlabWebView.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        wxSetToolTip(self.matlabWebView, "Input file for conversion")
+        self.matlabWebView.SetFont(panelTextFont)
+        self.matlabWebView.SetPage(_EMPTY_PAGE, "")
+        midPanelSizer.Add(self.matlabWebView, 1, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND, 5)
+        mainSizer.Add(midPanelSizer, 2, wx.ALL|wx.EXPAND, 5)
 
-                #Bottom sizer
-                bottomPanelSizer = wx.StaticBoxSizer( wx.StaticBox( self, wx.ID_ANY, "Converted File" ), wx.VERTICAL )
-                self.convertedWebView = wx.html2.WebView.New( self, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND )
-                self.convertedWebView.SetForegroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_WINDOWTEXT ) )
-                self.convertedWebView.SetFont( panelTextFont )
-                wxSetToolTip( self.convertedWebView, "Output file after conversion" )
-                self.convertedWebView.SetPage(_EMPTY_PAGE, "")
-                bottomPanelSizer.Add( self.convertedWebView, 1, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND, 5 )
-                mainSizer.Add( bottomPanelSizer, 2, wx.ALL|wx.EXPAND, 5 )
+        # Bottom sizer
+        bottomPanelSizer = wx.StaticBoxSizer(
+            wx.StaticBox(self, wx.ID_ANY, "Converted File"), wx.VERTICAL)
+        self.convertedWebView = wx.html2.WebView.New(
+            self, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND)
+        self.convertedWebView.SetForegroundColour(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.convertedWebView.SetFont(panelTextFont)
+        wxSetToolTip(self.convertedWebView, "Output file after conversion")
+        self.convertedWebView.SetPage(_EMPTY_PAGE, "")
+        bottomPanelSizer.Add(
+            self.convertedWebView, 1, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND, 5)
+        mainSizer.Add(bottomPanelSizer, 2, wx.ALL|wx.EXPAND, 5)
 
-                #Set frame sizer
-                self.SetSizer( mainSizer )
-                self.Layout()
-                self.Centre( wx.BOTH )
+        # Set frame sizer
+        self.SetSizer(mainSizer)
+        self.Layout()
+        self.Centre(wx.BOTH)
 
-                # Bind GUI elements to specific events
-                self.Bind( wx.EVT_MENU, self.onOpen, id = self.openFile.GetId() )
-                self.Bind( wx.EVT_MENU, self.onSaveAs, id = self.saveFile.GetId() )
-                self.Bind( wx.EVT_MENU, self.onExit, id = self.exit.GetId() )
-                self.Bind( wx.EVT_MENU, self.onClear, id = self.clear.GetId() )
-                self.Bind( wx.EVT_MENU, self.onConvert, id = self.convertFile.GetId() )
-                self.Bind( wx.EVT_MENU, self.onCloseAll, id = self.close.GetId() )
-                self.Bind( wx.EVT_MENU, self.onHelp, id = self.helpItem.GetId() )
-                self.Bind( wx.EVT_MENU, self.onLicense, id = self.license.GetId() )
-                self.Bind( wx.EVT_MENU, self.onAbout, id = self.about.GetId() )
-                self.Bind( wx.EVT_FILEPICKER_CHANGED, self.onFilePicker, id = self.filePicker.GetId() )
-                self.Bind( wx.EVT_BUTTON, self.onConvert, id = self.convertButton.GetId() )
-                self.Bind( wx.EVT_MENU, self.OnPageSetup, id= self.pageSetup.GetId() )
-                self.Bind( wx.EVT_MENU, self.OnPrint, id=self.printOption.GetId())
-                self.Bind( wx.EVT_MENU_RANGE, self.onFileHistory, id=wx.ID_FILE1, id2=wx.ID_FILE9)
-                self.Bind( wx.EVT_CLOSE, self.onClose )
+        # Bind GUI elements to specific events
+        self.Bind(wx.EVT_MENU, self.onOpen, id = self.openFile.GetId())
+        self.Bind(wx.EVT_MENU, self.onSaveAs, id = self.saveFile.GetId())
+        self.Bind(wx.EVT_MENU, self.onExit, id = self.exit.GetId())
+        self.Bind(wx.EVT_MENU, self.onClear, id = self.clear.GetId())
+        self.Bind(wx.EVT_MENU, self.onConvert, id = self.convertFile.GetId())
+        self.Bind(wx.EVT_MENU, self.onCloseAll, id = self.close.GetId())
+        self.Bind(wx.EVT_MENU, self.onHelp, id = self.helpItem.GetId())
+        self.Bind(wx.EVT_MENU, self.onLicense, id = self.license.GetId())
+        self.Bind(wx.EVT_MENU, self.onAbout, id = self.about.GetId())
+        self.Bind(wx.EVT_FILEPICKER_CHANGED, self.onFilePicker, id = self.filePicker.GetId())
+        self.Bind(wx.EVT_BUTTON, self.onConvert, id = self.convertButton.GetId())
+        self.Bind(wx.EVT_MENU, self.OnPageSetup, id= self.pageSetup.GetId())
+        self.Bind(wx.EVT_MENU, self.OnPrint, id=self.printOption.GetId())
+        self.Bind(wx.EVT_MENU_RANGE, self.onFileHistory, id=wx.ID_FILE1, id2=wx.ID_FILE9)
+        self.Bind(wx.EVT_CLOSE, self.onClose)
 
-        def __del__( self ):
-                pass
+    def __del__(self):
+        pass
 
 # -----------------------------------------------------------------------------
 # Virtual Event Handlers
 # -----------------------------------------------------------------------------
-        def onOpen(self, event):
-                global _IS_OUTPUT_SAVED
-                dirname=""
-                dlg = wx.FileDialog(self, "Choose a file", dirname, "", "*.m", wx.OPEN)
-                if dlg.ShowModal() == wx.ID_OK:
-                        filename = dlg.GetFilename()
-                        dirname = dlg.GetDirectory()
-                        path=os.path.join(dirname, filename)
-                        resetOnOpen(self, event)
-                        openFile(self, event, path)
-                        self.filePicker.SetPath(path)
-                        #Only reset values when file was loaded
-                        modifyHistory(self, event , path)
-                        _IS_OUTPUT_SAVED = False
-                dlg.Destroy()
+    def onOpen(self, event):
+        global _IS_OUTPUT_SAVED
+        dirname=""
+        dlg = wx.FileDialog(self, "Choose a file", dirname, "", "*.m", wx.OPEN)
+        if dlg.ShowModal() == wx.ID_OK:
+            filename = dlg.GetFilename()
+            dirname = dlg.GetDirectory()
+            path=os.path.join(dirname, filename)
+            resetOnOpen(self, event)
+            openFile(self, event, path)
+            self.filePicker.SetPath(path)
+            # Only reset values when file was loaded
+            modifyHistory(self, event , path)
+            _IS_OUTPUT_SAVED = False
+        dlg.Destroy()
 
 
-        def onFilePicker(self, event):
-                resetOnOpen(self, event)
-                path=self.filePicker.GetPath()
-                openFile(self, event, path)
-                modifyHistory(self, event, path)
-                _IS_OUTPUT_SAVED = False
+    def onFilePicker(self, event):
+        resetOnOpen(self, event)
+        path=self.filePicker.GetPath()
+        openFile(self, event, path)
+        modifyHistory(self, event, path)
+        _IS_OUTPUT_SAVED = False
 
 
-        def onSaveAs( self, event ):
-                saveFile(self, event)
+    def onSaveAs(self, event):
+        saveFile(self, event)
 
 
-        def onFileHistory(self, event):
-                resetOnOpen(self, event)
-                fileNum = event.GetId() - wx.ID_FILE1
-                path = self.fileHistory.GetHistoryFile(fileNum)
-                modifyHistory (self, event, path)
-                self.filePicker.SetPath(path)
-                openFile(self, event, path)
+    def onFileHistory(self, event):
+        resetOnOpen(self, event)
+        fileNum = event.GetId() - wx.ID_FILE1
+        path = self.fileHistory.GetHistoryFile(fileNum)
+        modifyHistory (self, event, path)
+        self.filePicker.SetPath(path)
+        openFile(self, event, path)
 
 
-        def onExit( self, event ):
-                self.Close(True)
+    def onExit(self, event):
+        self.Close(True)
 
 
-        def onClear( self, event ):
-                global _IS_OUTPUT_SAVED
-                self.matlabWebView.SetPage(_EMPTY_PAGE,"")
-                self.convertedWebView.SetPage(_EMPTY_PAGE, "")
-                self.filePicker.SetPath("")
-                self.statusBar.SetStatusText( "Ready",0 )
-                self.statusBar.SetStatusText( "",2 )
-                self.convertButton.Disable()
-                self.convertFile.Enable(0)
-                self.reactionBasedModel.SetValue( True )
-                self.varsAsSpecies.SetValue( True )
-                _IS_OUTPUT_SAVED = False
+    def onClear(self, event):
+        global _IS_OUTPUT_SAVED
+        self.matlabWebView.SetPage(_EMPTY_PAGE,"")
+        self.convertedWebView.SetPage(_EMPTY_PAGE, "")
+        self.filePicker.SetPath("")
+        self.statusBar.SetStatusText("Ready",0)
+        self.statusBar.SetStatusText("",2)
+        self.convertButton.Disable()
+        self.convertFile.Enable(0)
+        self.reactionBasedModel.SetValue(True)
+        self.varsAsSpecies.SetValue(True)
+        _IS_OUTPUT_SAVED = False
 
 
-        def onConvert( self, event ):
-                global _IS_OUTPUT_SAVED
-                global _SAVEAS_ODE
+    def onConvert(self, event):
+        global _IS_OUTPUT_SAVED
+        global _SAVEAS_ODE
 
-                checkSaveOutput( self, event )
-                self.convertedWebView.SetPage(_EMPTY_PAGE, "")
+        checkSaveOutput(self, event)
+        self.convertedWebView.SetPage(_EMPTY_PAGE, "")
 
-                self.statusBar.SetStatusText( "Generating output ..." ,0)
-                wx.BeginBusyCursor()
-                try:
-                        self.controller.parse_File(self.file_contents)
-                        #output XPP files
-                        if self.xppModel.GetValue():
-                                [output, extra] = self.controller.build_model(use_species=self.varsAsSpecies.GetValue(),
-                                                                              output_format="xpp",
-                                                                              name_after_param=False,
-                                                                              add_comments=False)
+        self.statusBar.SetStatusText("Generating output ...", 0)
+        wx.BeginBusyCursor()
+        try:
+            self.controller.parse_File(self.file_contents)
+            # output XPP files
+            if self.xppModel.GetValue():
+                [output, extra] = self.controller.build_model(
+                    use_species = self.varsAsSpecies.GetValue(),
+                    output_format = "xpp",
+                    name_after_param = False,
+                    add_comments = False)
 
-                                self.convertedWebView.SetPage(tokenize(output, "matlab", "borland"),"")
-                                self.statusBar.SetStatusText("XPP/XPPAUT ODE format",2)
+                self.convertedWebView.SetPage(tokenize(output, "matlab", "borland"), "")
+                self.statusBar.SetStatusText("XPP/XPPAUT ODE format", 2)
 
-                        #output equation-based SBML
-                        elif self.equationBasedModel.GetValue():
-                                 [output, extra] = self.controller.build_model(use_species=self.varsAsSpecies.GetValue(),
-                                                                               output_format="sbml",
-                                                                               name_after_param=False,
-                                                                               add_comments=False)
+            # output equation-based SBML
+            elif self.equationBasedModel.GetValue():
+                [output, extra] = self.controller.build_model(
+                    use_species = self.varsAsSpecies.GetValue(),
+                    output_format = "sbml",
+                    name_after_param = False,
+                    add_comments = False)
 
-                                 self.convertedWebView.SetPage(tokenize(output, "xml", "borland"),"")
-                                 self.statusBar.SetStatusText("SBML format - equations",2)
-                        #output reaction-based SBML
-                        else:
-                                if not self.controller.check_network_connection():
-                                        msg = "A network connection is needed for this feature, but the network appears to be unavailable."
-                                        dlg = wx.MessageDialog(self, msg, "Warning", wx.OK | wx.ICON_WARNING)
-                                        dlg.ShowModal()
-                                        dlg.Destroy()
-                                else:
-                                        sbml = self.controller.build_reaction_model(use_species=self.varsAsSpecies.GetValue(),
-                                                                               name_after_param=False,
-                                                                               add_comments=False)
-
-                                        self.convertedWebView.SetPage(tokenize(sbml, "xml", "borland"),"")
-                                        self.statusBar.SetStatusText("SBML format - reactions", 2)
-
-                except IOError as err:
-                        wx.EndBusyCursor()
-                        report(self, event, "IOError: {0}".format(err))
-                except Exception as exc:
-                        wx.EndBusyCursor()
-                        report(self, event, "Exception: {0}".format(exc))
+                self.convertedWebView.SetPage(tokenize(output, "xml", "borland"), "")
+                self.statusBar.SetStatusText("SBML format - equations", 2)
+            # Output reaction-based SBML
+            else:
+                if not self.controller.check_network_connection():
+                    msg = "A network connection is needed for this feature, but the network appears to be unavailable."
+                    dlg = wx.MessageDialog(self, msg, "Warning", wx.OK | wx.ICON_WARNING)
+                    dlg.ShowModal()
+                    dlg.Destroy()
                 else:
-                        wx.EndBusyCursor()
-                        self.statusBar.SetStatusText("Done", 0)
-                        _IS_OUTPUT_SAVED = False
-                        _SAVEAS_ODE = self.xppModel.GetValue()
+                    sbml = self.controller.build_reaction_model(
+                        use_species = self.varsAsSpecies.GetValue(),
+                        name_after_param = False,
+                        add_comments = False)
+
+                    self.convertedWebView.SetPage(tokenize(sbml, "xml", "borland"), "")
+                    self.statusBar.SetStatusText("SBML format - reactions",  2)
+
+        except IOError as err:
+            wx.EndBusyCursor()
+            report(self, event, "IOError: {0}".format(err))
+        except Exception as exc:
+            wx.EndBusyCursor()
+            report(self, event, "Exception: {0}".format(exc))
+        else:
+            wx.EndBusyCursor()
+            self.statusBar.SetStatusText("Done", 0)
+            _IS_OUTPUT_SAVED = False
+            _SAVEAS_ODE = self.xppModel.GetValue()
 
 
-        def onCloseAll( self, event ):
-                self.Close(True)
+    def onCloseAll(self, event):
+        self.Close(True)
 
 
-        def onHelp( self, event ):
-                wx.BeginBusyCursor()
-                webbrowser.open(_HELP_URL)
-                wx.EndBusyCursor()
+    def onHelp(self, event):
+        wx.BeginBusyCursor()
+        webbrowser.open(_HELP_URL)
+        wx.EndBusyCursor()
 
 
-        def onLicense( self, event ):
-                wx.BeginBusyCursor()
-                webbrowser.open(_LICENSE_URL)
-                wx.EndBusyCursor()
+    def onLicense(self, event):
+        wx.BeginBusyCursor()
+        webbrowser.open(_LICENSE_URL)
+        wx.EndBusyCursor()
 
 
-        def onAbout( self, event ):
-                dlg = wx.adv.AboutDialogInfo()
-                dlg.SetIcon(wx.Icon("../../docs/project/logo/moccasin_logo_20151002/logo_64.png", wx.BITMAP_TYPE_PNG))
-                dlg.SetName(_TITLE)
-                dlg.SetVersion(_VERSION)
-                dlg.SetLicense(_LICENSE)
-                dlg.SetDescription('\n'.join(textwrap.wrap(
-                        _TITLE + " is the Model ODE Converter for Creating Automated "
-                        "SBML INteroperability.  It is a user-assisted converter "
-                        "that can take MATLAB or Octave ODE-based models in "
-                        "biology and translate them into the SBML format.", 81)))
-                dlg.SetWebSite(_URL)
-                dlg.AddDeveloper(u"Michael Hucka (California Institute of Technology)")
-                dlg.AddDeveloper(u"\nSarah Keating (European Bioinformatics Institute)")
-                dlg.AddDeveloper(u"\nHarold G\u00f3mez (ETH Zurich)")
-                wx.adv.AboutBox(dlg)
+    def onAbout(self, event):
+        dlg = wx.adv.AboutDialogInfo()
+        dlg.SetIcon(wx.Icon(_icon_file, wx.BITMAP_TYPE_PNG))
+        dlg.SetName(_TITLE)
+        dlg.SetVersion(_VERSION)
+        dlg.SetLicense(_LICENSE)
+        dlg.SetDescription('\n'.join(textwrap.wrap(
+            _TITLE + " is the Model ODE Converter for Creating Automated "
+            "SBML INteroperability.  It is a user-assisted converter "
+            "that can take MATLAB or Octave ODE-based models in "
+            "biology and translate them into the SBML format.", 81)))
+        dlg.SetWebSite(_URL)
+        dlg.AddDeveloper(u"Michael Hucka (California Institute of Technology)")
+        dlg.AddDeveloper(u"\nSarah Keating (European Bioinformatics Institute)")
+        dlg.AddDeveloper(u"\nHarold G\u00f3mez (ETH Zurich)")
+        wx.adv.AboutBox(dlg)
 
 
-        def onClose( self, event ):
-                checkSaveOutput( self,event )
-                self.Destroy()
+    def onClose(self, event):
+        checkSaveOutput(self, event)
+        self.Destroy()
 
 
-        # Printing Handlers
-        def OnPageSetup(self, evt):
-                data = wx.PageSetupDialogData()
-                data.SetPrintData(self.pdata)
-                data.SetDefaultMinMargins(True)
-                data.SetMarginTopLeft(self.margins[0])
-                data.SetMarginBottomRight(self.margins[1])
-                dlg = wx.PageSetupDialog(self, data)
+    # Printing Handlers
 
-                if dlg.ShowModal() == wx.ID_OK:
-                        data = dlg.GetPageSetupData()
-                        self.pdata = wx.PrintData(data.GetPrintData()) # force a copy
-                        self.pdata.SetPaperId(data.GetPaperId())
-                        self.margins = (data.GetMarginTopLeft(),
-                                        data.GetMarginBottomRight())
-                dlg.Destroy()
+    def OnPageSetup(self, evt):
+        data = wx.PageSetupDialogData()
+        data.SetPrintData(self.pdata)
+        data.SetDefaultMinMargins(True)
+        data.SetMarginTopLeft(self.margins[0])
+        data.SetMarginBottomRight(self.margins[1])
+        dlg = wx.PageSetupDialog(self, data)
 
-
-        def OnPrint(self, evt):
-                data = wx.PrintDialogData(self.pdata)
-                printer = wx.Printer(data)
-                text = self.convertedWebView.GetPageText()
-                printout = PrintDialog(text, _TITLE + " output", self.margins)
-                useSetupDialog = True
-                if not printer.Print(self, printout, useSetupDialog) \
-                   and printer.GetLastError() == wx.PRINTER_ERROR:
-                        wx.MessageBox(
-                                "There was a problem printing.\n"
-                                "Perhaps your current printer is not set correctly?",
-                                "Printing Error", wx.OK)
-                else:
-                        data = printer.GetPrintDialogData()
-                        self.pdata = wx.PrintData(data.GetPrintData()) # force a copy
-                printout.Destroy()
+        if dlg.ShowModal() == wx.ID_OK:
+            data = dlg.GetPageSetupData()
+            self.pdata = wx.PrintData(data.GetPrintData()) # force a copy
+            self.pdata.SetPaperId(data.GetPaperId())
+            self.margins = (data.GetMarginTopLeft(), data.GetMarginBottomRight())
+        dlg.Destroy()
 
 
+    def OnPrint(self, evt):
+        data = wx.PrintDialogData(self.pdata)
+        printer = wx.Printer(data)
+        text = self.convertedWebView.GetPageText()
+        printout = PrintDialog(text, _TITLE + " output", self.margins)
+        useSetupDialog = True
+        if (not printer.Print(self, printout, useSetupDialog)
+            and printer.GetLastError() == wx.PRINTER_ERROR):
+            wx.MessageBox("There was a problem printing.\n"
+                          "Perhaps your current printer is not set correctly?",
+                          "Printing Error", wx.OK)
+        else:
+            data = printer.GetPrintDialogData()
+            self.pdata = wx.PrintData(data.GetPrintData()) # force a copy
+        printout.Destroy()
+
+
 # -----------------------------------------------------------------------------
 # Entry point
 # -----------------------------------------------------------------------------
 
 def gui_main():
-        app = wx.App(False)
-        app.SetAppName(_TITLE)
-        frame = MainFrame(None)
-        frame.Show()
-        app.MainLoop()
+    app = wx.App(False)
+    app.SetAppName(_TITLE)
+    frame = MainFrame(None)
+    frame.Show()
+    app.MainLoop()
 
 gui_main()
