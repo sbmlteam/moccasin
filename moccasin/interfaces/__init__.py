@@ -20,4 +20,4 @@
 # available online at https://github.com/sbmlteam/moccasin/.
 # ------------------------------------------------------------------------- -->
 
-__all__ = ["Moccasin_GUI"]
+__all__ = ["moccasin", "moccasin_GUI"]
