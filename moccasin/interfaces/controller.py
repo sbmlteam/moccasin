@@ -46,7 +46,7 @@ class Controller():
     '''This class serves to interface between Moccasins' modules to the CLI and GUI.'''
 
 
-    def __init__( self ):
+    def __init__(self):
         self.parser = MatlabGrammar()
         self.file_contents = None
         self.parse_results = None
@@ -60,7 +60,7 @@ class Controller():
 
     def print_parsed_results(self):
         '''Prints the parsed input file.'''
-        return (self.parser.print_parse_results(self.parse_results))
+        return (self.parser.print_parse_results(self.parse_results, print_raw=True))
 
 
     def build_model(self, use_species, output_format, name_after_param, add_comments):
@@ -106,12 +106,3 @@ class Controller():
             print("error: {0}".format(err))
         finally:
             os.unlink(xpp_file.name)
-
-
-    def check_network_connection(self):
-        '''Connects somewhere to test if a network is available.'''
-        try:
-            _ = requests.get('http://www.google.com', timeout=5)
-            return True
-        except requests.ConnectionError:
-            return False
