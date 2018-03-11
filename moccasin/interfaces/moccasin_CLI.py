@@ -32,11 +32,13 @@ except:
 
 try:
     thisdir = os.path.dirname(os.path.abspath(__file__))
-    sys.path.append(os.path.join(thisdir, '..'))
+    sys.path.append(os.path.join(thisdir, '../..'))
 except:
-    sys.path.append('..')
+    sys.path.append('../..')
 
-from controller import Controller
+import moccasin
+from moccasin.interfaces import moccasin_GUI
+from .controller import Controller
 
 # This prevents exceeding recursion depth in some cases.
 sys.setrecursionlimit(5000)
@@ -60,8 +62,8 @@ sys.setrecursionlimit(5000)
     paths         = 'paths to MATLAB input files to convert'
 )
 
-def main(gui, use_equations, use_params, quiet, xpp_output, version,
-         no_color, debug_parser, no_comments, *paths):
+def cli_main(gui, use_equations, use_params, quiet, xpp_output, version,
+             no_color, debug_parser, no_comments, *paths):
     '''Interface for controlling MOCCASIN, the MATLAB ODE converter for SBML.
 MOCCASIN can take certain forms of ODE (ordinary differential equation) models
 written in MATLAB and Octave and export them as SBML files.  MOCCASIN does not
@@ -137,15 +139,13 @@ For more information about MOCCASIN, visit https://sbml.org/Software/MOCCASIN
     add_comments = not no_comments
 
     if gui:
-        import moccasin_GUI
-        gui_main()
+        moccasin_GUI.gui_main()
         sys.exit()
     if version:
-        import __version__
-        msg('{} version {}'.format(__version__.__title__, __version__.__version__))
-        msg('Author: {}'.format(__version__.__author__))
-        msg('URL: {}'.format(__version__.__url__))
-        msg('License: {}'.format(__version__.__license__))
+        msg('{} version {}'.format(moccasin.__title__, moccasin.__version__))
+        msg('Author: {}'.format(moccasin.__author__))
+        msg('URL: {}'.format(moccasin.__url__))
+        msg('License: {}'.format(moccasin.__license__))
         sys.exit()
     if not paths:
         raise SystemExit(colorcode('Must provide a path to a file.', 'error'))
@@ -323,17 +323,6 @@ def color_codes(flags):
     if 'dark' in flags:
         attrib.append('dark')
     return (prefix, color, attrib)
-
-
-# -----------------------------------------------------------------------------
-# Main entry point.
-# -----------------------------------------------------------------------------
-
-def cli_main():
-    #The argument parser is inferred - it also deals with too few or too many func args
-    plac.call(main)
-
-cli_main()
 
 
 # Please leave the following for Emacs users.
