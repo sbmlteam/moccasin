@@ -1,7 +1,7 @@
 #!/usr/bin/env python3.4
 #
 # @file    test.py
-# @brief   Simple test driver for MatlabGrammar class.
+# @brief   Simple test driver for MatlabParser class.
 # @author  Michael Hucka
 #
 # <!---------------------------------------------------------------------------
@@ -29,7 +29,7 @@
 #    ./test.py matlabfile.m
 #
 # where "matlabfile.m" is some (preferrably very simple) matlab input file.
-# test.py will parse the file using MatlabGrammar.parse_string() and print an
+# test.py will parse the file using MatlabParser.parse_string() and print an
 # annotated representation of how the input was interpreted.  This
 # representation is in the form of a MatlabContext object for the input file
 # "matlabfile.m".  If given the optional argument -d, then test.py invokes
@@ -42,7 +42,7 @@
 from __future__ import print_function
 import sys
 import getopt
-from grammar import *
+from parser import *
 
 def get_options(argv):
     """Helper function for parsing command-line arguments."""
@@ -83,7 +83,7 @@ Arguments:
         pr = cProfile.Profile()
         pr.enable()
 
-    with MatlabGrammar() as parser:
+    with MatlabParser() as parser:
         # This uses parse_string() instead of parse_file() because the file has
         # already been opened.  This is a minor performance improvement in case
         # someone tries to read a really huge file -- no sense reading it twice.
