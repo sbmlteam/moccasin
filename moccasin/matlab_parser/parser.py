@@ -385,7 +385,7 @@ if LooseVersion(pyparsing.__version__) < LooseVersion('2.0.3'):
 # Necessary optimization.  Without this, the PyParsing grammar defined below
 # never finishes parsing anything.
 
-ParserElement.enablePackrat()
+ParserElement.enablePackrat(cache_size_limit = None)
 
 # The inefficient nature of this parser leads to easily exceeding the default
 # recursion stack limit.  Let's increase it:
