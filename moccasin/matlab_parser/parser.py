@@ -1121,7 +1121,7 @@ class Disambiguator(MatlabNodeVisitor):
 # the highest level parsing object, simply because Python interprets the file
 # in this order and needs each item defined before it encounters it later.
 # However, for readabily, it's probably easiest to start at the last
-# definition (which is _matlab_syntax) and read up.
+# definition (which is _matlab) and read up.
 
 class MatlabParser:
 
@@ -1716,7 +1716,7 @@ class MatlabParser:
     # Commands.
     #
     # Shell commands don't respect ellipses or delimiters, so we use EOL
-    # explicitly here and match _shell_cmd at the _matlab_syntax level.
+    # explicitly here and match _shell_cmd at the _matlab level.
 
     _shell_cmd_cmd  = Group(restOfLine)('command')
     _shell_cmd      = Group(Group('!' + _shell_cmd_cmd + _EOL)('shell command'))
@@ -1802,7 +1802,7 @@ class MatlabParser:
 
     # Statements and statement lists.
     #
-    # Statement lists are almost the full _matlab_syntax, except that
+    # Statement lists are almost the full _matlab, except that
     # they don't include function definitions.
 
     _stmt           = Group(_control_stmt
@@ -1831,8 +1831,8 @@ class MatlabParser:
     # others.  The use of 'end' is required for nested function definitions,
     # which means that we need two variants of function bodies too.  This
     # leads to our final grammatical indiginity: two expressions for function
-    # definitions, which are used in the overall definition of _matlab_file
-    # such that _matlab_file tries first one variant and then the other.
+    # definitions, which are used in the overall definition of _matlab
+    # such that _matlab tries first one variant and then the other.
     # In the following two definitions, note that both the use of 'end' and
     # the definition of the body are different.
 
@@ -1868,8 +1868,8 @@ class MatlabParser:
     # ends: either they all have to have 'end', or none do.  This leads to two
     # forms of MATLAB files.  The following would be the correct definition:
     #
-    #  _matlab_file = (ZeroOrMore(_fun_def_shallow ^ _stmt ^ _shell_cmd ^ _noncontent)
-    #                  ^ ZeroOrMore(_fun_def_deep ^ _stmt ^ _shell_cmd ^ _noncontent))
+    #  _matlab = (ZeroOrMore(_fun_def_shallow ^ _stmt ^ _shell_cmd ^ _noncontent)
+    #             ^ ZeroOrMore(_fun_def_deep ^ _stmt ^ _shell_cmd ^ _noncontent))
     #
     # However, using that grammar definition, the resulting MOCCASIN parser
     # takes almost twice as long to parse anything as it would if only one of
@@ -1879,7 +1879,7 @@ class MatlabParser:
     # allows mixing the forms.  (MOCCASIN passes all our syntactic tests
     # either way, but probably would fail to reject some invalid inputs.)
 
-    _matlab_file = ZeroOrMore(_fun_def_shallow ^ _fun_def_deep ^ _stmt ^ _shell_cmd ^ _noncontent)
+    _matlab = ZeroOrMore(_fun_def_shallow ^ _fun_def_deep ^ _stmt ^ _shell_cmd ^ _noncontent)
 
 
     # Preprocessor.
@@ -2107,7 +2107,7 @@ class MatlabParser:
 
     def _do_parse(self, input):
         preprocessed = self._preprocess(input)
-        pr = self._matlab_file.parseString(preprocessed, parseAll=True)
+        pr = self._matlab.parseString(preprocessed, parseAll=True)
         return self._generate_nodes_and_contexts(pr)
 
 
@@ -2139,7 +2139,7 @@ class MatlabParser:
                  _fun_paramslist, _fun_with_end, _fun_without_end,
                  _funcall_cmd_style, _funcall_or_array, _id , _identifier,
                  _if_stmt, _lhs_array, _lhs_var, _line_c_start,
-                 _line_comment, _logical_op, _loop_var, _matlab_file,
+                 _line_comment, _logical_op, _loop_var, _matlab,
                  _most_ops, _multi_values, _name, _named_handle,
                  _noncmd_arg_start, _noncontent, _not_unary, _one_param,
                  _one_row, _one_sub, _operand, _operand_in_array,
@@ -2179,7 +2179,7 @@ class MatlabParser:
     # (which is _to_name by default) to a list of specific objects.  E.g.:
     #    _to_print_debug = [_cell_access, _cell_array, _bare_cell, _expr]
 
-    _to_print_debug = _to_name # [_fun_body, _fun_def_deep, _fun_def_shallow, _stmt, _matlab_file]
+    _to_print_debug = _to_name # [_fun_body, _fun_def_deep, _fun_def_shallow, _stmt, _matlab]
 
     def _print_debug(self, print_debug=False):
         if print_debug:
