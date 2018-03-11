@@ -1864,12 +1864,22 @@ class MatlabGrammar:
 
     # The complete MATLAB file syntax.
     #
-    # Since a file cannot mix the style of function definitions that use ends
-    # (either they all have to have 'end', or none do), we have two forms of
-    # MATLAB files.
+    # In MATLAB, a file cannot mix the style of function definitions that use
+    # ends: either they all have to have 'end', or none do.  This leads to two
+    # forms of MATLAB files.  The following would be the correct definition:
+    #
+    #  _matlab_file = (ZeroOrMore(_fun_def_shallow ^ _stmt ^ _shell_cmd ^ _noncontent)
+    #                  ^ ZeroOrMore(_fun_def_deep ^ _stmt ^ _shell_cmd ^ _noncontent))
+    #
+    # However, using that grammar definition, the resulting MOCCASIN parser
+    # takes almost twice as long to parse anything as it would if only one of
+    # those versions was present.  Since MOCCASIN already assumes that input
+    # files are valid MATLAB, we relax the definition to the following form
+    # to gain a substantial speedup.  This is not strictly correct because it
+    # allows mixing the forms.  (MOCCASIN passes all our syntactic tests
+    # either way, but probably would fail to reject some invalid inputs.)
 
-    _matlab_file = (ZeroOrMore(_fun_def_shallow ^ _stmt ^ _shell_cmd ^ _noncontent)
-                    ^ ZeroOrMore(_fun_def_deep ^ _stmt ^ _shell_cmd ^ _noncontent))
+    _matlab_file = ZeroOrMore(_fun_def_shallow ^ _fun_def_deep ^ _stmt ^ _shell_cmd ^ _noncontent)
 
 
     # Preprocessor.
