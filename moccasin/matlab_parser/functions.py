@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
-# @file    grammar.py
-# @brief   Know MATLAB functions, for type inference purposes
+# @file    functions.py
+# @brief   Known MATLAB functions, for type inference purposes
 # @author  Michael Hucka
 #
 # <!---------------------------------------------------------------------------
