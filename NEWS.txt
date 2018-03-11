@@ -1,6 +1,26 @@
            MOCCASIN NEWS -- History of user-visible changes
 
 ====================================================================
+1.2.0
+====================================================================
+
+There are two important changes in this release.  The first is a 
+*massive* improvement to the speed of parsing MATLAB files compared
+to recent performance.  The second is the elimination of the 
+separate `moccasin_CLI` and `moccasin_GUI` entry points in favor of
+a single program, `moccasin`, that can be used either to start the
+GUI or perform actions via the command line. 
+
+Bug fixes:
+
+* [#49](https://github.com/sbmlteam/moccasin/issues/49) Fixed extreme
+  slowness of MATLAB parser.
+
+* [#46](https://github.com/sbmlteam/moccasin/issues/46) Moccasin
+  GUI won't launch.
+
+
+====================================================================
 1.1.2
 ====================================================================
 
