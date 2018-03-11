@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
-# @file    grammar.py
-# @brief   Core of the MATLAB grammar definition in PyParsing
+# @file    parser.py
+# @brief   Core of the MATLAB parser and grammar definition in PyParsing
 # @author  Michael Hucka
 #
 # <!---------------------------------------------------------------------------
@@ -23,10 +23,10 @@
 # Basic principles of the parser
 # ------------------------------
 #
-# The main entry point are the functions `MatlabGrammar.parse_string()` and
-# `MatlabGrammar.parse_file()`.  There are a few other public methods on the
-# class `MatlabGrammar` for debugging and other tasks, but the basic goal of
-# `MatlabGrammar` is to provide the two main entry points.  Both of those
+# The main entry point are the functions `MatlabParser.parse_string()` and
+# `MatlabParser.parse_file()`.  There are a few other public methods on the
+# class `MatlabParser` for debugging and other tasks, but the basic goal of
+# `MatlabParser` is to provide the two main entry points.  Both of those
 # functions return a data structure that a caller can examine to determine
 # what was found in a given MATLAB input string or file.
 #
@@ -172,7 +172,7 @@
 #
 #  a = 1
 #
-# `MatlabGrammar.parse_file()` will return a `MatlabContext` object after
+# `MatlabParser.parse_file()` will return a `MatlabContext` object after
 # parsing this, and this context object will have one attribute, `nodes`,
 # containing a list of `MatlabNode` objects.  In the present case, that list
 # will have a length of 1 because there is only one line in the input.  Here
@@ -380,7 +380,7 @@ except:
 # Check minimum version of PyParsing.
 
 if LooseVersion(pyparsing.__version__) < LooseVersion('2.0.3'):
-    raise Exception('MatlabGrammar requires PyParsing version 2.0.3 or higher')
+    raise Exception('MatlabParser requires PyParsing version 2.0.3 or higher')
 
 # Necessary optimization.  Without this, the PyParsing grammar defined below
 # never finishes parsing anything.
@@ -1113,7 +1113,7 @@ class Disambiguator(MatlabNodeVisitor):
 
 
 
-# MatlabGrammar.
+# MatlabParser.
 # .............................................................................
 # The definition of our MATLAB grammar, in PyParsing.
 #
@@ -1123,7 +1123,7 @@ class Disambiguator(MatlabNodeVisitor):
 # However, for readabily, it's probably easiest to start at the last
 # definition (which is _matlab_syntax) and read up.
 
-class MatlabGrammar:
+class MatlabParser:
 
     # First, the lowest-level terminal tokens.
     # .........................................................................
@@ -2157,9 +2157,9 @@ class MatlabGrammar:
     def _object_name(self, obj):
         """Returns the name of a given object."""
         try:
-            values = MatlabGrammar.__dict__.iteritems()  # Python 2
+            values = MatlabParser.__dict__.iteritems()  # Python 2
         except:
-            values = MatlabGrammar.__dict__.items()      # Python 3
+            values = MatlabParser.__dict__.items()      # Python 3
         for name, thing in values:
             if thing is obj:
                 return name
@@ -2248,7 +2248,7 @@ class MatlabGrammar:
     def parse_file(self, path, print_results=False, print_debug=False,
                    fail_soft=False):
         """Parses the MATLAB contained in `file` and returns a MatlabContext.
-        object This is essentially identical to MatlabGrammar.parse_string()
+        object This is essentially identical to MatlabParser.parse_string()
         but does the work of opening and closing the `file`.
 
         :param print_debug: print complete parsing debug output.
@@ -2317,7 +2317,7 @@ class MatlabGrammar:
         as they would appear in Matlab text: e.g., "foo(2,3)".
         """
         def compose(name, args, delimiters=None):
-            list = [MatlabGrammar.make_formula(arg, spaces, parens, atrans)
+            list = [MatlabParser.make_formula(arg, spaces, parens, atrans)
                     for arg in (args or [])]
             sep = ' ' if spaces else ''
             front = name if name else ''
@@ -2325,7 +2325,7 @@ class MatlabGrammar:
             right = delimiters[1] if delimiters else ''
             return front + left + sep.join(list) + right
 
-        recurse = MatlabGrammar.make_formula
+        recurse = MatlabParser.make_formula
         if isinstance(thing, str):
             return thing
         elif isinstance(thing, Primitive):
@@ -2425,7 +2425,7 @@ class MatlabGrammar:
 #     ['assignment']
 #
 # This first line of the file was labeled as an 'assignment', which is
-# MatlabGrammar's way of identifying (you guessed it) an assignment
+# MatlabParser's way of identifying (you guessed it) an assignment
 # statement.  Now let's look inside of it:
 #
 #     (Pdb) content['assignment'].keys()
@@ -2442,7 +2442,7 @@ class MatlabGrammar:
 # This now says that the object keyed by 'lhs' in the content['assignment']
 # ParseResults object has another dictionary, with a single item stored under
 # the key 'identifier'.  'identifier' is one of the terminal entities in
-# MatlabGrammar.  When you access its value, you will find it's not a
+# MatlabParser.  When you access its value, you will find it's not a
 # ParseResults object, but a string:
 #
 #     (Pdb) content['assignment']['lhs']['identifier']
@@ -2457,13 +2457,13 @@ class MatlabGrammar:
 #     (Pdb) content['assignment']['rhs']['number']
 #     '1'
 #
-# The key 'number' corresponds to another terminal entity in MatlabGrammar.
+# The key 'number' corresponds to another terminal entity in MatlabParser.
 # Its value is (you guessed it again) a number.  Note that the values
-# returned by MatlabGrammar are always strings, so even though it could in
-# principle be returned in the form of a numerical data type, MatlabGrammar
+# returned by MatlabParser are always strings, so even though it could in
+# principle be returned in the form of a numerical data type, MatlabParser
 # does not do that, because doing so might require data type conversions and
 # such conversions might require decisions that are best left to the
-# applications calling MatlabGrammar.  So instead, it always returns
+# applications calling MatlabParser.  So instead, it always returns
 # everything in finds in a MATLAB file as a text string.
 #
 # Now, let's examine what happens if we have something slightly more
@@ -2486,9 +2486,9 @@ class MatlabGrammar:
 #     (Pdb) content['assignment']['rhs'].keys()
 #     ['array']
 #
-# This time, MatlabGrammar has helpfully identified the object on the
+# This time, MatlabParser has helpfully identified the object on the
 # right-hand side as an array.  In the MATLAB world, a "matrix" is a
-# two-dimensional array, but the MatlabGrammar grammar is not able to
+# two-dimensional array, but the MatlabParser grammar is not able to
 # determine the number of dimensions of an array object; consequently, all of
 # the homogeneous array objects (vectors, matrices, and arrays) are labeled
 # as simply 'array'.  (MATLAB cell arrays are labeled 'cell array'.)  Now
@@ -2503,7 +2503,7 @@ class MatlabGrammar:
 # This time, the object has no keys.  The reason for this is the following:
 # some objects stored under the dictionary keys are actually lists.  The name
 # 'row list' is meant to suggest this possibility.  When a value created by
-# MatlabGrammar is a list, the first thing to do is to find out its length:
+# MatlabParser is a list, the first thing to do is to find out its length:
 #
 #     (Pdb) len(array['row list'])
 #     2
@@ -2560,7 +2560,7 @@ class MatlabGrammar:
 #     []
 #
 # This time, the right-hand side does not have a key.  This is the tip-off
-# that the right-hand side is an expression: in MatlabGrammar, if there is no
+# that the right-hand side is an expression: in MatlabParser, if there is no
 # key on an object, it means that the object is an expression or a list.
 # Expressions are lists: when you encounter them, it means the next step is
 # to iterate over the elements.
@@ -2581,7 +2581,7 @@ class MatlabGrammar:
 # and if there are no keys, it's another expression, so traverse it
 # recursively.
 #
-# And that summarizes the basic process for working with MatlabGrammar parse
+# And that summarizes the basic process for working with MatlabParser parse
 # results.  The parser(...) returns a list of objects results for the lines
 # in the file; each has a dictionary, which you inspect to figure out what
 # kind of objects were extracted, and then you dig into the object's
