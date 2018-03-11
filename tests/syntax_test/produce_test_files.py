@@ -52,7 +52,7 @@ def main(argv):
         #if do_print:
             #print('----- output ' + '-'*30)
         try:
-            with MatlabGrammar() as parser:
+            with MatlabParser() as parser:
                 results = parser.parse_string(contents, print_debug=do_print,
                                               fail_soft=True)
         except Exception as err:

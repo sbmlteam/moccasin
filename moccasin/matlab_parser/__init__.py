@@ -20,7 +20,7 @@
 # available online at https://github.com/sbmlteam/moccasin/.
 # ------------------------------------------------------------------------- -->
 
-from .grammar import MatlabGrammar
+from .parser import MatlabParser
 from .context import MatlabContext
 from .matlab import *
 from .functions import *

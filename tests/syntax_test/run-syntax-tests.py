@@ -54,7 +54,7 @@ def main(argv):
         print(contents.rstrip())
         if do_print:
             print('----- output ' + '-'*30)
-        with MatlabGrammar() as parser:
+        with MatlabParser() as parser:
             try:
                 results = parser.parse_string(contents, print_debug=do_print,
                                               fail_soft=True)

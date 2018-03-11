@@ -13,7 +13,7 @@ from string import printable
 sys.path.append('moccasin/')
 sys.path.append('../moccasin')
 sys.path.append('../../moccasin')
-from matlab_parser import MatlabGrammar
+from matlab_parser import MatlabParser
 
 _VERSION2 = platform.python_version().startswith('2')
 
@@ -28,7 +28,7 @@ def pytest_generate_tests(metafunc):
 #Parses the file and prints interpreted result(output is captured)
 def build_model(path):
     try:
-        with MatlabGrammar() as parser:
+        with MatlabParser() as parser:
             results = parser.parse_file(path, fail_soft=True)
             parser.print_parse_results(results, print_raw=True)
     except Exception as e:

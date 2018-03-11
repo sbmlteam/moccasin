@@ -47,7 +47,7 @@ class Controller():
 
 
     def __init__(self):
-        self.parser = MatlabGrammar()
+        self.parser = MatlabParser()
         self.file_contents = None
         self.parse_results = None
 

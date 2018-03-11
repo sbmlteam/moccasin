@@ -27,7 +27,7 @@ def pytest_generate_tests(metafunc):
 
 #Parses and converts file to SBML and prints result(output is captured)
 def build_model(path):
-    with MatlabGrammar() as parser:
+    with MatlabParser() as parser:
         results = parser.parse_file(path, print_debug=False, fail_soft=True)
         [sbml, add, post] = create_raterule_model(results, use_species=True,
                                                   output_format="sbml",

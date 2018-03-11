@@ -40,7 +40,7 @@ from grammar import *
 #   formatter.format(pr)
 #
 
-class MatlabGrammarFormatter(MatlabGrammar):
+class MatlabGrammarFormatter(MatlabParser):
     def format(self, thing):
         return '\n'.join([self._format_pr(pr) for pr in thing])
 

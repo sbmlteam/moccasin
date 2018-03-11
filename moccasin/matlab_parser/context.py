@@ -101,7 +101,7 @@ class MatlabContext(object):
                    expression on the right-hand side of the assignment.
 
       types:       A dictionary of data types associated with objects.  For
-                   example, when MatlabGrammar encounters an assignment
+                   example, when MatlabParser encounters an assignment
                    statement or a function definition, it stores the
                    identifier of the assigned variable or parameter in this
                    dictionary and sets the value to 'variable', to distinguish

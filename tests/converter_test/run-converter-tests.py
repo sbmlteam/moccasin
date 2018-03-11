@@ -30,7 +30,7 @@ def main(argv):
         if debug:
             pdb.set_trace()
         try:
-            with MatlabGrammar() as parser:
+            with MatlabParser() as parser:
                 parse_results = parser.parse_string(file_contents)
         except ParseException as err:
             print("error: {0}".format(err))
