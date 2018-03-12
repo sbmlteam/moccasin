@@ -206,12 +206,10 @@ For more information about MOCCASIN, visit https://sbml.org/Software/MOCCASIN
                         msg('Renaming to "{}".'.format(backup_path),
                             'warning', colorize)
                     os.rename(output_path, backup_path)
-                if not quiet:
-                    msg('Writing output to "{}"'.format(output_path), 'info', colorize)
                 with open(output_path, 'w') as output_file:
                     output_file.write(output)
                 if not quiet:
-                    msg('Finished processing "{}".'.format(path), 'info', colorize)
+                    msg('Wrote output to "{}"'.format(output_path), 'info', colorize)
 
     # Loop over the input files and process each one.
 
