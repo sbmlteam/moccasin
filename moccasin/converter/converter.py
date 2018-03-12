@@ -162,9 +162,9 @@ def sanity_check_matlab(parse_results):
     calls = [(k,v) for k,v in context.calls.items() if k.name.startswith('ode')]
     calls = [(k,v) for k,v in calls if not k.name.startswith('odeset')]
     if not calls:
-        fail(NotConvertibleError, 'did not find call to MATLAB odeNN function')
+        fail(NotConvertibleError, 'did not find a call to a MATLAB odeNN function')
     if len(calls) > 1:
-        fail(NotConvertibleError, 'multiple calls to odeNN functions')
+        fail(NotConvertibleError, 'found multiple calls to odeNN functions')
 
     # We have one call to an odeNN function.  It will have at least 3 args:
     #     [t, y] = ode45(@f, tspan, x0)
