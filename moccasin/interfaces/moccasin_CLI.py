@@ -139,7 +139,8 @@ For more information about MOCCASIN, visit https://sbml.org/Software/MOCCASIN
     colorize = 'termcolor' in sys.modules and not no_color
     add_comments = not no_comments
 
-    if gui:
+    if gui or not any([paths, use_equations, use_params, xpp_output,
+                       version, debug_parser, quiet, no_comments]):
         moccasin_GUI.gui_main()
         sys.exit()
     if version:
