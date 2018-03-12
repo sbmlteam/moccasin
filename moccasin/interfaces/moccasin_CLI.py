@@ -215,11 +215,11 @@ For more information about MOCCASIN, visit https://sbml.org/Software/MOCCASIN
 
     for path in paths:
         if not os.path.exists(path):
-            raise SystemExit(color('File "{}" does not appear to exist.'.format(path),
-                                   'error', colorize))
+            msg('File "{}" does not appear to exist.'.format(path), 'error', colorize)
+            continue
         elif not os.path.isfile(path):
-            raise SystemExit(color('File "{}" does not appear to be a file.'.format(path),
-                                   'error', colorize))
+            msg('File "{}" does not appear to be a file.'.format(path), 'error', colorize)
+            continue
         try:
             if debug_parser:
                 convert(path)
