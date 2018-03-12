@@ -28,9 +28,15 @@ import sys
 import requests
 import pdb
 
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-from matlab_parser import *
-from converter import *
+try:
+    thisdir = os.path.dirname(os.path.abspath(__file__))
+    sys.path.append(os.path.join(thisdir, '../..'))
+except:
+    sys.path.append('../..')
+
+import moccasin
+from moccasin.converter import create_raterule_model, process_biocham_output
+from moccasin.matlab_parser import MatlabParser
 
 # -----------------------------------------------------------------------------
 # Global configuration constants
@@ -43,8 +49,7 @@ _BIOCHAM_URL = 'http://lifeware.inria.fr/biocham/online/rest/export'
 # -----------------------------------------------------------------------------
 
 class Controller():
-    '''This class serves to interface between Moccasins' modules to the CLI and GUI.'''
-
+    '''This class serves to interface between the CLI and GUI.'''
 
     def __init__(self):
         self.parser = MatlabParser()
@@ -52,7 +57,7 @@ class Controller():
         self.parse_results = None
 
 
-    def parse_File(self , file_contents):
+    def parse_file(self , file_contents):
         '''Parses input file using Moccasin's parser.'''
         self.file_contents = file_contents
         self.parse_results = self.parser.parse_string(self.file_contents)
@@ -82,8 +87,8 @@ class Controller():
                                                                name_after_param,
                                                                add_comments)
 
-                # python 3 changed the way temporary files read/wrote data
-                # and used bytes that need to encoded/decoded
+                # Python 3 changed the way temporary files read/wrote data
+                # and used bytes that need to encoded/decoded.
                 try:
                     xpp_file.write(output)
                 except:
@@ -91,7 +96,7 @@ class Controller():
                 xpp_file.flush()
                 xpp_file.close()
                 files = {'file': open(xpp_file.name)}
-            # Access Biocham to curate and convert equations to reactions
+            # Access BIOCHAM to curate and convert equations to reactions.
             data = {'exportTo':'sbml', 'curate':'true'}
             response = requests.post(_BIOCHAM_URL, files=files, data=data)
             del files
