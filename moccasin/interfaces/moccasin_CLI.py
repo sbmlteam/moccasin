@@ -39,6 +39,7 @@ except:
 import moccasin
 from moccasin.interfaces import moccasin_GUI
 from .controller import Controller
+from .network_utils import have_network
 
 # This prevents exceeding recursion depth in some cases.
 sys.setrecursionlimit(5000)
@@ -149,7 +150,7 @@ For more information about MOCCASIN, visit https://sbml.org/Software/MOCCASIN
         sys.exit()
     if not paths:
         raise SystemExit(color('Must provide a path to a file.', 'error', colorize))
-    if not xpp_output and not use_equations and not check_network_connection():
+    if not xpp_output and not use_equations and not have_network():
         raise SystemExit(color('No network connection.', 'error', colorize))
     if not quiet:
         from halo import Halo
@@ -166,7 +167,7 @@ For more information about MOCCASIN, visit https://sbml.org/Software/MOCCASIN
                 msg(file_contents)
             if not debug_parser and not quiet:
                 msg('Parsing MATLAB file "{}" ...'.format(path), 'info', colorize)
-            controller.parse_File(file_contents)
+            controller.parse_file(file_contents)
             if debug_parser:
                 print_header('Parsed MATLAB output', 'info', quiet, colorize)
                 msg(controller.print_parsed_results())
@@ -241,17 +242,6 @@ For more information about MOCCASIN, visit https://sbml.org/Software/MOCCASIN
 # -----------------------------------------------------------------------------
 # Helper functions.
 # -----------------------------------------------------------------------------
-
-def check_network_connection():
-
-    '''Connects somewhere to test if a network is available.'''
-    import requests
-    try:
-        _ = requests.get('http://www.google.com', timeout=5)
-        return True
-    except requests.ConnectionError:
-        return False
-
 
 def print_header(text, flags, quiet = False, colorize = True):
     if not quiet:
