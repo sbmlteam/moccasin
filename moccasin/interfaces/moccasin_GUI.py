@@ -53,8 +53,9 @@ except:
     sys.path.append('../..')
 
 import moccasin
-from .printDialog import PrintDialog
 from .controller import Controller
+from .network_utils import have_network
+from .printDialog import PrintDialog
 
 
 # -----------------------------------------------------------------------------
@@ -206,7 +207,9 @@ def wxSetToolTip(item, text):
 # -----------------------------------------------------------------------------
 # Graphical User Interface (GUI) definition
 # -----------------------------------------------------------------------------
+
 class MainFrame (wx.Frame):
+
     def __init__(self, parent):
         wx.Frame.__init__(self, parent, id = wx.ID_ANY,
                           title = _TITLE,
@@ -525,7 +528,7 @@ class MainFrame (wx.Frame):
         self.statusBar.SetStatusText("Generating output ...", 0)
         wx.BeginBusyCursor()
         try:
-            self.controller.parse_File(self.file_contents)
+            self.controller.parse_file(self.file_contents)
             # output XPP files
             if self.xppModel.GetValue():
                 [output, extra] = self.controller.build_model(
@@ -549,7 +552,7 @@ class MainFrame (wx.Frame):
                 self.statusBar.SetStatusText("SBML format - equations", 2)
             # Output reaction-based SBML
             else:
-                if not self.controller.check_network_connection():
+                if not have_network():
                     msg = "A network connection is needed for this feature, but the network appears to be unavailable."
                     dlg = wx.MessageDialog(self, msg, "Warning", wx.OK | wx.ICON_WARNING)
                     dlg.ShowModal()
