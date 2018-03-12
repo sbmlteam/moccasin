@@ -148,9 +148,9 @@ For more information about MOCCASIN, visit https://sbml.org/Software/MOCCASIN
         msg('License: {}'.format(moccasin.__license__))
         sys.exit()
     if not paths:
-        raise SystemExit(colorcode('Must provide a path to a file.', 'error', colorize))
+        raise SystemExit(color('Must provide a path to a file.', 'error', colorize))
     if not xpp_output and not use_equations and not check_network_connection():
-        raise SystemExit(colorcode('No network connection.', 'error', colorize))
+        raise SystemExit(color('No network connection.', 'error', colorize))
     if not quiet:
         from halo import Halo
     extension = '.ode' if xpp_output else '.xml'
@@ -217,16 +217,16 @@ For more information about MOCCASIN, visit https://sbml.org/Software/MOCCASIN
 
     for path in paths:
         if not os.path.exists(path):
-            raise SystemExit(colorcode('File "{}" does not appear to exist.'.format(path),
-                                       'error', colorize))
+            raise SystemExit(color('File "{}" does not appear to exist.'.format(path),
+                                   'error', colorize))
         elif not os.path.isfile(path):
-            raise SystemExit(colorcode('File "{}" does not appear to be a file.'.format(path),
-                                       'error', colorize))
+            raise SystemExit(color('File "{}" does not appear to be a file.'.format(path),
+                                   'error', colorize))
         try:
             if debug_parser:
                 convert(path)
             else:
-                prefix = colorcode('{} '.format(path), 'info', colorize)
+                prefix = color('{} '.format(path), 'info', colorize)
                 with Halo(spinner='bouncingBall', enabled = not quiet):
                     convert(path)
                 if len(paths) > 1 and not quiet:
@@ -270,18 +270,18 @@ def msg(text, flags = None, colorize = True):
     happening in real time.
     '''
     if colorize:
-        print(colorcode(text, flags), flush = True)
+        print(color(text, flags), flush = True)
     else:
         print(text, flush = True)
 
 
-def colorcode(text, flags = None, colorize = True):
-    (prefix, color, attributes) = color_codes(flags)
+def color(text, flags = None, colorize = True):
+    (prefix, color_name, attributes) = color_codes(flags)
     if colorize:
-        if attributes and color:
-            return colored(text, color, attrs = attributes)
-        elif color:
-            return colored(text, color)
+        if attributes and color_name:
+            return colored(text, color_name, attrs = attributes)
+        elif color_name:
+            return colored(text, color_name)
         elif attributes:
             return colored(text, attrs = attributes)
         else:
@@ -293,27 +293,27 @@ def colorcode(text, flags = None, colorize = True):
 
 
 def color_codes(flags):
-    color  = ''
+    color_name  = ''
     prefix = ''
     attrib = []
     if type(flags) is not list:
         flags = [flags]
     if 'error' in flags:
         prefix = 'ERROR'
-        color = 'red'
+        color_name = 'red'
     if 'warning' in flags:
         prefix = 'WARNING'
-        color = 'yellow'
+        color_name = 'yellow'
     if 'info' in flags:
-        color = 'green'
+        color_name = 'green'
     if 'white' in flags:
-        color = 'white'
+        color_name = 'white'
     if 'blue' in flags:
-        color = 'blue'
+        color_name = 'blue'
     if 'grey' in flags:
-        color = 'grey'
+        color_name = 'grey'
     if 'cyan' in flags:
-        color = 'cyan'
+        color_name = 'cyan'
     if 'underline' in flags:
         attrib.append('underline')
     if 'bold' in flags:
@@ -322,7 +322,7 @@ def color_codes(flags):
         attrib.append('reverse')
     if 'dark' in flags:
         attrib.append('dark')
-    return (prefix, color, attrib)
+    return (prefix, color_name, attrib)
 
 
 # Please leave the following for Emacs users.
