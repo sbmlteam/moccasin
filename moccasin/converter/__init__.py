@@ -20,7 +20,13 @@
 # available online at https://github.com/sbmlteam/moccasin/.
 # ------------------------------------------------------------------------- -->
 
+from .cleaner import *
 from .converter import *
-from .rewriter import *
-from .recognizer import *
 from .errors import *
+from .evaluate_formula import *
+from .expr_tester import *
+from .finder import *
+from .name_generator import *
+from .recognizer import *
+from .rewriter import *
+from .xpp import *

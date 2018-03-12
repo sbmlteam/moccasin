@@ -21,8 +21,14 @@
 # ------------------------------------------------------------------------- -->
 
 import sys
-sys.path.append('..')
-from matlab_parser import *
+
+try:
+    thisdir = os.path.dirname(os.path.abspath(__file__))
+    sys.path.append(os.path.join(thisdir, '../..'))
+except:
+    sys.path.append('../..')
+
+from moccasin.matlab_parser.matlab import *
 
 # MatlabCleaner
 #

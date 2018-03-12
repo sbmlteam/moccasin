@@ -21,9 +21,15 @@
 # ------------------------------------------------------------------------- -->
 
 import sys
-sys.path.append('..')
-from matlab_parser import *
 from collections import defaultdict
+
+try:
+    thisdir = os.path.dirname(os.path.abspath(__file__))
+    sys.path.append(os.path.join(thisdir, '../..'))
+except:
+    sys.path.append('../..')
+
+from moccasin.matlab_parser import *
 
 # MatlabRecognizer
 #

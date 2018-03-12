@@ -90,30 +90,45 @@ import re
 import six
 import sys
 
-sys.path.append('..')
-
-from matlab_parser import *
-from version import __version__, __url__
 try:
-    from .cleaner import *
-    from .errors import *
-    from .evaluate_formula import *
-    from .expr_tester import *
-    from .finder import *
-    from .name_generator import *
-    from .recognizer import *
-    from .rewriter import *
-    from .xpp import *
+    thisdir = os.path.dirname(os.path.abspath(__file__))
+    sys.path.append(os.path.join(thisdir, '../..'))
 except:
-    from cleaner import *
-    from errors import *
-    from evaluate_formula import *
-    from expr_tester import *
-    from finder import *
-    from name_generator import *
-    from recognizer import *
-    from rewriter import *
-    from xpp import *
+    sys.path.append('../..')
+
+import moccasin
+from moccasin import MatlabParser
+
+from .cleaner import *
+from .errors import *
+from .evaluate_formula import *
+from .expr_tester import *
+from .finder import *
+from .name_generator import *
+from .recognizer import *
+from .rewriter import *
+from .xpp import *
+
+#try:
+#     from .cleaner import *
+#     from .errors import *
+#     from .evaluate_formula import *
+#     from .expr_tester import *
+#     from .finder import *
+#     from .name_generator import *
+#     from .recognizer import *
+#     from .rewriter import *
+#     from .xpp import *
+# except:
+#     from cleaner import *
+#     from errors import *
+#     from evaluate_formula import *
+#     from expr_tester import *
+#     from finder import *
+#     from name_generator import *
+#     from recognizer import *
+#     from rewriter import *
+#     from xpp import *
 
 
 # -----------------------------------------------------------------------------
@@ -121,9 +136,9 @@ except:
 # -----------------------------------------------------------------------------
 
 def parse_matlab(path):
-    """Invokes the MatlabGrammar parser on the file given by 'path'."""
+    """Invokes the MatlabParser parser on the file given by 'path'."""
     try:
-        with MatlabGrammar() as parser:
+        with MatlabParser() as parser:
             return parser.parse_file(path)
     except Exception as err:
         # FIXME test what happens here
@@ -691,10 +706,10 @@ def generate_xpp_header(add_comments):
     lines = ''
     if add_comments:
         lines += '#\n# This file was generated automatically by MOCCASIN '
-        lines += 'version {}.\n'.format(__version__)
+        lines += 'version {}.\n'.format(moccasin.__version__)
         lines += '# The contents are suitable as input to the program XPP or XPPAUT.\n'
         lines += '# For more information about MOCCASIN, please visit the website:\n'
-        lines += '# {}\n#\n\n'.format(__url__)
+        lines += '# {}\n#\n\n'.format(moccasin.__url__)
     return lines
 
 
@@ -1073,13 +1088,13 @@ def make_indexed(var, index, content, translations, use_species, use_rules,
         # If the RHS is an expression but it's all constant values, we turn it
         # into an initial assignment.
         make_declaration(real_name, 0, False)
-        formula = MatlabGrammar.make_formula(content)
+        formula = MatlabParser.make_formula(content)
         create_initial_assignment(document, real_name, formula)
     else:
         # Not a simple number => may depend on quantities that change during
         # simulation.  Create assignment rule or initial assignment.
         translator = lambda node: munge_reference(node, context, underscores)
-        formula = MatlabGrammar.make_formula(content, atrans=translator)
+        formula = MatlabParser.make_formula(content, atrans=translator)
         if not formula:
             fail(ConversionError,
                  'Failed to convert formula for {}'.format(var))
@@ -1092,7 +1107,7 @@ def make_rate_rule(assigned_var, dep_var, translations, index, content,
     # Currently, this assumes there's only one math expression per row or
     # column, meaning, one subscript value per row or column.
     translator = lambda node: munge_reference(node, context, underscores)
-    string_formula = MatlabGrammar.make_formula(content, atrans=translator)
+    string_formula = MatlabParser.make_formula(content, atrans=translator)
     if not string_formula:
         fail(ConversionError,
              'Failed to convert formula for row {}'.format(index + 1))
@@ -1117,7 +1132,7 @@ def make_rate_rule(assigned_var, dep_var, translations, index, content,
 
 def munge_reference(array, context, underscores):
     if not isinstance(array.name, Identifier):
-        return MatlabGrammar.make_formula(array)
+        return MatlabParser.make_formula(array)
     if not array.args:
         # Nothing to do. Can happen it's Ambiguous with no args => identifier.
         return array.name.name
@@ -1165,7 +1180,7 @@ def make_remaining_vars(working_context, function_context, skip_vars,
                 continue
             else:
                 # FIXME: it may be possible to handle some cases like this.
-                text = MatlabGrammar.make_formula(var)
+                text = MatlabParser.make_formula(var)
                 fail(ConversionError,
                      'unable to convert array assignment {}'.format(text))
         elif isinstance(rhs, Array):
@@ -1184,12 +1199,12 @@ def make_remaining_vars(working_context, function_context, skip_vars,
             # made an initial assignment instead of an assignment rule.
             if constant_expression(rhs, context):
                 create_parameter(document, var.name, 0, True)
-                formula = MatlabGrammar.make_formula(rhs)
+                formula = MatlabParser.make_formula(rhs)
                 create_initial_assignment(document, var.name, formula)
             else:
                 translator = lambda node: munge_reference(node, function_context,
                                                           underscores)
-                formula = MatlabGrammar.make_formula(rhs, atrans=translator)
+                formula = MatlabParser.make_formula(rhs, atrans=translator)
                 translated = translate_names(formula, name_translations)
                 create_assigned_parameter(document, var.name, translated,
                                           in_function)
@@ -1228,7 +1243,7 @@ def generate_output(document, add_comments):
         writer = SBMLWriter();
         if add_comments:
             writer.setProgramName("MOCCASIN")
-            writer.setProgramVersion(__version__)
+            writer.setProgramVersion(moccasin.__version__)
         return writer.writeSBMLToString(document);
 
 
@@ -1317,7 +1332,7 @@ def process_biocham_output(sbml, parse_results, post_add, post_convert,
     writer = SBMLWriter();
     if add_comments:
         writer.setProgramName("MOCCASIN")
-        writer.setProgramVersion(__version__)
+        writer.setProgramVersion(moccasin.__version__)
 
     # Write it, and we are done!  Pop the champagne cork.
     return writer.writeSBMLToString(document)
@@ -1345,7 +1360,7 @@ def fail(ex, arg):
 # -----------------------------------------------------------------------------
 
 def parse_args(argv):
-    help_msg = 'MOCCASIN version ' + __version__ + '\n' + main.__doc__
+    help_msg = 'MOCCASIN version ' + moccasin.__version__ + '\n' + main.__doc__
     try:
         options, path = getopt.getopt(argv[1:], "cdpqxoOrvl")
     except:

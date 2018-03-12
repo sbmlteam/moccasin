@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
 # @file    __init__.py
-# @brief   MATLAB moccasin package __init__ file
+# @brief   MOCCASIN package __init__ file
 # @author  Michael Hucka
 #
 # <!---------------------------------------------------------------------------
@@ -20,5 +20,10 @@
 # available online at https://github.com/sbmlteam/moccasin/.
 # ------------------------------------------------------------------------- -->
 
-from .__version__ import __title__, __version__, __url__, __license__, \
-    __author__, __author_email__, __help_url__
+from .__version__ import __version__, __title__, __url__
+from .__version__ import __author__, __author_email__
+from .__version__ import __license__, __license_url__, __help_url__
+
+from .matlab_parser import MatlabParser
+from .interfaces import moccasin_CLI, moccasin_GUI
+from .converter import create_raterule_model, process_biocham_output
