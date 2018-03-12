@@ -142,7 +142,7 @@ For more information about MOCCASIN, visit https://sbml.org/Software/MOCCASIN
         moccasin_GUI.gui_main()
         sys.exit()
     if version:
-        msg('{} version {}'.format(moccasin.__title__, moccasin.__version__))
+        msg('MOCCASIN version {}'.format(moccasin.__version__))
         msg('Author: {}'.format(moccasin.__author__))
         msg('URL: {}'.format(moccasin.__url__))
         msg('License: {}'.format(moccasin.__license__))
