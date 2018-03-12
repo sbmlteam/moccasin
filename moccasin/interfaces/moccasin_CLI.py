@@ -148,9 +148,9 @@ For more information about MOCCASIN, visit https://sbml.org/Software/MOCCASIN
         msg('License: {}'.format(moccasin.__license__))
         sys.exit()
     if not paths:
-        raise SystemExit(colorcode('Must provide a path to a file.', 'error'))
+        raise SystemExit(colorcode('Must provide a path to a file.', 'error', colorize))
     if not xpp_output and not use_equations and not check_network_connection():
-        raise SystemExit(colorcode('No network connection.', 'error'))
+        raise SystemExit(colorcode('No network connection.', 'error', colorize))
     if not quiet:
         from halo import Halo
     extension = '.ode' if xpp_output else '.xml'
