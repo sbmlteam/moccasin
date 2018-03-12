@@ -2,8 +2,8 @@
 #
 # @file    moccasin.py
 # @brief   Command-line interface for Moccasin
-# @author  Harold Gomez
 # @author  Michael Hucka
+# @author  Harold Gomez
 #
 # <!---------------------------------------------------------------------------
 # This software is part of MOCCASIN, the Model ODE Converter for Creating
