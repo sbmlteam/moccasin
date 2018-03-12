@@ -29,15 +29,11 @@ import sys
 import wx
 import re
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from printDialog import PrintDialog
-from controller import Controller
-import __version__
-
 # We need wx.html2, which was introduced in wxPython 2.9.
 from distutils.version import LooseVersion
 if LooseVersion(wx.__version__) < LooseVersion('2.9'):
-    raise Exception('The ' + __title__ + ' GUI requires wxPython version 2.9 or higher')
+    raise Exception('The ' + moccasin.__title__
+                    + ' GUI requires wxPython version 2.9 or higher')
 
 # Imports for tokenizing, formatting and displaying .m or .xml files
 import wx.html2
@@ -50,21 +46,31 @@ from pkg_resources import get_distribution, DistributionNotFound
 
 import wx.adv
 
+try:
+    thisdir = os.path.dirname(os.path.abspath(__file__))
+    sys.path.append(os.path.join(thisdir, '../..'))
+except:
+    sys.path.append('../..')
+
+import moccasin
+from .printDialog import PrintDialog
+from .controller import Controller
+
 
 # -----------------------------------------------------------------------------
 # Global configuration constants
 # -----------------------------------------------------------------------------
 
-_TITLE           = __version__.__title__
-_URL             = __version__.__url__
-_HELP_URL        = __version__.__help_url__
-_LICENSE         = __version__.__license__
-_LICENSE_URL     = __version__.__license_url__
-_VERSION         = __version__.__version__
+_TITLE           = moccasin.__title__
+_URL             = moccasin.__url__
+_HELP_URL        = moccasin.__help_url__
+_LICENSE         = moccasin.__license__
+_LICENSE_URL     = moccasin.__license_url__
+_VERSION         = moccasin.__version__
 _IS_OUTPUT_SAVED = False
-_SAVEAS_ODE      = False #Used to save the right file format
+_SAVEAS_ODE      = False                # Used to save the right file format
 _EMPTY_PAGE      ='''<HTML lang=en><HEAD></HEAD>
-<BODY><!-- empty page --></BODY> </HTML> ''' #Used as empty value to clear the empty WebView text field
+<BODY><!-- empty page --></BODY> </HTML> ''' # Used as empty value to clear the empty WebView text field
 
 _icon_file       = "../../docs/project/logo/moccasin_logo_20151002/logo_64.png"
 
@@ -449,9 +455,10 @@ class MainFrame (wx.Frame):
     def __del__(self):
         pass
 
-# -----------------------------------------------------------------------------
-# Virtual Event Handlers
-# -----------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
+    # Virtual Event Handlers
+    # -------------------------------------------------------------------------
+
     def onOpen(self, event):
         global _IS_OUTPUT_SAVED
         dirname=""
@@ -653,5 +660,3 @@ def gui_main():
     frame = MainFrame(None)
     frame.Show()
     app.MainLoop()
-
-gui_main()
