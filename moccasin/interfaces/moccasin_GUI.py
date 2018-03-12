@@ -631,8 +631,8 @@ class MainFrame (wx.Frame):
             elif isinstance(error, MatlabParsingError):
                 msg += " – MOCCASIN is unable to parse this MATLAB file – please contact the developers."
 
-        short = ('{}\n\nWould you like to try to continue?"
-                 + \n(Click "no" to quit now)'.format(msg))
+        short = ('{}\n\nWould you like to try to continue?'
+                 + '\n(Click "no" to quit now)'.format(msg))
         dlg = wx.MessageDialog(self, message = short,
                                caption = "MOCCASIN experienced an error {}".format(context),
                                 style = wx.YES_NO | wx.YES_DEFAULT | wx.HELP | wx.ICON_ERROR)
