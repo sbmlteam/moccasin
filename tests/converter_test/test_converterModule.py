@@ -12,7 +12,8 @@ sys.path.append('../../moccasin/converter/')
 sys.path.append('moccasin/')
 sys.path.append('../moccasin')
 sys.path.append('../../moccasin')
-from matlab_parser import *
+import moccasin
+from moccasin import MatlabParser
 from converter import *
 
 sys.setrecursionlimit(10000)
