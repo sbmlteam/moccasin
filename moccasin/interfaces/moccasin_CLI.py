@@ -63,20 +63,20 @@ sys.setrecursionlimit(5000)
     paths         = 'paths to MATLAB input files to convert'
 )
 
-def cli_main(gui, use_equations, use_params, quiet, xpp_output, version,
+def cli_main(gui, use_equations, use_params, quiet, version, xpp_output,
              no_color, debug_parser, no_comments, *paths):
     '''Interface for controlling MOCCASIN, the MATLAB ODE converter for SBML.
 MOCCASIN can take certain forms of ODE (ordinary differential equation) models
 written in MATLAB and Octave and export them as SBML files.  MOCCASIN does not
 require MATLAB -- it contains its own parser and translation code.
 
-If given the command-line option --gui, this program will start the graphical
-interface to MOCCASIN and ignore all other arguments.  If given the argument
--v, it will print information about the current program version, and exit.
-Otherwise, this program expects at least one file name as an argument.
-MOCCASIN will convert each given file, saving the results in the same file
-path but with the extension ".xml".  (That is, if given the file "model.m",
-it will produce "model.xml".)
+If given no arguments at all, or if given the command-line option --gui, this
+program will start the graphical interface to MOCCASIN and ignore all other
+arguments.  If given the argument -v, it will print information about the
+current program version, and exit.  Otherwise, this program expects at least
+one file name as an argument.  MOCCASIN will convert each given file, saving
+the results in the same file path but with the extension ".xml".  (That is,
+if given the file "model.m", it will produce "model.xml".)
 
 Currently, MOCCASIN is limited to inputs in which the model is self-contained
 in a single file and not split across multiple files.  (In other words, each
@@ -129,6 +129,9 @@ the translation process:
 
 For more information about SBML, please visit https://sbml.org
 For more information about MOCCASIN, visit https://sbml.org/Software/MOCCASIN
+
+MOCCASIN is an acronym for "Model ODE Converter for Creating Automated
+SBML INteroperability".
 '''
 
     # Process arguments.
@@ -146,8 +149,10 @@ For more information about MOCCASIN, visit https://sbml.org/Software/MOCCASIN
     if version:
         msg('MOCCASIN version {}'.format(moccasin.__version__))
         msg('Author: {}'.format(moccasin.__author__))
+        msg('E-mail: {}'.format(moccasin.__email__))
         msg('URL: {}'.format(moccasin.__url__))
         msg('License: {}'.format(moccasin.__license__))
+        msg('Citation: {}'.format(moccasin.__citation__))
         sys.exit()
     if not paths:
         raise SystemExit(color('Must provide a path to a file.', 'error', colorize))
