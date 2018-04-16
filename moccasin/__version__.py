@@ -20,11 +20,27 @@
 # available online at https://github.com/sbmlteam/moccasin/.
 # ------------------------------------------------------------------------- -->
 
-__version__      = '1.2.0'
-__title__        = 'MOCCASIN'
-__url__          = 'https://github.com/sbmlteam/moccasin'
-__author__       = 'Michael Hucka, Sarah Keating, and Harold Gomez'
-__author_email__ = 'moccasin-dev@googlegroups.com'
-__license__      = 'GNU Lesser General Public License, version 2.1'
-__license_url__  = 'https://www.gnu.org/licenses/lgpl.html'
-__help_url__     = 'https://github.com/sbmlteam/moccasin/blob/master/README.md'
+__version__     = '1.2.0'
+__title__       = 'MOCCASIN'
+__description__ = 'MOCCASIN translates basic ODE-based MATLAB models of biological processes into SBML format.'
+__url__         = 'https://github.com/sbmlteam/moccasin'
+__author__      = 'Michael Hucka, Sarah Keating, and Harold Gomez'
+__email__       = 'moccasin-dev@googlegroups.com'
+__license__     = 'GNU Lesser General Public License, version 2.1'
+__license_url__ = 'https://www.gnu.org/licenses/lgpl.html'
+__help_url__    = 'https://github.com/sbmlteam/moccasin/blob/master/README.md'
+__citation__    = '''@article{moccasin2016,
+  title    = "{MOCCASIN}: converting {MATLAB} {ODE} models to {SBML}",
+  author   = "G{\'o}mez, Harold F. and Hucka, Michael and Keating, Sarah M. and
+              Nudelman, German and Iber, Dagmar and Sealfon, Stuart C.",
+  journal  = "Bioinformatics",
+  volume   =  32,
+  number   =  12,
+  pages    = "1905--1906",
+  month    =  jun,
+  year     =  2016,
+  url      = "http://dx.doi.org/10.1093/bioinformatics/btw056",
+  doi      = "10.1093/bioinformatics/btw056",
+  pmid     = "26861819",
+  pmc      = "PMC4908318"
+}'''
