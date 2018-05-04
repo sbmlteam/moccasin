@@ -263,7 +263,7 @@ class MainFrame (wx.Frame):
 
         sbSizer9 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "File conversion"),
                                      wx.VERTICAL)
-        optionLayoutSizer = wx.GridSizer(1, 6, 0, 40)
+        optionLayoutSizer = wx.GridSizer(1, 6, 0, 120)
         self.staticTextOpt = wx.StaticText(self, wx.ID_ANY, "Variable encoding: ",
                                            wx.DefaultPosition, wx.DefaultSize, 0)
         self.staticTextOpt.Wrap(-1)
@@ -288,7 +288,7 @@ class MainFrame (wx.Frame):
         self.convertButton.Disable()
         optionLayoutSizer.Add(self.convertButton, 1, wx.ALIGN_LEFT|wx.ALIGN_RIGHT|wx.ALL, 5)
         sbSizer9.Add(optionLayoutSizer, 0, wx.EXPAND, 5)
-        gSizer7 = wx.GridSizer(0, 6, 0, 40)
+        gSizer7 = wx.GridSizer(0, 6, 0, 120)
 
         self.modeType = wx.StaticText(self, wx.ID_ANY, "Output format: ",
                                       wx.DefaultPosition, wx.DefaultSize, 0)
