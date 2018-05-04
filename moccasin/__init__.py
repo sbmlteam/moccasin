@@ -20,8 +20,8 @@
 # available online at https://github.com/sbmlteam/moccasin/.
 # ------------------------------------------------------------------------- -->
 
-from .__version__ import __version__, __title__, __url__
-from .__version__ import __author__, __author_email__
+from .__version__ import __version__, __title__, __url__, __description__
+from .__version__ import __author__, __email__, __citation__
 from .__version__ import __license__, __license_url__, __help_url__
 
 from .matlab_parser import MatlabParser
