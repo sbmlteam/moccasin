@@ -6,6 +6,7 @@ Synopsis
 MOCCASIN is designed to convert certain basic forms of ODE simulation models
 written in MATLAB or Octave and translate them into SBML format.
 
+
 Background and introduction
 ---------------------------
 
@@ -30,6 +31,7 @@ into SBML.
 
 MOCCASIN is written in Python and does not require MATLAB to run. It requires
 libSBML and a number of common Python 3 libraries to run.
+
 
 How it works
 ------------
@@ -77,8 +79,32 @@ used in the file, because that kind of information is not meant to be stored
 in SBML files anyway. (A future version of MOCCASIN will hopefully translate
 the additional run information into SED-ML format.)
 
+
 Using MOCCASIN
 --------------
+
+You can use MOCCASIN either via the command line or via a built-in GUI
+interface.  Both interface area accessed using the same command, with the
+default being to start the GUI interface.  On Linux and macOS systems, the
+installation _should_ place a new program on your shell's search path, so
+that you can start MOCCASIN with a simple shell command:
+
+  moccasin
+
+If that fails because the shell cannot find the command, you should be able
+to run it using the alternative approach:
+
+  python3 -m moccasin
+
+To use the command-line interface, supply one or more MATLAB files on the
+command line; MOCCASIN will read and convert the file(s):
+
+  moccasin path/to/a/matlab/file.m
+
+It also accepts additional command-line arguments.  To get information about
+the other options, use the -h argument:
+
+  moccasin -h
 
 
 Authors
@@ -87,6 +113,7 @@ Authors
 Michael Hucka <mhucka@caltech.edu>
 Sarah M. Keating <skeating@caltech.edu>
 Harold Gomez <harold.gomez@bsse.ethz.ch>
+
 
 Copyright
 ---------
@@ -104,6 +131,7 @@ terms of the GNU Lesser General Public License as published by the Free
 Software Foundation.  A copy of the license agreement is provided in the
 file named "COPYING.txt" included with this software distribution and also
 available online at https://github.com/sbmlteam/moccasin/.
+
 '''
 
 from .__version__ import __version__, __title__, __url__, __description__
