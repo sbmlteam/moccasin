@@ -4,12 +4,33 @@
 1.2.0
 ====================================================================
 
-There are two important changes in this release.  The first is a 
+There are three important changes in this release.  The first is a 
 *massive* improvement to the speed of parsing MATLAB files compared
 to recent performance.  The second is the elimination of the 
 separate `moccasin_CLI` and `moccasin_GUI` entry points in favor of
 a single program, `moccasin`, that can be used either to start the
-GUI or perform actions via the command line. 
+GUI or perform actions via the command line.  The third is 
+corretions of errors in the installation scripts so that `setup.py`
+now correctly installs dependencies.
+
+Enhancements:
+
+* New command-line driver interface called, simply, `moccasin`.
+  It features a revised set of command-line options, snazzy colors,
+  spinners and more!
+
+* A past enhancement to `setup.py` caused it to stop being able to
+  install dependencies normally, with the consequence that users had
+  to install dependent Python packages by hand.  This was problematic
+  in many cases because the packages were not always easily 
+  installed.  The errors in `setup.py` have been corrected.
+
+* The installation instructions have been updated and improved.
+
+* The GUI interface provides (hopefully) more helpful dialogs.
+
+* Huge performance improvements.
+
 
 Bug fixes:
 
