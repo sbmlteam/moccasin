@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # @file    setup.py
 # @brief   Standard Python setup.py for MOCCASIN.
