@@ -3,23 +3,34 @@ MOCCASIN
 
 <img align="right" src="https://raw.githubusercontent.com/sbmlteam/moccasin/master/docs/project/logo/moccasin_logo_20151002/logo_128.png"> *MOCCASIN* stands for *"Model ODE Converter for Creating Automated SBML INteroperability"*.  MOCCASIN is designed to convert certain basic forms of ODE simulation models written in MATLAB or Octave and translate them into [SBML](http://sbml.org) format.  It thereby enables researchers to convert MATLAB models into an open and widely-used format in systems biology.
 
-[![License](http://img.shields.io/:license-LGPL-blue.svg)](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html)  [![Latest version](https://img.shields.io/badge/Latest_version-1.1.2-brightgreen.svg)](http://shields.io) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.883135.svg)](https://doi.org/10.5281/zenodo.883135) [![Build Status](https://travis-ci.org/sbmlteam/moccasin.svg?branch=master)](https://travis-ci.org/sbmlteam/moccasin) [![Coverage Status](https://coveralls.io/repos/sbmlteam/moccasin/badge.svg?branch=master)](https://coveralls.io/r/sbmlteam/moccasin?branch=master)
+[![License](http://img.shields.io/:license-LGPL-blue.svg)](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html)  [![Latest version](https://img.shields.io/badge/Latest_version-1.2.0-brightgreen.svg)](http://shields.io) <!--
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.883135.svg)](https://doi.org/10.5281/zenodo.883135)--> [![Build Status](https://travis-ci.org/sbmlteam/moccasin.svg?branch=master)](https://travis-ci.org/sbmlteam/moccasin) [![Coverage Status](https://coveralls.io/repos/sbmlteam/moccasin/badge.svg?branch=master)](https://coveralls.io/r/sbmlteam/moccasin?branch=master)
 
-----
-*Authors*:      [Michael Hucka](http://www.cds.caltech.edu/~mhucka), [Sarah Keating](http://www.ebi.ac.uk/about/people/sarah-keating), and [Harold G&oacute;mez](http://www.bu.edu/computationalimmunology/people/harold-gomez/).
-
-*License*:      This code is licensed under the LGPL version 2.1.  Please see the file [../LICENSE.txt](https://raw.githubusercontent.com/sbmlteam/moccasin/master/LICENSE.txt) for details.
-
-*Repository*:   [https://github.com/sbmlteam/moccasin](https://github.com/sbmlteam/moccasin)
-
+*Authors*:      [Michael Hucka](http://www.cds.caltech.edu/~mhucka), [Sarah Keating](http://www.ebi.ac.uk/about/people/sarah-keating), and [Harold G&oacute;mez](http://www.bu.edu/computationalimmunology/people/harold-gomez/).<br>
+*License*:      This code is licensed under the LGPL version 2.1.  Please see the file [../LICENSE.txt](https://raw.githubusercontent.com/sbmlteam/moccasin/master/LICENSE.txt) for details.<br>
+*Code repository*:   [https://github.com/sbmlteam/moccasin](https://github.com/sbmlteam/moccasin)<br>
 *Developers' discussion group*: [https://groups.google.com/forum/#!forum/moccasin-dev](https://groups.google.com/forum/#!forum/moccasin-dev)
 
 🏁 Recent news and activities
 ------------------------------
 
-_August 2017_: Release 1.1.2 fixed a bug that caused MOCCASIN to fail on some scripts that did not have an enclosing function.  Issues resolved: [#19](https://github.com/sbmlteam/moccasin/issues/19), [#20](https://github.com/sbmlteam/moccasin/issues/20).  Also in August, release 1.1.1 fixed [issue #15](https://github.com/sbmlteam/moccasin/issues/15) and allows MOCCASIN to work with wxPython [version 4.0.0](https://www.wxpython.org/news/wxpython-4.0.0b1-release/index.html).
+_May 2018_: Release 1.2.0 includes a fix for a critical performance bug caused by a change to the API in PyParsing, with the consequence that MOCCASIN should run an order of magnitude faster than the last release.  Additional changes include improvements to the installation instructions, improved diagnostics in the GUI interface, and some bug fixes.
 
-_June 2016_: The MATLAB parser and the conversion code in MOCCASIN version 1.1 are considerably better than they were in last year's 1.0 release.  The underlying parser now creates a more complete abstract syntax tree representation of the MATLAB input, and the converter also takes advantage of more syntactic features in XPP and BIOCHAM.  The result is better conversions of larger and more complex models.
+Table of Contents
+-----------------
+
+* [Please cite the MOCCASIN paper and the version you use](#️-please-cite-the-moccasin-paper-and-the-version-you-use)
+* [Background and introduction](#-background-and-introduction)
+* [How it works](#-how-it-works)
+* [Installation and configuration](#-installation-and-configuration)
+    * [<em>Check and install dependencies</em>](#-check-and-install-dependencies)
+    * [<em>Download and install MOCCASIN</em>](#-download-and-install-moccasin)
+* [Using MOCCASIN](#-using-moccasin)
+* [Getting help and support](#-getting-help-and-support)
+* [Do you like it?](#-do-you-like-it)
+* [Contributing — info for developers](#-contributing--info-for-developers)
+* [Acknowledgments](#-acknowledgments)
+* [Copyright and license](#-copyright-and-license)
 
 
 ♥️ Please cite the MOCCASIN paper and the version you use
@@ -36,8 +47,6 @@ Harold F. Gómez, Michael Hucka, Sarah M. Keating, German Nudelman, Dagmar Iber 
 Please also indicate the specific version of MOCCASIN you use, to improve other people's ability to reproduce your results. You can use the Zenodo DOIs we provide for this purpose:
 
 * MOCCASIN release 1.1.2 &rArr; [10.5281/zenodo.883135](https://doi.org/10.5281/zenodo.883135)
-* MOCCASIN release 1.1.1 &rArr; [10.5281/zenodo.846461](https://dx.doi.org/10.5281/zenodo.846461)
-* MOCCASIN release 1.1.0 &rArr; [10.5281/zenodo.56374](http://dx.doi.org/10.5281/zenodo.56374)
 
 ☀ Background and introduction
 -----------------------------
@@ -46,12 +55,12 @@ Computational modeling has become a crucial aspect of biological research, and [
 
 The goal of this project is to develop software that uses a combination of heuristics and user assistance to help researchers export models written as ordinary MATLAB and Octave scripts. MOCCASIN (*"Model ODE Converter for Creating Automated SBML INteroperability"*) helps researchers take ODE (ordinary differential equation) models written in MATLAB and Octave and export them as SBML files.  Although its scope is limited to MATLAB written with certain assumptions, and general conversion of MATLAB models is impossible, MOCCASIN nevertheless *can* translate some common forms of models into SBML.
 
-MOCCASIN is written in Python and does _not_ require MATLAB to run.  It requires [libSBML](http://sbml.org/Software/libSBML) and a number of common Python libraries to run, and is compatible with Python 2.7 and 3.3.
+MOCCASIN is written in Python and does _not_ require MATLAB to run.  It requires [libSBML](http://sbml.org/Software/libSBML) and a number of common Python 3 libraries to run.
 
 ✺ How it works
 ------------
 
-MOCCASIN uses an algorithm developed by Fages, Gay and Soliman described in the paper titled [_Inferring reaction systems from ordinary differential equations_](http://www.sciencedirect.com/science/article/pii/S0304397514006197).  A free technical report explaining the algorithm is [available from INRIA](https://hal.inria.fr/hal-01103692).  To parse MATLAB and produce input to the reaction-inference algorithm, MOCCASIN uses a custom MATLAB parser written using [PyParsing](https://pyparsing.wikispaces.com) and a variety of post-processing operations to interpret the MATLAB contents.
+MOCCASIN uses an algorithm developed by Fages, Gay and Soliman described in their 2015 paper titled [_Inferring reaction systems from ordinary differential equations_](http://www.sciencedirect.com/science/article/pii/S0304397514006197).  A free technical report explaining the algorithm is [available from INRIA](https://hal.inria.fr/hal-01103692).  To parse MATLAB and produce input to the reaction-inference algorithm, MOCCASIN uses a custom MATLAB parser written using [PyParsing](https://pyparsing.wikispaces.com) and a variety of post-processing operations to interpret the MATLAB contents.
 
 Currently, MOCCASIN is limited to MATLAB inputs in which a model is contained in a single file.  The file must set up a system of differential equations as a function defined in the file, and make a call to one of the MATLAB `odeNN` family of solvers (e.g., `ode45`, `ode15s`, etc.).  The following is a simple but complete example:
 
@@ -77,36 +86,96 @@ function dx = f(t, x)
 end
 ```
 
-You can view the SBML output for this example [in a separate file](docs/project/examples/example.xml).  MOCCASIN assumes that the second parameter in the ODE function definition determines the variables that should identify the SBML species; thus, the output generated by MOCCASIN will have SBML species named `x_1` and `x_2` by default.  (The use of suffixes is necessary because plain SBML does not support arrays or vectors.)  The output will also not capture any information about the particular ODE solver or the start/stop/configuration parameters used in the file, because that kind of information is not meant to be stored in SBML files anyway.  (A future version of MOCCASIN will hopefully translate the additional run information into [SED-ML](http://sed-ml.org) format.)
+You can view the SBML output for this example [in a separate file](docs/project/examples/example.xml).  MOCCASIN assumes that the second parameter in the ODE function definition determines the variables that identify the SBML species; thus, the output generated by MOCCASIN will have SBML species named `x_1` and `x_2` by default.  (The use of suffixes is necessary because plain SBML does not support arrays or vectors.)  The output will also not capture any information about the particular ODE solver or the start/stop/configuration parameters used in the file, because that kind of information is not meant to be stored in SBML files anyway.  (A future version of MOCCASIN will hopefully translate the additional run information into [SED-ML](http://sed-ml.org) format.)
 
 
 ☛ Installation and configuration
 --------------------------------
 
-Before installing MOCCASIN, you need to separately install the following software that MOCCASIN depends upon:
+MOCCASIN requires Python version 3 and depends on numerous other Python packages.
 
-* [libSBML](http://sbml.org/Software/libSBML/Downloading_libSBML#If_you_use_Python), which in turn depends on the following packages:
-  * `python-dev`
-  * `libxml2-dev`
-  * `libz-dev`
-  * `libbz2-dev`
-* [wxPython](http://wxpython.org/).  Note: wxPython is not fully supported for Python 3.4, even with [wxPython-Phoenix](http://wxpython.org/Phoenix/docs/html/index.html), and unfortunately, the MOCCASIN GUI uses features not available in wxPython-Phoenix.  Consequently, **to use the GUI interface, you must use Python 2.7**.  (If you only use the command-line interface, you can use Python 2.7 or 3.x.)
-* [plac](https://micheles.github.io/plac/)
-* [pyparsing](http://pyparsing.wikispaces.com)
-* a few other Python modules (e.g., `requests`) that should be already available in your Python installation.
+## ⓵&nbsp;&nbsp; _Check and install dependencies_
 
-Once that is done, you can download or clone the MOCCASIN source code base and then run the following:
+Most dependent packages should install automatically using Python `pip` and PyPI, but some of those packages themselves have dependencies on system libraries that may require separate manual installation.  The following is a guide for the systems we have tested.
+
+### Ubuntu Linux 14.x and 16.x
+
+The basic installation of Ubuntu Linux does not come with Python, `pip` or `git`, so they need to be installed.  In addition, wxPython needs numerous libraries to be installed first, or the installation of wxPython itself (during the installation of MOCCASIN) will fail.  The following shell commands should get the necessary things installed:
 
 ```
-python setup.py install
+sudo apt-get install -y git python3-pip build-essential libtiff5-dev freeglut3-dev libsdl2-dev
+sudo apt-get install -y libgstreamer-plugins-base1.0-dev libwebkit2gtk-4.0-dev 
+```
+
+After this is finished, the steps to download and install MOCCASIN should work.
+
+### macOS
+
+For recent versions of macOS such as 10.13 (High Sierra), you will need  [Xcode](https://itunes.apple.com/us/app/xcode/id497799835?mt=12) from the Apple App Store.  You will also need to install the command-line tools, which can be done using the following shell command:
+```
+sudo xcode-select --install
+```
+
+Finally, you will also to install Python&nbsp;3 and `pip`.  If you use [MacPorts](https://www.macports.org), you could use the following sequence of commands:
+```
+sudo port -N install python34 py34-pip
+sudo port select --set python3 python34
+```
+
+After this, the steps to download and install MOCCASIN should work.
+
+### CentOS 7
+
+Python&nbsp;3 and `pip`, as well as development tools such as a compiler, first need to be installed:
+
+```csh
+sudo yum -y install epel-release
+sudo yum -y install python34-setuptools python34-pip
+sudo yum -y install groupinstall development
+```
+
+Next, installing wxPython is the most difficult step.  If at all possible, find an existing wheel file.  For CentOS&nbsp;7, the site [https://extras.wxpython.org/wxPython4/extras/linux/gtk3/centos-7/](https://extras.wxpython.org/wxPython4/extras/linux/gtk3/centos-7/) contains recent builds in Python wheel format.  Download the latest version that matches your Python configuration.  For example, at the time of this writing, the most recent version of wxPython is 4.0.1 and the wheel file for Python&nbsp;3.4 is named [wxPython-4.0.1-cp34-cp34m-linux_x86_64.whl](https://extras.wxpython.org/wxPython4/extras/linux/gtk3/centos-7/wxPython-4.0.1-cp34-cp34m-linux_x86_64.whl). Download the wheel file to a temporary location on your computer and then run the following command:
+```csh
+sudo python3 -m pip install /path/to/wxPython-4.0.1-cp34-cp34m-linux_x86_64.whl
+```
+
+After that, the steps below to download and install MOCCASIN should work.  If you cannot get wxPython installed using a prebuilt wheel, then please consult the [wxPython build information  page](https://wxpython.org/pages/downloads/index.html) or contact the MOCCASIN developers.
+
+## ⓶&nbsp;&nbsp; _Download and install MOCCASIN_
+
+The following is probably the simplest and most direct way to install MOCCASIN on your computer:
+```sh
+sudo python3 -m pip install git+https://github.com/sbmlteam/moccasin.git
+```
+
+Alternatively, you can clone this GitHub repository to a location on your computer's file system and then run `setup.py`:
+```sh
+git clone https://github.com/sbmlteam/moccasin.git
+cd moccasin
+sudo python3 -m pip install .
 ```
 
 ► Using MOCCASIN
 --------------
 
-You can use MOCCASIN either via the command line or via the GUI interface.  To start the MOCCASIN GUI, after installation (see above), execute the Python file `moccasin/interfaces/moccasin_GUI.py` (relative to the MOCCASIN source directory), or in a shell terminal, type the command
+You can use MOCCASIN either via the command line or via a built-in GUI interface.  Both interface area accessed using the same command, with the default being to start the GUI interface.  On Linux and macOS systems, the installation _should_ place a new program on your shell's search path, so that you can start MOCCASIN with a simple shell command:
 ```
-python -m moccasin-GUI
+moccasin
+```
+
+If that fails because the shell cannot find the command, you should be able to run it using the alternative approach:
+```
+python3 -m moccasin
+```
+
+To use the command-line interface, supply one or more MATLAB files on the command line; MOCCASIN will read and convert the file(s):
+```
+moccasin path/to/a/matlab/file.m
+```
+
+It also accepts additional command-line arguments.  To get information about the other options, use the `-h` argument:
+```
+moccasin -h
 ```
 
 Once the GUI window opens, the first thing you will probably want to do is click the *Browse* button in the upper right of the window, to find the MATLAB file you want to convert on your computer.  Once you do this, you can select a few options, and click the *Convert* button.  After some time (depending on the size of the file), you should eventually get SBML output in the lowest panel of the GUI.  The animation below illustrates the whole process:
@@ -115,21 +184,13 @@ Once the GUI window opens, the first thing you will probably want to do is click
 <img src="https://cloud.githubusercontent.com/assets/1450019/16715437/44c33744-4694-11e6-9f81-ebbe64788ac1.gif" alt="MOCCASIN GUI" title="MOCCASIN GUI"/>
 </p>
 
-If you prefer a command-line interface, or have trouble with the GUI library dependencies, you can use the command-line interface instead.  Simply run `moccasin` instead of `moccasin-GUI`:
-```
-python -m moccasin
-```
-To convert a file (let us say `/tmp/mymodel.m`), simply provide the file on the command line:
-```
-python -m moccasin /tmp/mymodel.m
-```
+MOCCASIN offers a few conversion options:
 
-If the above fails for some reason, you can try a more direct approach: `cd` to the `moccasin/interfaces` directory in a clone of the repository, and run the interface directly:
-```
-cd moccasin/interfaces
-./moccasin_CLI.py /tmp/mymodel.m
-```
-You can use the `-h` option to `moccasin_CLI.py` to find out the available command-line arguments.
+* It can generate equation-based SBML output instead of the default, which is reaction-based SBML.  The former uses no reactions, and instead writes out everything in terms of SBML "rate rules".
+
+* It can encode variables as SBML parameters instead of the default, to encode them as SBML species.  Depending on your application and what you do with the output, this may or may not be useful.
+
+* It can generate XPP `.ode` file output, instead of SBML format.
 
 
 ⁇ Getting help and support
