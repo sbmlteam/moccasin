@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.4
+#!/usr/bin/env python3
 #
 # @file    test.py
 # @brief   Simple test driver for MatlabParser class.
