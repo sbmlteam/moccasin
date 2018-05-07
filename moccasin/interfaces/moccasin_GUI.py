@@ -54,10 +54,10 @@ except:
     sys.path.append('../..')
 
 import moccasin
+from moccasin.errors import *
 from .controller import Controller
 from .network_utils import have_network
 from .printDialog import PrintDialog
-from moccasin.converter.errors import *
 
 
 # -----------------------------------------------------------------------------
