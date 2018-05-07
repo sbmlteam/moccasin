@@ -118,7 +118,7 @@ sudo xcode-select --install
 
 Finally, you will also to install Python&nbsp;3 and `pip`.  If you use [MacPorts](https://www.macports.org), you could use the following sequence of commands:
 ```
-sudo port -N install python34 py34-pip
+sudo port install python34 py34-pip
 sudo port select --set python3 python34
 ```
 
