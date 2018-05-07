@@ -182,7 +182,7 @@ SBML INteroperability".
             if not debug_parser and not quiet:
                 msg('Parsing MATLAB file "{}" ...'.format(path), 'info', colorize)
             controller.parse_file(file_contents)
-            controller.check_translatable(not relaxed)
+            controller.check_translatable(relaxed)
             if debug_parser:
                 print_header('Parsed MATLAB output', 'info', quiet, colorize)
                 msg(controller.print_parsed_results())
