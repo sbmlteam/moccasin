@@ -98,37 +98,15 @@ except:
 
 import moccasin
 from moccasin import MatlabParser
-
-from .cleaner import *
-from .errors import *
-from .evaluate_formula import *
-from .expr_tester import *
-from .finder import *
-from .name_generator import *
-from .recognizer import *
-from .rewriter import *
-from .xpp import *
-
-#try:
-#     from .cleaner import *
-#     from .errors import *
-#     from .evaluate_formula import *
-#     from .expr_tester import *
-#     from .finder import *
-#     from .name_generator import *
-#     from .recognizer import *
-#     from .rewriter import *
-#     from .xpp import *
-# except:
-#     from cleaner import *
-#     from errors import *
-#     from evaluate_formula import *
-#     from expr_tester import *
-#     from finder import *
-#     from name_generator import *
-#     from recognizer import *
-#     from rewriter import *
-#     from xpp import *
+from moccasin.errors import *
+from moccasin.converter.cleaner import *
+from moccasin.converter.evaluate_formula import *
+from moccasin.converter.expr_tester import *
+from moccasin.converter.finder import *
+from moccasin.converter.name_generator import *
+from moccasin.converter.recognizer import *
+from moccasin.converter.rewriter import *
+from moccasin.converter.xpp import *
 
 
 # -----------------------------------------------------------------------------
@@ -222,6 +200,13 @@ def sanity_check_matlab(parse_results):
             fail(IncompleteInputError,
                  'function passed to odeNN is not defined in this file')
 
+    # Many MATLAB constructs can't be handled, although some can be translated
+    # to other constructs if we know their full meanings are not employed.
+    # FIXME: generalize and expand this.
+    if MatlabFinder(context).find_operators(['.*', '.^', './']):
+        fail(ArrayOperatorInputError,
+             'MATLAB code uses array operators that may not be translatable')
+
 
 def clean_matlab(context, protected_context):
     '''Remove MATLAB content we would ignore anyway.  This speeds up processing
@@ -239,7 +224,7 @@ def clean_matlab(context, protected_context):
                 for elem in subscripts:
                     if isinstance(elem, Identifier):
                         assigned_vars.append(elem)
-        used_vars = [x for x in assigned_vars if MatlabFinder(context).find_use(x)]
+        used_vars = [x for x in assigned_vars if MatlabFinder(context).find_symbol(x)]
         unused_vars = list(set(assigned_vars) - set(used_vars))
         for var in list(context.assignments.keys()):
             if var in unused_vars:
