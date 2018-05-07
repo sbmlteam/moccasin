@@ -57,6 +57,11 @@ class UnsupportedInputError(MoccasinException):
     pass
 
 
+class ArrayOperatorInputError(UnsupportedInputError):
+    """Class of errors involving unsupported MATLAB array operators."""
+    pass
+
+
 class ConversionError(MoccasinException):
     """Class of errors for general failures of MOCCASIN's conversion approach."""
     pass

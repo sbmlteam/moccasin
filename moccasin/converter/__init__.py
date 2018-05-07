@@ -22,7 +22,6 @@
 
 from .cleaner import *
 from .converter import *
-from .errors import *
 from .evaluate_formula import *
 from .expr_tester import *
 from .finder import *

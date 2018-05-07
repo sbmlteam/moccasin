@@ -55,6 +55,7 @@ sys.setrecursionlimit(5000)
     use_equations = ('create equation-based SBML (default: reaction-based)',   'flag', 'e'),
     use_params    = ('encode variables as SBML parameters (default: species)', 'flag', 'p'),
     quiet         = ('do not print informational messages while working',      'flag', 'q'),
+    relaxed       = ('assume certain MATLAB operators are not used',           'flag', 'r'),
     xpp_output    = ('create XPP ODE format instead of SBML format output',    'flag', 'x'),
     version       = ('print MOCCASIN version info and exit',                   'flag', 'v'),
     no_color      = ('do not color-code the terminal output (default: do)',    'flag', 'C'),
@@ -63,8 +64,8 @@ sys.setrecursionlimit(5000)
     paths         = 'paths to MATLAB input files to convert'
 )
 
-def cli_main(gui, use_equations, use_params, quiet, version, xpp_output,
-             no_color, debug_parser, no_comments, *paths):
+def cli_main(gui, use_equations, use_params, quiet, relaxed, version,
+             xpp_output, no_color, debug_parser, no_comments, *paths):
     '''Interface for controlling MOCCASIN, the MATLAB ODE converter for SBML.
 MOCCASIN can take certain forms of ODE (ordinary differential equation) models
 written in MATLAB and Octave and export them as SBML files.  MOCCASIN does not
@@ -112,6 +113,13 @@ support arrays or vectors.)  The output will also not capture any information
 about the particular ODE solver or the start/stop/configuration parameters
 used in the file, because that kind of information is not meant to be stored
 in SBML files anyway.
+
+The converter can only handle a very limited subset of MATLAB constructs.  A
+notable class of constructs it cannot handle is matrix/array operators in
+equations such as the element-wise equivalents of addition, subtraction, and
+similar.  Since MATLAB users sometimes employ the operators in their formulas
+even when they do not need to, MOCCASIN can be told to assume non-matrix
+meanings of .*, .^, etc. using the argument -r.
 
 This command-line interface understands some additional arguments controlling
 the translation process:
@@ -174,6 +182,7 @@ SBML INteroperability".
             if not debug_parser and not quiet:
                 msg('Parsing MATLAB file "{}" ...'.format(path), 'info', colorize)
             controller.parse_file(file_contents)
+            controller.check_translatable(relaxed)
             if debug_parser:
                 print_header('Parsed MATLAB output', 'info', quiet, colorize)
                 msg(controller.print_parsed_results())

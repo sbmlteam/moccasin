@@ -36,7 +36,9 @@ except:
 
 import moccasin
 from moccasin.converter import create_raterule_model, process_biocham_output
+from moccasin.converter import sanity_check_matlab
 from moccasin.matlab_parser import MatlabParser
+from moccasin.errors import UnsupportedInputError
 
 # -----------------------------------------------------------------------------
 # Global configuration constants
@@ -61,6 +63,18 @@ class Controller():
         '''Parses input file using Moccasin's parser.'''
         self.file_contents = file_contents
         self.parse_results = self.parser.parse_string(self.file_contents)
+
+
+    def check_translatable(self, relaxed = False):
+        '''Check the parsed MATLAB and complain if we can't translate it.'''
+        try:
+            sanity_check_matlab(self.parse_results)
+            return True
+        except Exception as e:
+            if relaxed and isinstance(e,  moccasin.UnsupportedInputError):
+                return True
+            raise
+        return False
 
 
     def print_parsed_results(self):

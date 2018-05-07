@@ -98,37 +98,15 @@ except:
 
 import moccasin
 from moccasin import MatlabParser
-
-from .cleaner import *
-from .errors import *
-from .evaluate_formula import *
-from .expr_tester import *
-from .finder import *
-from .name_generator import *
-from .recognizer import *
-from .rewriter import *
-from .xpp import *
-
-#try:
-#     from .cleaner import *
-#     from .errors import *
-#     from .evaluate_formula import *
-#     from .expr_tester import *
-#     from .finder import *
-#     from .name_generator import *
-#     from .recognizer import *
-#     from .rewriter import *
-#     from .xpp import *
-# except:
-#     from cleaner import *
-#     from errors import *
-#     from evaluate_formula import *
-#     from expr_tester import *
-#     from finder import *
-#     from name_generator import *
-#     from recognizer import *
-#     from rewriter import *
-#     from xpp import *
+from moccasin.errors import *
+from moccasin.converter.cleaner import *
+from moccasin.converter.evaluate_formula import *
+from moccasin.converter.expr_tester import *
+from moccasin.converter.finder import *
+from moccasin.converter.name_generator import *
+from moccasin.converter.recognizer import *
+from moccasin.converter.rewriter import *
+from moccasin.converter.xpp import *
 
 
 # -----------------------------------------------------------------------------
@@ -154,7 +132,7 @@ def sanity_check_matlab(parse_results):
     """
     # There must be at least one function call in the file.
     if not parse_results.calls and not parse_results.functions:
-        fail(NotConvertibleError, 'no function calls found => no calls to odeNN')
+        fail(NotConvertibleError, 'No function calls found => no calls to odeNN')
 
     # There must be one, and only one, call to a MATLAB odeNN function in the
     # highest context, or else we won't know what to do.
@@ -162,9 +140,9 @@ def sanity_check_matlab(parse_results):
     calls = [(k,v) for k,v in context.calls.items() if k.name.startswith('ode')]
     calls = [(k,v) for k,v in calls if not k.name.startswith('odeset')]
     if not calls:
-        fail(NotConvertibleError, 'did not find a call to a MATLAB odeNN function')
+        fail(NotConvertibleError, 'Did not find a call to a MATLAB odeNN function')
     if len(calls) > 1:
-        fail(NotConvertibleError, 'found multiple calls to odeNN functions')
+        fail(NotConvertibleError, 'Found multiple calls to odeNN functions')
 
     # We have one call to an odeNN function.  It will have at least 3 args:
     #     [t, y] = ode45(@f, tspan, x0)
@@ -176,7 +154,7 @@ def sanity_check_matlab(parse_results):
     # Currently, we only allow a variable as the initial conditions parameter.
     if not isinstance(init_cond, Identifier):
         fail(UnsupportedInputError,
-             'unsupported type of initial conditions variable in ODE call')
+             'Unsupported type of initial conditions variable in ODE call')
 
     # We currently can't handle anything other than function handles or
     # anonymous functions in the arguments to the odeNN functions.  If there
@@ -188,13 +166,13 @@ def sanity_check_matlab(parse_results):
         ode_func = assignment(ode_func, context)
     if not isinstance(ode_func, AnonFun) and not isinstance(ode_func, FuncHandle):
         fail(UnsupportedInputError,
-             'unsupported type of argument to {} call'.format(matlab_func.name))
+             'Unsupported type of argument to {} call'.format(matlab_func.name))
     if len(parse_results.functions) == 0:
         if isinstance(ode_func, AnonFun):
             return
         elif isinstance(ode_func, FuncHandle):
             fail(IncompleteInputError,
-                 'missing definition of function passed in odeNN call')
+                 'Missing definition of function passed in odeNN call')
 
     # If the user's ODE definition is a function, that function might be
     # defined nested inside the first function in the file, or it might be a
@@ -209,18 +187,25 @@ def sanity_check_matlab(parse_results):
         if parse_results.name not in parse_results.functions:
             # This is a WTF case.
             fail(UnsupportedInputError,
-                 'input file is not structured in a supported form')
+                 'Input file is not structured in a supported form')
         scopes = [parse_results.functions[parse_results.name], parse_results]
     if isinstance(ode_func, FuncHandle):
         if not isinstance(ode_func.name, Identifier):
             fail(UnsupportedInputError,
-                 'function passed to odeNN is not a simple handle')
+                 'Function passed to odeNN is not a simple handle')
         for s in scopes:
             if ode_func.name in s.functions:
                 break
         else:
             fail(IncompleteInputError,
-                 'function passed to odeNN is not defined in this file')
+                 'Function passed to odeNN is not defined in this file')
+
+    # Many MATLAB constructs can't be handled, although some can be translated
+    # to other constructs if we know their full meanings are not employed.
+    # FIXME: generalize and expand this.
+    if MatlabFinder(context).find_operators(['.*', '.^', './']):
+        fail(ArrayOperatorInputError,
+             'The MATLAB code uses array operators that may not be translatable')
 
 
 def clean_matlab(context, protected_context):
@@ -239,7 +224,7 @@ def clean_matlab(context, protected_context):
                 for elem in subscripts:
                     if isinstance(elem, Identifier):
                         assigned_vars.append(elem)
-        used_vars = [x for x in assigned_vars if MatlabFinder(context).find_use(x)]
+        used_vars = [x for x in assigned_vars if MatlabFinder(context).find_symbol(x)]
         unused_vars = list(set(assigned_vars) - set(used_vars))
         for var in list(context.assignments.keys()):
             if var in unused_vars:
@@ -311,7 +296,7 @@ def matlab_ode_call(context):
         if isinstance(id, Identifier) and re.match('^ode[0-9]', id.name):
             return id, arglist[0]
     # This should not happen if sanity_check_matlab() did its job.
-    fail(NotConvertibleError, 'did not find call to MATLAB odeNN function')
+    fail(NotConvertibleError, 'Did not find call to MATLAB odeNN function')
 
 
 def function_declaration(name, context, recursive=False):
@@ -360,11 +345,11 @@ def assigned_ode_var(name, context):
         if isinstance(rhs, FunCall) or isinstance(rhs, Ambiguous):
             if isinstance(rhs.name, Identifier) and rhs.name == name:
                 if not isinstance(lhs, Array) or len(lhs.rows[0]) != 2:
-                    fail(UnsupportedInputError, 'unrecognized form of odeNN call')
+                    fail(UnsupportedInputError, 'Unrecognized form of odeNN call')
                 # Arrays on LHS can only have one row, so using [0] is safe.
                 return lhs.rows[0][1]
     # Something in our algorithm is wrong, if we get here.
-    fail(ConversionError, 'found odeNN call, but could not interpret it')
+    fail(ConversionError, 'Found odeNN call, but could not interpret it')
 
 
 def num_underscores(context):
@@ -930,7 +915,7 @@ def create_raterule_model(parse_results, use_species=True, output_format="sbml",
     func_var, ode_func = func_from_handle(args[0], working_context, underscores)
     if not ode_func:
         fail(ConversionError,
-             'could not extract ODE function from {} call'.format(matlab_func))
+             'Could not extract ODE function from {} call'.format(matlab_func))
     time_span = args[1]
     init_cond_var = args[2]
     assigned_var = assigned_ode_var(matlab_func, working_context)
@@ -946,7 +931,7 @@ def create_raterule_model(parse_results, use_species=True, output_format="sbml",
     dependent_var = function_context.parameters[1]
     if not isinstance(dependent_var, Identifier):
         fail(ConversionError,
-             'failed to parse the arguments to function {}.'.format(ode_func.name))
+             'Failed to parse the arguments to function {}.'.format(ode_func.name))
 
     # Some people may want to see the species/independent variables named
     # after the input parameter, and others may want it named after the output.
@@ -971,7 +956,7 @@ def create_raterule_model(parse_results, use_species=True, output_format="sbml",
     init_cond = working_context.assignments[init_cond_var]
     if not isinstance(init_cond, Array):
         fail(ConversionError,
-             'could not find assignment to {}'.format(init_cond_var.name))
+             'Could not find assignment to {}'.format(init_cond_var.name))
     mloop(init_cond,
           lambda idx, item: make_indexed(ode_var, idx, item, translations,
                                          use_species, False, document,
@@ -1001,12 +986,12 @@ def create_raterule_model(parse_results, use_species=True, output_format="sbml",
     var_def = function_context.assignments[output_var]
     if not isinstance(var_def, Array):
         fail(ConversionError,
-             'failed to parse body of function {}'.format(function_context.name))
+             'Failed to parse body of function {}'.format(function_context.name))
     # The number of items in the output var must match initial conditions var.
     # Ignore if one is a column vector and the other a row vector.
     if vector_length(init_cond) != vector_length(var_def):
         fail(ConversionError,
-             'initial conditions array and output array have different sizes')
+             'Initial conditions array and output array have different sizes')
     mloop(var_def,
           lambda idx, item: make_rate_rule(ode_var, dependent_var, translations,
                                            idx, item, document, underscores,
@@ -1182,7 +1167,7 @@ def make_remaining_vars(working_context, function_context, skip_vars,
                 # FIXME: it may be possible to handle some cases like this.
                 text = MatlabParser.make_formula(var)
                 fail(ConversionError,
-                     'unable to convert array assignment {}'.format(text))
+                     'Unable to convert array assignment {}'.format(text))
         elif isinstance(rhs, Array):
             mloop(rhs,
                   lambda idx, item: make_indexed(var, idx, item, name_translations,
@@ -1296,7 +1281,7 @@ def process_biocham_output(sbml, parse_results, post_add, post_convert,
     success = document.setLevelAndVersion(3, 1, False)
     if not success:
         # FIXME provide more info about what happened.
-        fail(ConversionError, 'failed to convert output from Biocham.')
+        fail(ConversionError, 'Failed to convert output from Biocham.')
 
     # Convert constructs if necessary.
     for var, formula in post_convert:

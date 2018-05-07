@@ -34,17 +34,15 @@ from moccasin.matlab_parser import *
 class MatlabFinder(MatlabNodeVisitor):
     def __init__(self, context):
         super(MatlabFinder, self).__init__()
-        self._found = []
         self._context = context
-
-
-    def _foundit(self):
-        self._found.append(self._sought)
+        self._found = []
+        self._seek_symbol = None
+        self._seek_operators = []
 
 
     def visit_FunCall(self, node):
-        if node.args and self._sought in node.args:
-            self._foundit()
+        if self._seek_symbol and node.args and self._seek_symbol in node.args:
+            self._found.append(self._seek_symbol)
             return
         else:
             self.visit(node.args)
@@ -62,88 +60,91 @@ class MatlabFinder(MatlabNodeVisitor):
 
 
     def visit_Assignment(self, node):
-        if node.rhs == self._sought:
-            self._foundit()
+        if self._seek_symbol and node.rhs == self._seek_symbol:
+            self._found.append(self._seek_symbol)
             return
         else:
             self.visit(node.rhs)
 
 
     def visit_Operator(self, node):
+        if hasattr(node, 'op') and node.op in self._seek_operators:
+            self._found.append(node.op)
+            return
         if hasattr(node, 'operand'):
-            if node.operand == self._sought:
-                self._foundit()
+            if self._seek_symbol and node.operand == self._seek_symbol:
+                self._found.append(self._seek_symbol)
                 return
             else:
                 self.visit(node.operand)
         if hasattr(node, 'left'):
-            if node.left == self._sought:
-                self._foundit()
+            if self._seek_symbol and node.left == self._seek_symbol:
+                self._found.append(self._seek_symbol)
                 return
             else:
                 self.visit(node.left)
         if hasattr(node, 'right'):
-            if node.right == self._sought:
-                self._foundit()
+            if self._seek_symbol and node.right == self._seek_symbol:
+                self._found.append(self._seek_symbol)
                 return
             else:
                 self.visit(node.right)
         if hasattr(node, 'middle'):
-            if node.middle == self._sought:
-                self._foundit()
+            if self._seek_symbol and node.middle == self._seek_symbol:
+                self._found.append(self._seek_symbol)
                 return
             else:
                 self.visit(node.middle)
 
 
     def visit_If(self, node):
-        if node.cond == self._sought:
-            self._foundit()
+        if self._seek_symbol and node.cond == self._seek_symbol:
+            self._found.append(self._seek_symbol)
             return
         else:
             self.visit(node.cond)
-        if node.body == self._sought:
-            self._foundit()
+        if self._seek_symbol and node.body == self._seek_symbol:
+            self._found.append(self._seek_symbol)
             return
         else:
             self.visit(node.body)
-        if node.else_body == self._sought:
-            self._foundit()
+        if self._seek_symbol and node.else_body == self._seek_symbol:
+            self._found.append(self._seek_symbol)
             return
         else:
             self.visit(node.else_body)
         for else_cond, else_body in (node.elseif_tuples or []):
-            if else_cond == self._sought:
-                self._foundit()
+            if self._seek_symbol and else_cond == self._seek_symbol:
+                self._found.append(self._seek_symbol)
                 return
             else:
                 self.visit(else_cond)
-            if else_body == self._sought:
-                self._foundit()
+            if self._seek_symbol and else_body == self._seek_symbol:
+                self._found.append(self._seek_symbol)
                 return
             else:
                 self.visit(else_body)
 
 
     def visit_Switch(self, node):
-        if node.cond == self._sought:
-            self._foundit()
+        if self._seek_symbol and node.cond == self._seek_symbol:
+            self._found.append(self._seek_symbol)
             return
         else:
             self.visit(node.cond)
-        if node.otherwise == self._sought:
-            self._foundit()
+        if self._seek_symbol and node.otherwise == self._seek_symbol:
+            self._found.append(self._seek_symbol)
             return
         else:
             self.visit(node.otherwise)
         for case_cond, case_body in (node.case_tuples or []):
-            if case_cond == self._sought:
-                self._foundit()
+            if self._seek_symbol and case_cond == self._seek_symbol:
+                self._found.append(self._seek_symbol)
                 return
             else:
                 self.visit(case_cond)
-            if case_body == self._sought:
-                self._foundit()
+            if self._seek_symbol and case_body == self._seek_symbol:
+                self._found.append(self._seek_symbol)
                 return
             else:
                 self.visit(case_body)
@@ -152,20 +153,20 @@ class MatlabFinder(MatlabNodeVisitor):
     def visit_FlowControl(self, node):
         # This handles the remaining flow control constructs like while & for.
         if hasattr(node, 'cond'):
-            if node.cond == self._sought:
-                self._foundit()
+            if self._seek_symbol and node.cond == self._seek_symbol:
+                self._found.append(self._seek_symbol)
                 return
             else:
                 self.visit(node.cond)
         if hasattr(node, 'expr'):
-            if node.expr == self._sought:
-                self._foundit()
+            if self._seek_symbol and node.expr == self._seek_symbol:
+                self._found.append(self._seek_symbol)
                 return
             else:
                 self.visit(node.expr)
         if hasattr(node, 'body'):
-            if node.body == self._sought:
-                self._foundit()
+            if self._seek_symbol and node.body == self._seek_symbol:
+                self._found.append(self._seek_symbol)
                 return
             else:
                 self.visit(node.body)
@@ -174,56 +175,62 @@ class MatlabFinder(MatlabNodeVisitor):
     def visit_Array(self, node):
         for row in (node.rows or []):
             for item in (row or []):
-                if item == self._sought:
-                    self._foundit()
+                if self._seek_symbol and item == self._seek_symbol:
+                    self._found.append(self._seek_symbol)
                     return
                 else:
                     self.visit(item)
 
 
     def visit_ArrayRef(self, node):
-        if node.name == self._sought:
-            self._foundit()
+        if self._seek_symbol and node.name == self._seek_symbol:
+            self._found.append(self._seek_symbol)
             return
         elif not isinstance(node.name, Identifier):
             self.visit(node.name)
-        if node.args and self._sought in node.args:
-            self._foundit()
+        if self._seek_symbol and node.args and self._seek_symbol in node.args:
+            self._found.append(self._seek_symbol)
             return
         else:
             self.visit(node.args)
 
 
     def visit_Ambiguous(self, node):
-        if node.name == self._sought:
-            self._foundit()
+        if self._seek_symbol and node.name == self._seek_symbol:
+            self._found.append(self._seek_symbol)
             return
         elif not isinstance(node.name, Identifier):
             self.visit(node.name)
-        if node.args and self._sought in node.args:
-            self._foundit()
+        if self._seek_symbol and node.args and self._seek_symbol in node.args:
+            self._found.append(self._seek_symbol)
             return
         else:
             self.visit(node.args)
 
 
     def visit_StructRef(self, node):
-        if node.name == self._sought:
-            self._foundit()
+        if self._seek_symbol and node.name == self._seek_symbol:
+            self._found.append(self._seek_symbol)
             return
         elif not isinstance(node.name, Identifier):
             self.visit(node.name)
 
 
     def visit_AnonFun(self, node):
-        if node.body == self._sought:
-            self._foundit()
+        if self._seek_symbol and node.body == self._seek_symbol:
+            self._found.append(self._seek_symbol)
             return
         else:
             self.visit(node.body)
 
 
-    def find_use(self, var):
-        self._sought = var
+    def find_symbol(self, var):
+        self._seek_symbol = var
         self.visit(self._context.nodes)
-        return var in self._found
+        return self._found
+
+
+    def find_operators(self, ops):
+        self._seek_operators = ops
+        self.visit(self._context.nodes)
+        return self._found

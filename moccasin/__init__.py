@@ -141,3 +141,5 @@ from .__version__ import __license__, __license_url__, __help_url__
 from .matlab_parser import MatlabParser
 from .interfaces import moccasin_CLI, moccasin_GUI
 from .converter import create_raterule_model, process_biocham_output
+from .converter import sanity_check_matlab
+from .errors import *
