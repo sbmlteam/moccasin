@@ -38,6 +38,7 @@ import moccasin
 from moccasin.converter import create_raterule_model, process_biocham_output
 from moccasin.converter import sanity_check_matlab
 from moccasin.matlab_parser import MatlabParser
+from moccasin.errors import UnsupportedInputError
 
 # -----------------------------------------------------------------------------
 # Global configuration constants
@@ -70,7 +71,7 @@ class Controller():
             sanity_check_matlab(self.parse_results)
             return True
         except Exception as e:
-            if relaxed and isinstance(e,  UnsupportedInputError):
+            if relaxed and isinstance(e,  moccasin.UnsupportedInputError):
                 return True
             raise
         return False
