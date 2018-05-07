@@ -31,8 +31,23 @@ except:
 
 from moccasin.matlab_parser import *
 
-# MatlabRewriter
-#
+
+# Global constants.
+# .............................................................................
+# Depending on circumstances, we may translate some constructs into other
+# constructs.  Some of the translations are easiest done using tables.
+
+_TRANSLATE_EL_BINARYOPS = {
+    '.*': '*',
+    '.^': '^',
+    './': '/'
+}
+'''Element-wise binary operators we can recognzie as potentially being
+translatable into ordinary operators, if we are told it is safe to do so.'''
+
+
+# MatlabRewriter.
+# .............................................................................
 # We need to reformulate some MATLAB expressions into equivalent forms that
 # can be stored in SBML files.  Some things are easy to do and can be done
 # by changing the parsing results at the level of the MatlabNode tree returned
@@ -98,6 +113,16 @@ class MatlabRewriter(MatlabNodeVisitor):
                 node.value = node.value[:-1]
             if node.value.startswith('.'):
                 node.value = '0' + node.value
+        return node
+
+
+    def default_visit(self, node):
+        if isinstance(node, BinaryOp) and node.op in _TRANSLATE_EL_BINARYOPS:
+            node.op = _TRANSLATE_EL_BINARYOPS[node.op]
+        for a in type(node)._visitable_attr:
+            value = getattr(node, a, None)
+            if value:
+                setattr(node, a, self.visit(value))
         return node
 
 
