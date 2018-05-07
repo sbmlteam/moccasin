@@ -235,7 +235,7 @@ class MainFrame (wx.Frame):
 
         # Add sizers(3) and elements for matlab and translated text
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.SetMinSize(wx.Size(1,5))
+        mainSizer.SetMinSize(wx.Size(1, 5))
         if _WX4:
             mainSizer.AddSpacer(1)
         else:
@@ -243,12 +243,12 @@ class MainFrame (wx.Frame):
         # Top sizer
         labelFont = wx.Font(wx.NORMAL_FONT.GetPointSize(), 70, 90, 90,
                             False, wx.EmptyString)
-        topPanelSizer = wx.GridSizer(2, 1, 0, 0)
+        topPanelSizer = wx.FlexGridSizer(2, 1, 0, 0)
 
         fileConvSizer1 = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, "File selection"), wx.HORIZONTAL)
         self.m_staticText6 = wx.StaticText(self, wx.ID_ANY,
-                                           "Choose a file for conversion:",
+                                           "MATLAB file to be converted:",
                                            wx.DefaultPosition, wx.DefaultSize, 0)
         self.m_staticText6.Wrap(-1)
         self.m_staticText6.SetFont(labelFont)
@@ -256,15 +256,25 @@ class MainFrame (wx.Frame):
         self.filePicker = wx.FilePickerCtrl(self, wx.ID_ANY, wx.EmptyString,
                                             "Select a file", "*.m", wx.DefaultPosition,
                                             wx.DefaultSize, wx.FLP_DEFAULT_STYLE)
-        self.filePicker.SetMinSize(wx.Size(350,-1))
+        self.filePicker.SetMinSize(wx.Size(350, -1))
         self.filePicker.SetFont(labelFont)
         fileConvSizer1.Add(self.filePicker, 6, wx.ALL, 1)
         topPanelSizer.Add(fileConvSizer1, 1, wx.ALL|wx.EXPAND, 1)
 
         sbSizer9 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "File conversion"),
                                      wx.VERTICAL)
-        optionLayoutSizer = wx.GridSizer(1, 6, 0, 120)
-        self.staticTextOpt = wx.StaticText(self, wx.ID_ANY, "Variable encoding: ",
+        optionLayoutSizer = wx.GridSizer(1, 6, 0, 180)
+
+        self.assumeTranslatable = wx.CheckBox(self, id = wx.ID_ANY,
+                                              label = 'Assume no matrix operations are used in MATLAB code')
+        self.assumeTranslatable.SetFont(labelFont)
+        sbSizer9.Add(self.assumeTranslatable, flag = wx.ALL, border = 7)
+        if _WX4:
+            sbSizer9.AddSpacer(2)
+        else:
+            sbSizer9.AddSpacer((0, 0), 2, wx.ALL|wx.EXPAND, 2)
+
+        self.staticTextOpt = wx.StaticText(self, wx.ID_ANY, "Encode variables as: ",
                                            wx.DefaultPosition, wx.DefaultSize, 0)
         self.staticTextOpt.Wrap(-1)
         self.staticTextOpt.SetFont(labelFont)
@@ -288,9 +298,9 @@ class MainFrame (wx.Frame):
         self.convertButton.Disable()
         optionLayoutSizer.Add(self.convertButton, 1, wx.ALIGN_LEFT|wx.ALIGN_RIGHT|wx.ALL, 5)
         sbSizer9.Add(optionLayoutSizer, 0, wx.EXPAND, 5)
-        gSizer7 = wx.GridSizer(0, 6, 0, 120)
+        gSizer7 = wx.GridSizer(0, 6, 0, 180)
 
-        self.modeType = wx.StaticText(self, wx.ID_ANY, "Output format: ",
+        self.modeType = wx.StaticText(self, wx.ID_ANY, "Produce output format: ",
                                       wx.DefaultPosition, wx.DefaultSize, 0)
         self.modeType.Wrap(-1)
         self.modeType.SetFont(labelFont)
@@ -306,10 +316,10 @@ class MainFrame (wx.Frame):
                                        wx.DefaultPosition, wx.DefaultSize, 0)
         gSizer7.Add(self.xppModel, 0, wx.ALL, 8)
         sbSizer9.Add(gSizer7, 0, wx.EXPAND, 5)
+
         topPanelSizer.Add(sbSizer9, 2, wx.ALL|wx.EXPAND, 1)
 
         mainSizer.Add(topPanelSizer, 1, wx.ALL|wx.EXPAND, 5)
-
 
         # Mid sizer
         panelTextFont = wx.Font(wx.NORMAL_FONT.GetPointSize() -1, 70, 90,
@@ -419,6 +429,7 @@ class MainFrame (wx.Frame):
         self.convertFile.Enable(0)
         self.reactionBasedModel.SetValue(True)
         self.varsAsSpecies.SetValue(True)
+        self.assumeTranslatable.SetValue(False)
         self._output_saved = False
 
 
@@ -430,6 +441,7 @@ class MainFrame (wx.Frame):
         wx.BeginBusyCursor()
         try:
             self.controller.parse_file(self.file_contents)
+            self.controller.check_translatable(self.assumeTranslatable.Value)
             # output XPP files
             if self.xppModel.GetValue():
                 [output, extra] = self.controller.build_model(
