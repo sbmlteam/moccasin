@@ -1347,7 +1347,7 @@ def fail(ex, arg):
 def parse_args(argv):
     help_msg = 'MOCCASIN version ' + moccasin.__version__ + '\n' + main.__doc__
     try:
-        options, path = getopt.getopt(argv[1:], "cdpqxoOrvl")
+        options, path = getopt.getopt(argv[1:], "cdpqxnoOrvl")
     except:
         raise SystemExit(help_msg)
     if len(path) != 1 or len(options) > 8:
@@ -1361,6 +1361,7 @@ def parse_args(argv):
     name_after_param = any(['-l' in y for y in options])
     create_xpp       = any(['-o' in y for y in options])
     create_biocham   = any(['-O' in y for y in options])
+    no_check         = any(['-n' in y for y in options])
     if not create_xpp and not create_biocham:
         output_format = "sbml"
     elif create_xpp:
@@ -1368,7 +1369,7 @@ def parse_args(argv):
     else:
         output_format = "biocham"
     return path[0], debug, quiet, print_parse, print_raw, use_species, \
-        name_after_param, output_format, add_comments
+        name_after_param, output_format, add_comments, no_check
 
 
 def main(argv):
@@ -1380,6 +1381,7 @@ model.  Available options:
  -d   Drop into pdb before starting to parse the MATLAB input
  -h   Print this help message and quit
  -l   Name variables per ODE function's parameters (default: use output variable)
+ -n   No sanity checking
  -o   Convert to XPP .ode file format (default: produce SBML)
  -O   Convert to XPP .ode file format suitable for use with BIOCHAM
  -p   Turn variables into SBML parameters (default: make them SBML species)
@@ -1388,7 +1390,7 @@ model.  Available options:
  -x   Print extra debugging info about the interpreted MATLAB
 """
     (path, debug, quiet, print_parse, print_raw, use_species, name_after_param,
-     output_format, add_comments) = parse_args(argv)
+     output_format, add_comments, no_check) = parse_args(argv)
 
     # Try to read the file contents.
     path = expanded_path(path)
@@ -1416,7 +1418,8 @@ model.  Available options:
 
     # Parse the SBML contents and do initial minimal sanity checking.
     parse_results = parse_matlab(path)
-    sanity_check_matlab(parse_results)
+    if not no_check:
+        sanity_check_matlab(parse_results)
 
     # Now do the actual conversion.
     NameGenerator().reset()
