@@ -102,6 +102,9 @@ class MatlabRewriter(MatlabNodeVisitor):
             value = node.value
             if 'e' in value or 'E' in value or 'd' in value or 'D' in value:
                 tmp = Decimal(value)
+                if tmp > Decimal('1.0e20'):
+                    # Procedure fails for very large exponents. Give up.
+                    return node
                 exponent = tmp.as_tuple().exponent
                 if exponent < 0:
                     size = abs(exponent)
