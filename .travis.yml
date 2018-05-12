@@ -12,9 +12,6 @@ language: python
 python:
     - "3.5"
 
-before_install: # or any other customizable place
-  - source ~/virtualenv/python3.5/bin/activate
-
 cache:
     # Based on https://docs.travis-ci.com/user/caching/, the default is 3 min.
     # Set it to 96 hrs because our libsbml dependency doesn't change quickly,
