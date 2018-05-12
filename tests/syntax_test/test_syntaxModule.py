@@ -22,8 +22,9 @@ def pytest_generate_tests(metafunc):
     # called once per test function
     funcarglist = metafunc.cls.params[metafunc.function.__name__]
     argnames = list(funcarglist[0])
-    metafunc.parametrize(argnames, [[funcargs[name] for name in argnames]
-            for funcargs in funcarglist],scope='module')
+    metafunc.parametrize(argnames,
+                         [[funcargs[name] for name in argnames] for funcargs in funcarglist], 
+                         scope='module')
 
 #Parses the file and prints interpreted result(output is captured)
 def build_model(path):
@@ -52,9 +53,9 @@ def obtain_params():
     m_path = path + ['valid*.m']
     matlab_models = glob.glob(os.path.join(*m_path))
     parsed_models = [x.rsplit('.')[0] + '.txt' for x in matlab_models]
-    pairs = list()
+    pairs = []
     for i in range(len(matlab_models)):
-        pairs.append((dict(model = matlab_models[i], parsed = parsed_models[i])))
+        pairs.append(dict(model = matlab_models[i], parsed = parsed_models[i]))
     parameters = {'test_syntaxCases' : pairs}
     return parameters
 
