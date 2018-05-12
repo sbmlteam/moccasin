@@ -41,11 +41,6 @@ before_cache:
 sudo: false
 
 install: 
-  - sudo apt-get update
-  - wget "https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-14.04/wxPython-4.0.0b1-cp35-cp35m-linux_x86_64.whl"
-  - pip install wxPython-4.0.0b1-cp35-cp35m-linux_x86_64.whl 
-
-install: 
     - pip install -U pip wheel
     - pip install -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-14.04 wxPython
     - pip install --requirement=$TRAVIS_BUILD_DIR/requirements.txt
