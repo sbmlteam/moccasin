@@ -241,7 +241,10 @@ SBML INteroperability".
                 convert(path)
             else:
                 prefix = color('{} '.format(path), 'info', colorize)
-                with Halo(spinner='bouncingBall', enabled = not quiet):
+                if colorize:
+                    with Halo(spinner='bouncingBall', enabled = not quiet):
+                        convert(path)
+                else:
                     convert(path)
                 if len(paths) > 1 and not quiet:
                     msg('-'*70, 'info', colorize)
