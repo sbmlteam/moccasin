@@ -2316,10 +2316,10 @@ class MatlabParser:
         If no 'atrans' is given, the default behavior is to render arrays
         as they would appear in Matlab text: e.g., "foo(2,3)".
         """
-        def compose(name, args, delimiters=None):
+        def compose(name, args, delimiters=None, add_spaces=spaces):
             list = [MatlabParser.make_formula(arg, spaces, parens, atrans)
                     for arg in (args or [])]
-            sep = ' ' if spaces else ''
+            sep = ' ' if add_spaces else ''
             front = name if name else ''
             left = delimiters[0] if delimiters else ''
             right = delimiters[1] if delimiters else ''
@@ -2349,7 +2349,7 @@ class MatlabParser:
         elif isinstance(thing, Operator):
             if isinstance(thing, UnaryOp):
                 operand = recurse(thing.operand, spaces, parens, atrans)
-                return compose(None, [thing.op, operand], '()')
+                return compose(None, [thing.op, operand], '()', False)
             elif isinstance(thing, BinaryOp):
                 left = recurse(thing.left, spaces, parens, atrans)
                 right = recurse(thing.right, spaces, parens, atrans)
