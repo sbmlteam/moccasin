@@ -93,6 +93,22 @@ class MatlabRewriter(MatlabNodeVisitor):
             return meth(node) if meth else node
 
 
+    def visit_UnaryOp(self, node):
+        # Fix for issue #53 (https://github.com/sbmlteam/moccasin/issues/53)
+        # Biocham currently (as of today, 2018-05-11) seems to mistranslate
+        # unary negation.  This replaces expressions of the form "-x" with
+        # "-1 * x", which works better when passed to Biocham.  This is
+        # hopefully temporary, until Biocham has a chance to address whatever
+        # the underlying issue is.
+        if self.output_format == 'biocham' and node.op == '-':
+            return BinaryOp(op = '*',
+                            left = UnaryOp(op = '-', operand = Number(value = '1')),
+                            right = self.visit(node.operand))
+        else:
+            self.visit(node.operand)
+            return node
+
+
     def visit_Number(self, node):
         # Biocham seems unable to parse numbers in scientific notation in
         # some cases, and I haven't figured out what XPP is doing with
