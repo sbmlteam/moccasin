@@ -36,7 +36,7 @@ Table of Contents
 ♥️ Please cite the MOCCASIN paper and the version you use
 ---------------------------------------------------------
 
-Article citations are **critical** for us to be able to continue support for MOCCASIN.  If you use MOCCASIN and you publish papers about your software, we ask that you **please cite the MOCCASIN paper**:
+Article citations are **critical** for us to be able to continue support for MOCCASIN.  If you use MOCCASIN and you publish papers about work that uses MOCCASIN, we ask that you **please cite the MOCCASIN paper**:
 
 <dl>
 <dd>
@@ -44,7 +44,7 @@ Harold F. Gómez, Michael Hucka, Sarah M. Keating, German Nudelman, Dagmar Iber 
 </dd>
 </dl>
 
-Please also indicate the specific version of MOCCASIN you use, to improve other people's ability to reproduce your results. You can use the Zenodo DOIs we provide for this purpose:
+Please also use the DOI to indicate the specific version you use, to improve other people's ability to reproduce your results:
 
 * MOCCASIN release 1.1.2 &rArr; [10.5281/zenodo.883135](https://doi.org/10.5281/zenodo.883135)
 
