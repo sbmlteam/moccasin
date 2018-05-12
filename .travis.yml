@@ -12,6 +12,9 @@ language: python
 python:
     - "3.5"
 
+before_install: # or any other customizable place
+  - source ~/virtualenv/python3.5/bin/activate
+
 cache:
     # Based on https://docs.travis-ci.com/user/caching/, the default is 3 min.
     # Set it to 96 hrs because our libsbml dependency doesn't change quickly,
@@ -31,6 +34,7 @@ virtualenv:
 
 install: 
     - pip install -U pip wheel
+    - pip install -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-14.04 wxPython
     - pip install --requirement=$TRAVIS_BUILD_DIR/requirements.txt
     - pip install python-libsbml
     - pip install coverage
