@@ -36,8 +36,8 @@ Harold F. Gómez, Michael Hucka, Sarah M. Keating, German Nudelman, Dagmar Iber 
 Please also indicate the specific version of MOCCASIN you use, to improve other people's ability to reproduce your results. You can use the Zenodo DOIs we provide for this purpose:
 
 * MOCCASIN release 1.1.2 &rArr; [10.5281/zenodo.883135](https://doi.org/10.5281/zenodo.883135)
-* MOCCASIN release 1.1.1 &rArr; [10.5281/zenodo.846461](https://dx.doi.org/10.5281/zenodo.846461)
-* MOCCASIN release 1.1.0 &rArr; [10.5281/zenodo.56374](http://dx.doi.org/10.5281/zenodo.56374)
+* MOCCASIN release 1.1.1 &rArr; [10.5281/zenodo.846461](https://doi.org/10.5281/zenodo.846461)
+* MOCCASIN release 1.1.0 &rArr; [10.5281/zenodo.56374](https://doi.org/10.5281/zenodo.56374)
 
 ☀ Background and introduction
 -----------------------------
