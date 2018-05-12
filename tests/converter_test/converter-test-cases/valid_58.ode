@@ -2,7 +2,7 @@
 par b1=0.4
 
 # Variable id = myf, defined by an assignment rule.
-myf=exp(((- b1) * t))
+myf=exp(((-b1) * t))
 
 # Species id = Y_1, defined by a rate rule.
 init Y_1=1
