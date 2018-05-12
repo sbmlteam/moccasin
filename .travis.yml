@@ -10,7 +10,7 @@
 language: python
 
 python:
-    - "2.7"
+    - "3.5"
 
 cache:
     # Based on https://docs.travis-ci.com/user/caching/, the default is 3 min.
