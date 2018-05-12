@@ -26,9 +26,6 @@ before_cache:
 
 sudo: false
 
-virtualenv:
-    system_site_packages: true
-
 install: 
     - pip install -U pip wheel
     - pip install -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-14.04 wxPython
