@@ -23,7 +23,13 @@ Bug fixes:
 
 * [#49](https://github.com/sbmlteam/moccasin/issues/49) Fixed extreme slowness of MATLAB parser.
 
-* [#46](https://github.com/sbmlteam/moccasin/issues/46) Moccasin GUI won't launch.
+* [#46](https://github.com/sbmlteam/moccasin/issues/46) Fix for moccasin GUI not launching.
+
+* [#51](https://github.com/sbmlteam/moccasin/issues/51) Fixed bugs in checking whether MATLAB input is translatable, and add support for use of element-wise operators such as `.*` when they are not actually being used on matrices.
+
+* [#52](https://github.com/sbmlteam/moccasin/issues/52) Fixed bug in writing out very large numbers. Thanks to user [@willigot](https://github.com/sbmlteam/moccasin/issues/created_by/willigott) for reporting the issue.
+
+* [#53](https://github.com/sbmlteam/moccasin/issues/53) Biocham currently seems to mistranslate unary negation, at least in some situations.  MOCCASIN now has a workaround that replaces expressions of the form `-x` with `-1 * x`, which works better when passed to Biocham.  This is hopefully temporary, until Biocham has a chance to address whatever the underlying issue is.  Many thanks to user [@willigot](https://github.com/sbmlteam/moccasin/issues/created_by/willigott) for reporting the issue and suggesting the workaround.
 
 
 1.1.2

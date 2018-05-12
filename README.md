@@ -14,7 +14,7 @@ MOCCASIN
 🏁 Recent news and activities
 ------------------------------
 
-_May 2018_: Release 1.2.0 includes a fix for a critical performance bug caused by a change to the API in PyParsing, with the consequence that MOCCASIN should run an order of magnitude faster than the last release.  Additional changes include improvements to the installation instructions, improved diagnostics in the GUI interface, and some bug fixes.
+_May 2018_: Release 1.2.0 includes a fix for a critical performance bug caused by a change to the API in PyParsing, with the consequence that MOCCASIN should run an order of magnitude faster than the last release.  Additional changes include several important bug fixes, improvements to the installation instructions, and improved diagnostics in the GUI interface.  Please see the [NEWS.md](NEWS.md) file for more details.
 
 Table of Contents
 -----------------
