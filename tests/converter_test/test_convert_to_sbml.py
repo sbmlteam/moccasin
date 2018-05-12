@@ -7,6 +7,7 @@ import glob
 import os
 from pyparsing import ParseResults
 sys.path.append('../..')
+sys.path.append('../../moccasin')
 from moccasin import *
 
 sys.setrecursionlimit(10000)
