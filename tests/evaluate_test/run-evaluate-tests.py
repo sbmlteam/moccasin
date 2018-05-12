@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # @file    run-evaluate-tests.py
 # @brief   Test runner for MOCCASIN evaluation class.
