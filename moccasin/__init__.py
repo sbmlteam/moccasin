@@ -131,7 +131,6 @@ terms of the GNU Lesser General Public License as published by the Free
 Software Foundation.  A copy of the license agreement is provided in the
 file named "COPYING.txt" included with this software distribution and also
 available online at https://github.com/sbmlteam/moccasin/.
-
 '''
 
 from .__version__ import __version__, __title__, __url__, __description__

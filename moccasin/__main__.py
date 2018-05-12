@@ -21,7 +21,6 @@ file named "COPYING.txt" included with this software distribution and also
 available online at https://github.com/sbmlteam/moccasin/.
 '''
 
-
 # Allow this program to be executed directly from the 'bin' directory.
 import os
 import sys
