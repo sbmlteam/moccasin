@@ -266,7 +266,7 @@ class MainFrame (wx.Frame):
         optionLayoutSizer = wx.GridSizer(1, 6, 0, 180)
 
         self.assumeTranslatable = wx.CheckBox(self, id = wx.ID_ANY,
-                                              label = 'Assume no matrix operations are used in MATLAB code')
+                                              label = 'Assume matrix operations are not used in MATLAB code')
         self.assumeTranslatable.SetFont(labelFont)
         sbSizer9.Add(self.assumeTranslatable, flag = wx.ALL, border = 7)
         if _WX4:
