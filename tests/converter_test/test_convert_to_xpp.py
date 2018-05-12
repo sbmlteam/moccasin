@@ -6,15 +6,8 @@ import sys
 import glob
 import os
 from pyparsing import ParseResults
-sys.path.append('moccasin/converter/')
-sys.path.append('../moccasin/converter/')
-sys.path.append('../../moccasin/converter/')
-sys.path.append('moccasin/')
-sys.path.append('../moccasin')
-sys.path.append('../../moccasin')
-import moccasin
-from moccasin import MatlabParser
-from converter import *
+sys.path.append('../..')
+from moccasin import *
 
 # This prevents exceeding recursion depth in case valid_55.m
 sys.setrecursionlimit(1500)

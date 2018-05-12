@@ -4,11 +4,8 @@ from __future__ import print_function
 import glob
 import sys
 from pyparsing import ParseException, ParseResults
-sys.path.append('../../moccasin/converter/')
-sys.path.append('../../moccasin/')
-import moccasin
-from moccasin import MatlabParser
-from converter import *
+sys.path.append('../..')
+from moccasin import *
 
 sys.setrecursionlimit(10000)
 
