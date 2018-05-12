@@ -23,7 +23,7 @@ def pytest_generate_tests(metafunc):
     funcarglist = metafunc.cls.params[metafunc.function.__name__]
     argnames = list(funcarglist[0])
     metafunc.parametrize(argnames,
-                         [[funcargs[name] for name in argnames] for funcargs in funcarglist], 
+                         [[funcargs[name] for name in argnames] for funcargs in funcarglist],
                          scope='module')
 
 #Parses the file and prints interpreted result(output is captured)
