@@ -74,7 +74,7 @@ _VERSION         = moccasin.__version__
 _EMPTY_PAGE      ='''<HTML lang=en><HEAD></HEAD>
 <BODY><!-- empty page --></BODY> </HTML> ''' # Used as empty value to clear the empty WebView text field
 
-_icon_file       = "../../docs/project/logo/moccasin_logo_20151002/logo_64.png"
+_icon_file       = os.path.join(thisdir, "../../docs/project/logo/moccasin_logo_20151002/logo_64.png")
 
 
 # -----------------------------------------------------------------------------
