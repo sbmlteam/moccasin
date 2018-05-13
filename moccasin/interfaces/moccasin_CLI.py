@@ -55,12 +55,12 @@ sys.setrecursionlimit(5000)
     use_equations = ('create equation-based SBML (default: reaction-based)',   'flag', 'e'),
     use_params    = ('encode variables as SBML parameters (default: species)', 'flag', 'p'),
     quiet         = ('do not print informational messages while working',      'flag', 'q'),
-    relaxed       = ('assume certain MATLAB operators are not used',           'flag', 'r'),
+    relaxed       = ('assume certain MATLAB operators are not used in input',  'flag', 'r'),
     xpp_output    = ('create XPP ODE format instead of SBML format output',    'flag', 'x'),
-    version       = ('print MOCCASIN version info and exit',                   'flag', 'v'),
     no_color      = ('do not color-code the terminal output (default: do)',    'flag', 'C'),
     debug_parser  = ('print debug information about the parsed MATLAB',        'flag', 'D'),
-    no_comments   = ('do not insert version comments into SBML output',        'flag', 'V'),
+    version       = ('print MOCCASIN version info and exit',                   'flag', 'V'),
+    no_comments   = ('do not insert version comments into SBML output',        'flag', 'X'),
     paths         = 'paths to MATLAB input files to convert'
 )
 
