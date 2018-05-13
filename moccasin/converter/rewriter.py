@@ -8,7 +8,7 @@
 # This software is part of MOCCASIN, the Model ODE Converter for Creating
 # Automated SBML INteroperability. Visit https://github.com/sbmlteam/moccasin/.
 #
-# Copyright (C) 2014-2016 jointly by the following organizations:
+# Copyright (C) 2014-2017 jointly by the following organizations:
 #  1. California Institute of Technology, Pasadena, CA, USA
 #  2. Icahn School of Medicine at Mount Sinai, New York, NY, USA
 #  3. Boston University, Boston, MA, USA
@@ -21,12 +21,33 @@
 # ------------------------------------------------------------------------- -->
 
 import sys
-sys.path.append('..')
-from matlab_parser import *
 from decimal import *
 
-# MatlabRewriter
-#
+try:
+    thisdir = os.path.dirname(os.path.abspath(__file__))
+    sys.path.append(os.path.join(thisdir, '../..'))
+except:
+    sys.path.append('../..')
+
+from moccasin.matlab_parser import *
+
+
+# Global constants.
+# .............................................................................
+# Depending on circumstances, we may translate some constructs into other
+# constructs.  Some of the translations are easiest done using tables.
+
+_TRANSLATE_EL_BINARYOPS = {
+    '.*': '*',
+    '.^': '^',
+    './': '/'
+}
+'''Element-wise binary operators we can recognzie as potentially being
+translatable into ordinary operators, if we are told it is safe to do so.'''
+
+
+# MatlabRewriter.
+# .............................................................................
 # We need to reformulate some MATLAB expressions into equivalent forms that
 # can be stored in SBML files.  Some things are easy to do and can be done
 # by changing the parsing results at the level of the MatlabNode tree returned
@@ -72,6 +93,22 @@ class MatlabRewriter(MatlabNodeVisitor):
             return meth(node) if meth else node
 
 
+    def visit_UnaryOp(self, node):
+        # Fix for issue #53 (https://github.com/sbmlteam/moccasin/issues/53)
+        # Biocham currently (as of today, 2018-05-11) seems to mistranslate
+        # unary negation.  This replaces expressions of the form "-x" with
+        # "-1 * x", which works better when passed to Biocham.  This is
+        # hopefully temporary, until Biocham has a chance to address whatever
+        # the underlying issue is.
+        if self.output_format == 'biocham' and node.op == '-':
+            return BinaryOp(op = '*',
+                            left = UnaryOp(op = '-', operand = Number(value = '1')),
+                            right = self.visit(node.operand))
+        else:
+            self.visit(node.operand)
+            return node
+
+
     def visit_Number(self, node):
         # Biocham seems unable to parse numbers in scientific notation in
         # some cases, and I haven't figured out what XPP is doing with
@@ -81,6 +118,9 @@ class MatlabRewriter(MatlabNodeVisitor):
             value = node.value
             if 'e' in value or 'E' in value or 'd' in value or 'D' in value:
                 tmp = Decimal(value)
+                if tmp > Decimal('1.0e20'):
+                    # Procedure fails for very large exponents. Give up.
+                    return node
                 exponent = tmp.as_tuple().exponent
                 if exponent < 0:
                     size = abs(exponent)
@@ -92,6 +132,16 @@ class MatlabRewriter(MatlabNodeVisitor):
                 node.value = node.value[:-1]
             if node.value.startswith('.'):
                 node.value = '0' + node.value
+        return node
+
+
+    def default_visit(self, node):
+        if isinstance(node, BinaryOp) and node.op in _TRANSLATE_EL_BINARYOPS:
+            node.op = _TRANSLATE_EL_BINARYOPS[node.op]
+        for a in type(node)._visitable_attr:
+            value = getattr(node, a, None)
+            if value:
+                setattr(node, a, self.visit(value))
         return node
 
 

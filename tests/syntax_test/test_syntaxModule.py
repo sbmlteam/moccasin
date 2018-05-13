@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 
 from __future__ import print_function
 import pytest
@@ -13,7 +13,7 @@ from string import printable
 sys.path.append('moccasin/')
 sys.path.append('../moccasin')
 sys.path.append('../../moccasin')
-from matlab_parser import MatlabGrammar
+from matlab_parser import MatlabParser
 
 _VERSION2 = platform.python_version().startswith('2')
 
@@ -22,13 +22,14 @@ def pytest_generate_tests(metafunc):
     # called once per test function
     funcarglist = metafunc.cls.params[metafunc.function.__name__]
     argnames = list(funcarglist[0])
-    metafunc.parametrize(argnames, [[funcargs[name] for name in argnames]
-            for funcargs in funcarglist],scope='module')
+    metafunc.parametrize(argnames,
+                         [[funcargs[name] for name in argnames] for funcargs in funcarglist],
+                         scope='module')
 
 #Parses the file and prints interpreted result(output is captured)
 def build_model(path):
     try:
-        with MatlabGrammar() as parser:
+        with MatlabParser() as parser:
             results = parser.parse_file(path, fail_soft=True)
             parser.print_parse_results(results, print_raw=True)
     except Exception as e:
@@ -52,9 +53,9 @@ def obtain_params():
     m_path = path + ['valid*.m']
     matlab_models = glob.glob(os.path.join(*m_path))
     parsed_models = [x.rsplit('.')[0] + '.txt' for x in matlab_models]
-    pairs = list()
+    pairs = []
     for i in range(len(matlab_models)):
-        pairs.append((dict(model = matlab_models[i], parsed = parsed_models[i])))
+        pairs.append(dict(model = matlab_models[i], parsed = parsed_models[i]))
     parameters = {'test_syntaxCases' : pairs}
     return parameters
 

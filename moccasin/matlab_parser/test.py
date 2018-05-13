@@ -1,14 +1,14 @@
-#!/usr/bin/env python3.4
+#!/usr/bin/env python3
 #
 # @file    test.py
-# @brief   Simple test driver for MatlabGrammar class.
+# @brief   Simple test driver for MatlabParser class.
 # @author  Michael Hucka
 #
 # <!---------------------------------------------------------------------------
 # This software is part of MOCCASIN, the Model ODE Converter for Creating
 # Automated SBML INteroperability. Visit https://github.com/sbmlteam/moccasin/.
 #
-# Copyright (C) 2014-2016 jointly by the following organizations:
+# Copyright (C) 2014-2017 jointly by the following organizations:
 #  1. California Institute of Technology, Pasadena, CA, USA
 #  2. Icahn School of Medicine at Mount Sinai, New York, NY, USA
 #  3. Boston University, Boston, MA, USA
@@ -29,7 +29,7 @@
 #    ./test.py matlabfile.m
 #
 # where "matlabfile.m" is some (preferrably very simple) matlab input file.
-# test.py will parse the file using MatlabGrammar.parse_string() and print an
+# test.py will parse the file using MatlabParser.parse_string() and print an
 # annotated representation of how the input was interpreted.  This
 # representation is in the form of a MatlabContext object for the input file
 # "matlabfile.m".  If given the optional argument -d, then test.py invokes
@@ -42,12 +42,12 @@
 from __future__ import print_function
 import sys
 import getopt
-from grammar import *
+from parser import *
 
-def get_filename_and_options(argv):
+def get_options(argv):
     """Helper function for parsing command-line arguments."""
     try:
-        options, path = getopt.getopt(argv[1:], "dpqi")
+        options, path = getopt.getopt(argv[1:], "dpqit")
     except:
         raise SystemExit(main.__doc__)
     if len(path) != 1 or len(options) > 2:
@@ -56,19 +56,21 @@ def get_filename_and_options(argv):
     print_old = any(['-p' in y for y in options])
     quiet = any(['-q' in y for y in options])
     interactive_pdb = any(['-i' in y for y in options])
-    return path[0], print_debug, print_old, quiet, interactive_pdb
+    profile = any(['-t' in y for y in options])
+    return path[0], print_debug, print_old, quiet, interactive_pdb, profile
 
 
 def main(argv):
-    """Usage: matlab_parser.py [-d] [-i] [-p] [-q] FILENAME.m
+    """Usage: test.py [-d] [-i] [-p] [-q] [-t] FILENAME.m
 Arguments:
   -d   (Optional) Print extremely detailed debug output during parsing
   -i   (Optional) Drop into pdb as the final step
   -p   (Optional) Print a representation of the output in the "old" format
   -q   (Optional) Be quiet -- just print the output
+  -t   (Optional) Profile/time internal function execution
 """
 
-    path, debug, print_old, quiet, interactive = get_filename_and_options(argv)
+    path, debug, print_old, quiet, run_pdb, profile = get_options(argv)
 
     with open(path, 'r') as file:
         if not quiet: print('----- file ' + path + ' ' + '-'*30)
@@ -76,7 +78,12 @@ Arguments:
         if not quiet: print(contents)
         file.close()
 
-    with MatlabGrammar() as parser:
+    if profile:
+        import cProfile, pstats, io
+        pr = cProfile.Profile()
+        pr.enable()
+
+    with MatlabParser() as parser:
         # This uses parse_string() instead of parse_file() because the file has
         # already been opened.  This is a minor performance improvement in case
         # someone tries to read a really huge file -- no sense reading it twice.
@@ -94,12 +101,19 @@ Arguments:
             if not quiet: print('----- old format ' + '-'*50)
             parser.print_parse_results(results)
 
-        if interactive:
+        if run_pdb:
             print('-'*60)
             print('Debug reminder: parsed results are in variable `results`')
             print('-'*60)
             pdb.set_trace()
 
+    if profile:
+        pr.disable()
+        s = io.StringIO()
+        sortby = 'cumulative'
+        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        ps.print_stats()
+        print(s.getvalue())
 
 if __name__ == '__main__':
     main(sys.argv)

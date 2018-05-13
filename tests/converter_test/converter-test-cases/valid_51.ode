@@ -13,7 +13,7 @@ dY_1/dt=((Y_2 * Y_3) * k1)
 
 # Species id = Y_2, defined by a rate rule.
 init Y_2=2
-dY_2/dt=(((- Y_1) * Y_3) * k2)
+dY_2/dt=(((-Y_1) * Y_3) * k2)
 
 # Species id = Y_3, defined by a rate rule.
 init Y_3=3

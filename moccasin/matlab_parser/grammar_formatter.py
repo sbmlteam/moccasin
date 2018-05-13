@@ -8,7 +8,7 @@
 # This software is part of MOCCASIN, the Model ODE Converter for Creating
 # Automated SBML INteroperability. Visit https://github.com/sbmlteam/moccasin/.
 #
-# Copyright (C) 2014-2016 jointly by the following organizations:
+# Copyright (C) 2014-2017 jointly by the following organizations:
 #  1. California Institute of Technology, Pasadena, CA, USA
 #  2. Icahn School of Medicine at Mount Sinai, New York, NY, USA
 #  3. Boston University, Boston, MA, USA
@@ -40,7 +40,7 @@ from grammar import *
 #   formatter.format(pr)
 #
 
-class MatlabGrammarFormatter(MatlabGrammar):
+class MatlabGrammarFormatter(MatlabParser):
     def format(self, thing):
         return '\n'.join([self._format_pr(pr) for pr in thing])
 

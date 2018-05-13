@@ -1,13 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from __future__ import print_function
 import glob
 import sys
 from pyparsing import ParseException, ParseResults
-sys.path.append('../../moccasin/converter/')
-sys.path.append('../../moccasin/')
-from matlab_parser import *
-from converter import *
+sys.path.append('../..')
+from moccasin import *
 
 sys.setrecursionlimit(10000)
 
@@ -30,7 +28,7 @@ def main(argv):
         if debug:
             pdb.set_trace()
         try:
-            with MatlabGrammar() as parser:
+            with MatlabParser() as parser:
                 parse_results = parser.parse_string(file_contents)
         except ParseException as err:
             print("error: {0}".format(err))

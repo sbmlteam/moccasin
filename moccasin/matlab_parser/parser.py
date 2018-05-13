@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 #
-# @file    grammar.py
-# @brief   Core of the MATLAB grammar definition in PyParsing
+# @file    parser.py
+# @brief   Core of the MATLAB parser and grammar definition in PyParsing
 # @author  Michael Hucka
 #
 # <!---------------------------------------------------------------------------
 # This software is part of MOCCASIN, the Model ODE Converter for Creating
 # Automated SBML INteroperability. Visit https://github.com/sbmlteam/moccasin/.
 #
-# Copyright (C) 2014-2016 jointly by the following organizations:
+# Copyright (C) 2014-2017 jointly by the following organizations:
 #  1. California Institute of Technology, Pasadena, CA, USA
 #  2. Icahn School of Medicine at Mount Sinai, New York, NY, USA
 #  3. Boston University, Boston, MA, USA
@@ -23,10 +23,10 @@
 # Basic principles of the parser
 # ------------------------------
 #
-# The main entry point are the functions `MatlabGrammar.parse_string()` and
-# `MatlabGrammar.parse_file()`.  There are a few other public methods on the
-# class `MatlabGrammar` for debugging and other tasks, but the basic goal of
-# `MatlabGrammar` is to provide the two main entry points.  Both of those
+# The main entry point are the functions `MatlabParser.parse_string()` and
+# `MatlabParser.parse_file()`.  There are a few other public methods on the
+# class `MatlabParser` for debugging and other tasks, but the basic goal of
+# `MatlabParser` is to provide the two main entry points.  Both of those
 # functions return a data structure that a caller can examine to determine
 # what was found in a given MATLAB input string or file.
 #
@@ -172,7 +172,7 @@
 #
 #  a = 1
 #
-# `MatlabGrammar.parse_file()` will return a `MatlabContext` object after
+# `MatlabParser.parse_file()` will return a `MatlabContext` object after
 # parsing this, and this context object will have one attribute, `nodes`,
 # containing a list of `MatlabNode` objects.  In the present case, that list
 # will have a length of 1 because there is only one line in the input.  Here
@@ -380,12 +380,12 @@ except:
 # Check minimum version of PyParsing.
 
 if LooseVersion(pyparsing.__version__) < LooseVersion('2.0.3'):
-    raise Exception('MatlabGrammar requires PyParsing version 2.0.3 or higher')
+    raise Exception('MatlabParser requires PyParsing version 2.0.3 or higher')
 
 # Necessary optimization.  Without this, the PyParsing grammar defined below
 # never finishes parsing anything.
 
-ParserElement.enablePackrat()
+ParserElement.enablePackrat(cache_size_limit = None)
 
 # The inefficient nature of this parser leads to easily exceeding the default
 # recursion stack limit.  Let's increase it:
@@ -1113,7 +1113,7 @@ class Disambiguator(MatlabNodeVisitor):
 
 
 
-# MatlabGrammar.
+# MatlabParser.
 # .............................................................................
 # The definition of our MATLAB grammar, in PyParsing.
 #
@@ -1121,9 +1121,9 @@ class Disambiguator(MatlabNodeVisitor):
 # the highest level parsing object, simply because Python interprets the file
 # in this order and needs each item defined before it encounters it later.
 # However, for readabily, it's probably easiest to start at the last
-# definition (which is _matlab_syntax) and read up.
+# definition (which is _matlab) and read up.
 
-class MatlabGrammar:
+class MatlabParser:
 
     # First, the lowest-level terminal tokens.
     # .........................................................................
@@ -1716,7 +1716,7 @@ class MatlabGrammar:
     # Commands.
     #
     # Shell commands don't respect ellipses or delimiters, so we use EOL
-    # explicitly here and match _shell_cmd at the _matlab_syntax level.
+    # explicitly here and match _shell_cmd at the _matlab level.
 
     _shell_cmd_cmd  = Group(restOfLine)('command')
     _shell_cmd      = Group(Group('!' + _shell_cmd_cmd + _EOL)('shell command'))
@@ -1802,7 +1802,7 @@ class MatlabGrammar:
 
     # Statements and statement lists.
     #
-    # Statement lists are almost the full _matlab_syntax, except that
+    # Statement lists are almost the full _matlab, except that
     # they don't include function definitions.
 
     _stmt           = Group(_control_stmt
@@ -1831,8 +1831,8 @@ class MatlabGrammar:
     # others.  The use of 'end' is required for nested function definitions,
     # which means that we need two variants of function bodies too.  This
     # leads to our final grammatical indiginity: two expressions for function
-    # definitions, which are used in the overall definition of _matlab_file
-    # such that _matlab_file tries first one variant and then the other.
+    # definitions, which are used in the overall definition of _matlab
+    # such that _matlab tries first one variant and then the other.
     # In the following two definitions, note that both the use of 'end' and
     # the definition of the body are different.
 
@@ -1864,12 +1864,22 @@ class MatlabGrammar:
 
     # The complete MATLAB file syntax.
     #
-    # Since a file cannot mix the style of function definitions that use ends
-    # (either they all have to have 'end', or none do), we have two forms of
-    # MATLAB files.
+    # In MATLAB, a file cannot mix the style of function definitions that use
+    # ends: either they all have to have 'end', or none do.  This leads to two
+    # forms of MATLAB files.  The following would be the correct definition:
+    #
+    #  _matlab = (ZeroOrMore(_fun_def_shallow ^ _stmt ^ _shell_cmd ^ _noncontent)
+    #             ^ ZeroOrMore(_fun_def_deep ^ _stmt ^ _shell_cmd ^ _noncontent))
+    #
+    # However, using that grammar definition, the resulting MOCCASIN parser
+    # takes almost twice as long to parse anything as it would if only one of
+    # those versions was present.  Since MOCCASIN already assumes that input
+    # files are valid MATLAB, we relax the definition to the following form
+    # to gain a substantial speedup.  This is not strictly correct because it
+    # allows mixing the forms.  (MOCCASIN passes all our syntactic tests
+    # either way, but probably would fail to reject some invalid inputs.)
 
-    _matlab_file = (ZeroOrMore(_fun_def_shallow ^ _stmt ^ _shell_cmd ^ _noncontent)
-                    ^ ZeroOrMore(_fun_def_deep ^ _stmt ^ _shell_cmd ^ _noncontent))
+    _matlab = ZeroOrMore(_fun_def_shallow ^ _fun_def_deep ^ _stmt ^ _shell_cmd ^ _noncontent)
 
 
     # Preprocessor.
@@ -2097,7 +2107,7 @@ class MatlabGrammar:
 
     def _do_parse(self, input):
         preprocessed = self._preprocess(input)
-        pr = self._matlab_file.parseString(preprocessed, parseAll=True)
+        pr = self._matlab.parseString(preprocessed, parseAll=True)
         return self._generate_nodes_and_contexts(pr)
 
 
@@ -2129,7 +2139,7 @@ class MatlabGrammar:
                  _fun_paramslist, _fun_with_end, _fun_without_end,
                  _funcall_cmd_style, _funcall_or_array, _id , _identifier,
                  _if_stmt, _lhs_array, _lhs_var, _line_c_start,
-                 _line_comment, _logical_op, _loop_var, _matlab_file,
+                 _line_comment, _logical_op, _loop_var, _matlab,
                  _most_ops, _multi_values, _name, _named_handle,
                  _noncmd_arg_start, _noncontent, _not_unary, _one_param,
                  _one_row, _one_sub, _operand, _operand_in_array,
@@ -2147,9 +2157,9 @@ class MatlabGrammar:
     def _object_name(self, obj):
         """Returns the name of a given object."""
         try:
-            values = MatlabGrammar.__dict__.iteritems()  # Python 2
+            values = MatlabParser.__dict__.iteritems()  # Python 2
         except:
-            values = MatlabGrammar.__dict__.items()      # Python 3
+            values = MatlabParser.__dict__.items()      # Python 3
         for name, thing in values:
             if thing is obj:
                 return name
@@ -2169,7 +2179,7 @@ class MatlabGrammar:
     # (which is _to_name by default) to a list of specific objects.  E.g.:
     #    _to_print_debug = [_cell_access, _cell_array, _bare_cell, _expr]
 
-    _to_print_debug = _to_name # [_fun_body, _fun_def_deep, _fun_def_shallow, _stmt, _matlab_file]
+    _to_print_debug = _to_name # [_fun_body, _fun_def_deep, _fun_def_shallow, _stmt, _matlab]
 
     def _print_debug(self, print_debug=False):
         if print_debug:
@@ -2238,7 +2248,7 @@ class MatlabGrammar:
     def parse_file(self, path, print_results=False, print_debug=False,
                    fail_soft=False):
         """Parses the MATLAB contained in `file` and returns a MatlabContext.
-        object This is essentially identical to MatlabGrammar.parse_string()
+        object This is essentially identical to MatlabParser.parse_string()
         but does the work of opening and closing the `file`.
 
         :param print_debug: print complete parsing debug output.
@@ -2306,16 +2316,16 @@ class MatlabGrammar:
         If no 'atrans' is given, the default behavior is to render arrays
         as they would appear in Matlab text: e.g., "foo(2,3)".
         """
-        def compose(name, args, delimiters=None):
-            list = [MatlabGrammar.make_formula(arg, spaces, parens, atrans)
+        def compose(name, args, delimiters=None, add_spaces=spaces):
+            list = [MatlabParser.make_formula(arg, spaces, parens, atrans)
                     for arg in (args or [])]
-            sep = ' ' if spaces else ''
+            sep = ' ' if add_spaces else ''
             front = name if name else ''
             left = delimiters[0] if delimiters else ''
             right = delimiters[1] if delimiters else ''
             return front + left + sep.join(list) + right
 
-        recurse = MatlabGrammar.make_formula
+        recurse = MatlabParser.make_formula
         if isinstance(thing, str):
             return thing
         elif isinstance(thing, Primitive):
@@ -2339,7 +2349,7 @@ class MatlabGrammar:
         elif isinstance(thing, Operator):
             if isinstance(thing, UnaryOp):
                 operand = recurse(thing.operand, spaces, parens, atrans)
-                return compose(None, [thing.op, operand], '()')
+                return compose(None, [thing.op, operand], '()', False)
             elif isinstance(thing, BinaryOp):
                 left = recurse(thing.left, spaces, parens, atrans)
                 right = recurse(thing.right, spaces, parens, atrans)
@@ -2415,7 +2425,7 @@ class MatlabGrammar:
 #     ['assignment']
 #
 # This first line of the file was labeled as an 'assignment', which is
-# MatlabGrammar's way of identifying (you guessed it) an assignment
+# MatlabParser's way of identifying (you guessed it) an assignment
 # statement.  Now let's look inside of it:
 #
 #     (Pdb) content['assignment'].keys()
@@ -2432,7 +2442,7 @@ class MatlabGrammar:
 # This now says that the object keyed by 'lhs' in the content['assignment']
 # ParseResults object has another dictionary, with a single item stored under
 # the key 'identifier'.  'identifier' is one of the terminal entities in
-# MatlabGrammar.  When you access its value, you will find it's not a
+# MatlabParser.  When you access its value, you will find it's not a
 # ParseResults object, but a string:
 #
 #     (Pdb) content['assignment']['lhs']['identifier']
@@ -2447,13 +2457,13 @@ class MatlabGrammar:
 #     (Pdb) content['assignment']['rhs']['number']
 #     '1'
 #
-# The key 'number' corresponds to another terminal entity in MatlabGrammar.
+# The key 'number' corresponds to another terminal entity in MatlabParser.
 # Its value is (you guessed it again) a number.  Note that the values
-# returned by MatlabGrammar are always strings, so even though it could in
-# principle be returned in the form of a numerical data type, MatlabGrammar
+# returned by MatlabParser are always strings, so even though it could in
+# principle be returned in the form of a numerical data type, MatlabParser
 # does not do that, because doing so might require data type conversions and
 # such conversions might require decisions that are best left to the
-# applications calling MatlabGrammar.  So instead, it always returns
+# applications calling MatlabParser.  So instead, it always returns
 # everything in finds in a MATLAB file as a text string.
 #
 # Now, let's examine what happens if we have something slightly more
@@ -2476,9 +2486,9 @@ class MatlabGrammar:
 #     (Pdb) content['assignment']['rhs'].keys()
 #     ['array']
 #
-# This time, MatlabGrammar has helpfully identified the object on the
+# This time, MatlabParser has helpfully identified the object on the
 # right-hand side as an array.  In the MATLAB world, a "matrix" is a
-# two-dimensional array, but the MatlabGrammar grammar is not able to
+# two-dimensional array, but the MatlabParser grammar is not able to
 # determine the number of dimensions of an array object; consequently, all of
 # the homogeneous array objects (vectors, matrices, and arrays) are labeled
 # as simply 'array'.  (MATLAB cell arrays are labeled 'cell array'.)  Now
@@ -2493,7 +2503,7 @@ class MatlabGrammar:
 # This time, the object has no keys.  The reason for this is the following:
 # some objects stored under the dictionary keys are actually lists.  The name
 # 'row list' is meant to suggest this possibility.  When a value created by
-# MatlabGrammar is a list, the first thing to do is to find out its length:
+# MatlabParser is a list, the first thing to do is to find out its length:
 #
 #     (Pdb) len(array['row list'])
 #     2
@@ -2550,7 +2560,7 @@ class MatlabGrammar:
 #     []
 #
 # This time, the right-hand side does not have a key.  This is the tip-off
-# that the right-hand side is an expression: in MatlabGrammar, if there is no
+# that the right-hand side is an expression: in MatlabParser, if there is no
 # key on an object, it means that the object is an expression or a list.
 # Expressions are lists: when you encounter them, it means the next step is
 # to iterate over the elements.
@@ -2571,7 +2581,7 @@ class MatlabGrammar:
 # and if there are no keys, it's another expression, so traverse it
 # recursively.
 #
-# And that summarizes the basic process for working with MatlabGrammar parse
+# And that summarizes the basic process for working with MatlabParser parse
 # results.  The parser(...) returns a list of objects results for the lines
 # in the file; each has a dictionary, which you inspect to figure out what
 # kind of objects were extracted, and then you dig into the object's

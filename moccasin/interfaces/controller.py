@@ -8,7 +8,7 @@
 # This software is part of MOCCASIN, the Model ODE Converter for Creating
 # Automated SBML INteroperability. Visit https://github.com/sbmlteam/moccasin/.
 #
-# Copyright (C) 2014-2016 jointly by the following organizations:
+# Copyright (C) 2014-2017 jointly by the following organizations:
 #  1. California Institute of Technology, Pasadena, CA, USA
 #  2. Icahn School of Medicine at Mount Sinai, New York, NY, USA
 #  3. Boston University, Boston, MA, USA
@@ -28,9 +28,17 @@ import sys
 import requests
 import pdb
 
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-from matlab_parser import *
-from converter import *
+try:
+    thisdir = os.path.dirname(os.path.abspath(__file__))
+    sys.path.append(os.path.join(thisdir, '../..'))
+except:
+    sys.path.append('../..')
+
+import moccasin
+from moccasin.converter import create_raterule_model, process_biocham_output
+from moccasin.converter import sanity_check_matlab
+from moccasin.matlab_parser import MatlabParser
+from moccasin.errors import UnsupportedInputError
 
 # -----------------------------------------------------------------------------
 # Global configuration constants
@@ -43,24 +51,35 @@ _BIOCHAM_URL = 'http://lifeware.inria.fr/biocham/online/rest/export'
 # -----------------------------------------------------------------------------
 
 class Controller():
-    '''This class serves to interface between Moccasins' modules to the CLI and GUI.'''
+    '''This class serves to interface between the CLI and GUI.'''
 
-
-    def __init__( self ):
-        self.parser = MatlabGrammar()
+    def __init__(self):
+        self.parser = MatlabParser()
         self.file_contents = None
         self.parse_results = None
 
 
-    def parse_File(self , file_contents):
+    def parse_file(self , file_contents):
         '''Parses input file using Moccasin's parser.'''
         self.file_contents = file_contents
         self.parse_results = self.parser.parse_string(self.file_contents)
 
 
+    def check_translatable(self, relaxed = False):
+        '''Check the parsed MATLAB and complain if we can't translate it.'''
+        try:
+            sanity_check_matlab(self.parse_results)
+            return True
+        except Exception as e:
+            if relaxed and isinstance(e,  moccasin.UnsupportedInputError):
+                return True
+            raise
+        return False
+
+
     def print_parsed_results(self):
         '''Prints the parsed input file.'''
-        return (self.parser.print_parse_results(self.parse_results))
+        return (self.parser.print_parse_results(self.parse_results, print_raw=True))
 
 
     def build_model(self, use_species, output_format, name_after_param, add_comments):
@@ -82,8 +101,8 @@ class Controller():
                                                                name_after_param,
                                                                add_comments)
 
-                # python 3 changed the way temporary files read/wrote data
-                # and used bytes that need to encoded/decoded
+                # Python 3 changed the way temporary files read/wrote data
+                # and used bytes that need to encoded/decoded.
                 try:
                     xpp_file.write(output)
                 except:
@@ -91,7 +110,7 @@ class Controller():
                 xpp_file.flush()
                 xpp_file.close()
                 files = {'file': open(xpp_file.name)}
-            # Access Biocham to curate and convert equations to reactions
+            # Access BIOCHAM to curate and convert equations to reactions.
             data = {'exportTo':'sbml', 'curate':'true'}
             response = requests.post(_BIOCHAM_URL, files=files, data=data)
             del files
@@ -106,12 +125,3 @@ class Controller():
             print("error: {0}".format(err))
         finally:
             os.unlink(xpp_file.name)
-
-
-    def check_network_connection(self):
-        '''Connects somewhere to test if a network is available.'''
-        try:
-            _ = requests.get('http://www.google.com', timeout=5)
-            return True
-        except requests.ConnectionError:
-            return False

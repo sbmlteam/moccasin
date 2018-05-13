@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # @file    run-syntax-tests.py
 # @brief   Test runner for MOCCASIN MATLAB parser.
@@ -8,7 +8,7 @@
 # This software is part of MOCCASIN, the Model ODE Converter for Creating
 # Automated SBML INteroperability. Visit https://github.com/sbmlteam/moccasin/.
 #
-# Copyright (C) 2014-2016 jointly by the following organizations:
+# Copyright (C) 2014-2017 jointly by the following organizations:
 #  1. California Institute of Technology, Pasadena, CA, USA
 #  2. Icahn School of Medicine at Mount Sinai, New York, NY, USA
 #  3. Boston University, Boston, MA, USA
@@ -54,7 +54,7 @@ def main(argv):
         print(contents.rstrip())
         if do_print:
             print('----- output ' + '-'*30)
-        with MatlabGrammar() as parser:
+        with MatlabParser() as parser:
             try:
                 results = parser.parse_string(contents, print_debug=do_print,
                                               fail_soft=True)

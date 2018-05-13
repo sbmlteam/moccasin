@@ -10,7 +10,21 @@
 language: python
 
 python:
-    - "2.7"
+    - "3.5"
+
+addons:
+  apt:
+    packages:
+    # These are all for wxPython 4
+    - libwebkitgtk-3.0-dev
+    - libjpeg-dev
+    - libtiff-dev
+    - libgtk2.0-dev
+    - libsdl1.2-dev
+    - libgstreamer-plugins-base0.10-dev
+    - freeglut3
+    - freeglut3-dev
+    - libnotify-dev
 
 cache:
     # Based on https://docs.travis-ci.com/user/caching/, the default is 3 min.
@@ -26,11 +40,9 @@ before_cache:
 
 sudo: false
 
-virtualenv:
-    system_site_packages: true
-
 install: 
     - pip install -U pip wheel
+    - pip install -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-14.04 wxPython
     - pip install --requirement=$TRAVIS_BUILD_DIR/requirements.txt
     - pip install python-libsbml
     - pip install coverage

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.4
+#!/usr/bin/env python3
 #
 # @file    converter.py
 # @brief   MATLAB converter
@@ -8,7 +8,7 @@
 # This software is part of MOCCASIN, the Model ODE Converter for Creating
 # Automated SBML INteroperability. Visit https://github.com/sbmlteam/moccasin/.
 #
-# Copyright (C) 2014-2016 jointly by the following organizations:
+# Copyright (C) 2014-2017 jointly by the following organizations:
 #  1. California Institute of Technology, Pasadena, CA, USA
 #  2. Icahn School of Medicine at Mount Sinai, New York, NY, USA
 #  3. Boston University, Boston, MA, USA
@@ -90,30 +90,23 @@ import re
 import six
 import sys
 
-sys.path.append('..')
-
-from matlab_parser import *
-from version import __version__, __url__
 try:
-    from .cleaner import *
-    from .errors import *
-    from .evaluate_formula import *
-    from .expr_tester import *
-    from .finder import *
-    from .name_generator import *
-    from .recognizer import *
-    from .rewriter import *
-    from .xpp import *
+    thisdir = os.path.dirname(os.path.abspath(__file__))
+    sys.path.append(os.path.join(thisdir, '../..'))
 except:
-    from cleaner import *
-    from errors import *
-    from evaluate_formula import *
-    from expr_tester import *
-    from finder import *
-    from name_generator import *
-    from recognizer import *
-    from rewriter import *
-    from xpp import *
+    sys.path.append('../..')
+
+import moccasin
+from moccasin import MatlabParser
+from moccasin.errors import *
+from moccasin.converter.cleaner import *
+from moccasin.converter.evaluate_formula import *
+from moccasin.converter.expr_tester import *
+from moccasin.converter.finder import *
+from moccasin.converter.name_generator import *
+from moccasin.converter.recognizer import *
+from moccasin.converter.rewriter import *
+from moccasin.converter.xpp import *
 
 
 # -----------------------------------------------------------------------------
@@ -121,9 +114,9 @@ except:
 # -----------------------------------------------------------------------------
 
 def parse_matlab(path):
-    """Invokes the MatlabGrammar parser on the file given by 'path'."""
+    """Invokes the MatlabParser parser on the file given by 'path'."""
     try:
-        with MatlabGrammar() as parser:
+        with MatlabParser() as parser:
             return parser.parse_file(path)
     except Exception as err:
         # FIXME test what happens here
@@ -139,7 +132,7 @@ def sanity_check_matlab(parse_results):
     """
     # There must be at least one function call in the file.
     if not parse_results.calls and not parse_results.functions:
-        fail(NotConvertibleError, 'no function calls found => no calls to odeNN')
+        fail(NotConvertibleError, 'No function calls found => no calls to odeNN')
 
     # There must be one, and only one, call to a MATLAB odeNN function in the
     # highest context, or else we won't know what to do.
@@ -147,9 +140,9 @@ def sanity_check_matlab(parse_results):
     calls = [(k,v) for k,v in context.calls.items() if k.name.startswith('ode')]
     calls = [(k,v) for k,v in calls if not k.name.startswith('odeset')]
     if not calls:
-        fail(NotConvertibleError, 'did not find call to MATLAB odeNN function')
+        fail(NotConvertibleError, 'Did not find a call to a MATLAB odeNN function')
     if len(calls) > 1:
-        fail(NotConvertibleError, 'multiple calls to odeNN functions')
+        fail(NotConvertibleError, 'Found multiple calls to odeNN functions')
 
     # We have one call to an odeNN function.  It will have at least 3 args:
     #     [t, y] = ode45(@f, tspan, x0)
@@ -161,7 +154,7 @@ def sanity_check_matlab(parse_results):
     # Currently, we only allow a variable as the initial conditions parameter.
     if not isinstance(init_cond, Identifier):
         fail(UnsupportedInputError,
-             'unsupported type of initial conditions variable in ODE call')
+             'Unsupported type of initial conditions variable in ODE call')
 
     # We currently can't handle anything other than function handles or
     # anonymous functions in the arguments to the odeNN functions.  If there
@@ -173,13 +166,13 @@ def sanity_check_matlab(parse_results):
         ode_func = assignment(ode_func, context)
     if not isinstance(ode_func, AnonFun) and not isinstance(ode_func, FuncHandle):
         fail(UnsupportedInputError,
-             'unsupported type of argument to {} call'.format(matlab_func.name))
+             'Unsupported type of argument to {} call'.format(matlab_func.name))
     if len(parse_results.functions) == 0:
         if isinstance(ode_func, AnonFun):
             return
         elif isinstance(ode_func, FuncHandle):
             fail(IncompleteInputError,
-                 'missing definition of function passed in odeNN call')
+                 'Missing definition of function passed in odeNN call')
 
     # If the user's ODE definition is a function, that function might be
     # defined nested inside the first function in the file, or it might be a
@@ -194,18 +187,25 @@ def sanity_check_matlab(parse_results):
         if parse_results.name not in parse_results.functions:
             # This is a WTF case.
             fail(UnsupportedInputError,
-                 'input file is not structured in a supported form')
+                 'Input file is not structured in a supported form')
         scopes = [parse_results.functions[parse_results.name], parse_results]
     if isinstance(ode_func, FuncHandle):
         if not isinstance(ode_func.name, Identifier):
             fail(UnsupportedInputError,
-                 'function passed to odeNN is not a simple handle')
+                 'Function passed to odeNN is not a simple handle')
         for s in scopes:
             if ode_func.name in s.functions:
                 break
         else:
             fail(IncompleteInputError,
-                 'function passed to odeNN is not defined in this file')
+                 'Function passed to odeNN is not defined in this file')
+
+    # Many MATLAB constructs can't be handled, although some can be translated
+    # to other constructs if we know their full meanings are not employed.
+    # FIXME: generalize and expand this.
+    if MatlabFinder(context).find_operators(['.*', '.^', './']):
+        fail(ArrayOperatorInputError,
+             'The MATLAB code uses array operators that may not be translatable')
 
 
 def clean_matlab(context, protected_context):
@@ -224,7 +224,7 @@ def clean_matlab(context, protected_context):
                 for elem in subscripts:
                     if isinstance(elem, Identifier):
                         assigned_vars.append(elem)
-        used_vars = [x for x in assigned_vars if MatlabFinder(context).find_use(x)]
+        used_vars = [x for x in assigned_vars if MatlabFinder(context).find_symbol(x)]
         unused_vars = list(set(assigned_vars) - set(used_vars))
         for var in list(context.assignments.keys()):
             if var in unused_vars:
@@ -296,7 +296,7 @@ def matlab_ode_call(context):
         if isinstance(id, Identifier) and re.match('^ode[0-9]', id.name):
             return id, arglist[0]
     # This should not happen if sanity_check_matlab() did its job.
-    fail(NotConvertibleError, 'did not find call to MATLAB odeNN function')
+    fail(NotConvertibleError, 'Did not find call to MATLAB odeNN function')
 
 
 def function_declaration(name, context, recursive=False):
@@ -345,11 +345,11 @@ def assigned_ode_var(name, context):
         if isinstance(rhs, FunCall) or isinstance(rhs, Ambiguous):
             if isinstance(rhs.name, Identifier) and rhs.name == name:
                 if not isinstance(lhs, Array) or len(lhs.rows[0]) != 2:
-                    fail(UnsupportedInputError, 'unrecognized form of odeNN call')
+                    fail(UnsupportedInputError, 'Unrecognized form of odeNN call')
                 # Arrays on LHS can only have one row, so using [0] is safe.
                 return lhs.rows[0][1]
     # Something in our algorithm is wrong, if we get here.
-    fail(ConversionError, 'found odeNN call, but could not interpret it')
+    fail(ConversionError, 'Found odeNN call, but could not interpret it')
 
 
 def num_underscores(context):
@@ -691,10 +691,10 @@ def generate_xpp_header(add_comments):
     lines = ''
     if add_comments:
         lines += '#\n# This file was generated automatically by MOCCASIN '
-        lines += 'version {}.\n'.format(__version__)
+        lines += 'version {}.\n'.format(moccasin.__version__)
         lines += '# The contents are suitable as input to the program XPP or XPPAUT.\n'
         lines += '# For more information about MOCCASIN, please visit the website:\n'
-        lines += '# {}\n#\n\n'.format(__url__)
+        lines += '# {}\n#\n\n'.format(moccasin.__url__)
     return lines
 
 
@@ -915,7 +915,7 @@ def create_raterule_model(parse_results, use_species=True, output_format="sbml",
     func_var, ode_func = func_from_handle(args[0], working_context, underscores)
     if not ode_func:
         fail(ConversionError,
-             'could not extract ODE function from {} call'.format(matlab_func))
+             'Could not extract ODE function from {} call'.format(matlab_func))
     time_span = args[1]
     init_cond_var = args[2]
     assigned_var = assigned_ode_var(matlab_func, working_context)
@@ -931,7 +931,7 @@ def create_raterule_model(parse_results, use_species=True, output_format="sbml",
     dependent_var = function_context.parameters[1]
     if not isinstance(dependent_var, Identifier):
         fail(ConversionError,
-             'failed to parse the arguments to function {}.'.format(ode_func.name))
+             'Failed to parse the arguments to function {}.'.format(ode_func.name))
 
     # Some people may want to see the species/independent variables named
     # after the input parameter, and others may want it named after the output.
@@ -956,7 +956,7 @@ def create_raterule_model(parse_results, use_species=True, output_format="sbml",
     init_cond = working_context.assignments[init_cond_var]
     if not isinstance(init_cond, Array):
         fail(ConversionError,
-             'could not find assignment to {}'.format(init_cond_var.name))
+             'Could not find assignment to {}'.format(init_cond_var.name))
     mloop(init_cond,
           lambda idx, item: make_indexed(ode_var, idx, item, translations,
                                          use_species, False, document,
@@ -986,12 +986,12 @@ def create_raterule_model(parse_results, use_species=True, output_format="sbml",
     var_def = function_context.assignments[output_var]
     if not isinstance(var_def, Array):
         fail(ConversionError,
-             'failed to parse body of function {}'.format(function_context.name))
+             'Failed to parse body of function {}'.format(function_context.name))
     # The number of items in the output var must match initial conditions var.
     # Ignore if one is a column vector and the other a row vector.
     if vector_length(init_cond) != vector_length(var_def):
         fail(ConversionError,
-             'initial conditions array and output array have different sizes')
+             'Initial conditions array and output array have different sizes')
     mloop(var_def,
           lambda idx, item: make_rate_rule(ode_var, dependent_var, translations,
                                            idx, item, document, underscores,
@@ -1073,13 +1073,13 @@ def make_indexed(var, index, content, translations, use_species, use_rules,
         # If the RHS is an expression but it's all constant values, we turn it
         # into an initial assignment.
         make_declaration(real_name, 0, False)
-        formula = MatlabGrammar.make_formula(content)
+        formula = MatlabParser.make_formula(content)
         create_initial_assignment(document, real_name, formula)
     else:
         # Not a simple number => may depend on quantities that change during
         # simulation.  Create assignment rule or initial assignment.
         translator = lambda node: munge_reference(node, context, underscores)
-        formula = MatlabGrammar.make_formula(content, atrans=translator)
+        formula = MatlabParser.make_formula(content, atrans=translator)
         if not formula:
             fail(ConversionError,
                  'Failed to convert formula for {}'.format(var))
@@ -1092,7 +1092,7 @@ def make_rate_rule(assigned_var, dep_var, translations, index, content,
     # Currently, this assumes there's only one math expression per row or
     # column, meaning, one subscript value per row or column.
     translator = lambda node: munge_reference(node, context, underscores)
-    string_formula = MatlabGrammar.make_formula(content, atrans=translator)
+    string_formula = MatlabParser.make_formula(content, atrans=translator)
     if not string_formula:
         fail(ConversionError,
              'Failed to convert formula for row {}'.format(index + 1))
@@ -1117,7 +1117,7 @@ def make_rate_rule(assigned_var, dep_var, translations, index, content,
 
 def munge_reference(array, context, underscores):
     if not isinstance(array.name, Identifier):
-        return MatlabGrammar.make_formula(array)
+        return MatlabParser.make_formula(array)
     if not array.args:
         # Nothing to do. Can happen it's Ambiguous with no args => identifier.
         return array.name.name
@@ -1165,9 +1165,9 @@ def make_remaining_vars(working_context, function_context, skip_vars,
                 continue
             else:
                 # FIXME: it may be possible to handle some cases like this.
-                text = MatlabGrammar.make_formula(var)
+                text = MatlabParser.make_formula(var)
                 fail(ConversionError,
-                     'unable to convert array assignment {}'.format(text))
+                     'Unable to convert array assignment {}'.format(text))
         elif isinstance(rhs, Array):
             mloop(rhs,
                   lambda idx, item: make_indexed(var, idx, item, name_translations,
@@ -1184,12 +1184,12 @@ def make_remaining_vars(working_context, function_context, skip_vars,
             # made an initial assignment instead of an assignment rule.
             if constant_expression(rhs, context):
                 create_parameter(document, var.name, 0, True)
-                formula = MatlabGrammar.make_formula(rhs)
+                formula = MatlabParser.make_formula(rhs)
                 create_initial_assignment(document, var.name, formula)
             else:
                 translator = lambda node: munge_reference(node, function_context,
                                                           underscores)
-                formula = MatlabGrammar.make_formula(rhs, atrans=translator)
+                formula = MatlabParser.make_formula(rhs, atrans=translator)
                 translated = translate_names(formula, name_translations)
                 create_assigned_parameter(document, var.name, translated,
                                           in_function)
@@ -1228,7 +1228,7 @@ def generate_output(document, add_comments):
         writer = SBMLWriter();
         if add_comments:
             writer.setProgramName("MOCCASIN")
-            writer.setProgramVersion(__version__)
+            writer.setProgramVersion(moccasin.__version__)
         return writer.writeSBMLToString(document);
 
 
@@ -1281,7 +1281,7 @@ def process_biocham_output(sbml, parse_results, post_add, post_convert,
     success = document.setLevelAndVersion(3, 1, False)
     if not success:
         # FIXME provide more info about what happened.
-        fail(ConversionError, 'failed to convert output from Biocham.')
+        fail(ConversionError, 'Failed to convert output from Biocham.')
 
     # Convert constructs if necessary.
     for var, formula in post_convert:
@@ -1317,7 +1317,7 @@ def process_biocham_output(sbml, parse_results, post_add, post_convert,
     writer = SBMLWriter();
     if add_comments:
         writer.setProgramName("MOCCASIN")
-        writer.setProgramVersion(__version__)
+        writer.setProgramVersion(moccasin.__version__)
 
     # Write it, and we are done!  Pop the champagne cork.
     return writer.writeSBMLToString(document)
@@ -1345,9 +1345,9 @@ def fail(ex, arg):
 # -----------------------------------------------------------------------------
 
 def parse_args(argv):
-    help_msg = 'MOCCASIN version ' + __version__ + '\n' + main.__doc__
+    help_msg = 'MOCCASIN version ' + moccasin.__version__ + '\n' + main.__doc__
     try:
-        options, path = getopt.getopt(argv[1:], "cdpqxoOrvl")
+        options, path = getopt.getopt(argv[1:], "cdpqxnoOrvl")
     except:
         raise SystemExit(help_msg)
     if len(path) != 1 or len(options) > 8:
@@ -1361,6 +1361,7 @@ def parse_args(argv):
     name_after_param = any(['-l' in y for y in options])
     create_xpp       = any(['-o' in y for y in options])
     create_biocham   = any(['-O' in y for y in options])
+    no_check         = any(['-n' in y for y in options])
     if not create_xpp and not create_biocham:
         output_format = "sbml"
     elif create_xpp:
@@ -1368,7 +1369,7 @@ def parse_args(argv):
     else:
         output_format = "biocham"
     return path[0], debug, quiet, print_parse, print_raw, use_species, \
-        name_after_param, output_format, add_comments
+        name_after_param, output_format, add_comments, no_check
 
 
 def main(argv):
@@ -1380,6 +1381,7 @@ model.  Available options:
  -d   Drop into pdb before starting to parse the MATLAB input
  -h   Print this help message and quit
  -l   Name variables per ODE function's parameters (default: use output variable)
+ -n   No sanity checking
  -o   Convert to XPP .ode file format (default: produce SBML)
  -O   Convert to XPP .ode file format suitable for use with BIOCHAM
  -p   Turn variables into SBML parameters (default: make them SBML species)
@@ -1388,7 +1390,7 @@ model.  Available options:
  -x   Print extra debugging info about the interpreted MATLAB
 """
     (path, debug, quiet, print_parse, print_raw, use_species, name_after_param,
-     output_format, add_comments) = parse_args(argv)
+     output_format, add_comments, no_check) = parse_args(argv)
 
     # Try to read the file contents.
     path = expanded_path(path)
@@ -1416,7 +1418,8 @@ model.  Available options:
 
     # Parse the SBML contents and do initial minimal sanity checking.
     parse_results = parse_matlab(path)
-    sanity_check_matlab(parse_results)
+    if not no_check:
+        sanity_check_matlab(parse_results)
 
     # Now do the actual conversion.
     NameGenerator().reset()

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from __future__ import print_function
 import pytest
@@ -6,14 +6,9 @@ import sys
 import glob
 import os
 from pyparsing import ParseResults
-sys.path.append('moccasin/converter/')
-sys.path.append('../moccasin/converter/')
-sys.path.append('../../moccasin/converter/')
-sys.path.append('moccasin/')
-sys.path.append('../moccasin')
+sys.path.append('../..')
 sys.path.append('../../moccasin')
-from matlab_parser import *
-from converter import *
+from moccasin import *
 
 sys.setrecursionlimit(10000)
 
@@ -27,7 +22,7 @@ def pytest_generate_tests(metafunc):
 
 #Parses and converts file to SBML and prints result(output is captured)
 def build_model(path):
-    with MatlabGrammar() as parser:
+    with MatlabParser() as parser:
         results = parser.parse_file(path, print_debug=False, fail_soft=True)
         [sbml, add, post] = create_raterule_model(results, use_species=True,
                                                   output_format="sbml",
