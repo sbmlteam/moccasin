@@ -3,8 +3,8 @@ MOCCASIN
 
 <img align="right" src="https://raw.githubusercontent.com/sbmlteam/moccasin/master/docs/project/logo/moccasin_logo_20151002/logo_128.png"> *MOCCASIN* stands for *"Model ODE Converter for Creating Automated SBML INteroperability"*.  MOCCASIN is designed to convert certain basic forms of ODE simulation models written in MATLAB or Octave and translate them into [SBML](http://sbml.org) format.  It thereby enables researchers to convert MATLAB models into an open and widely-used format in systems biology.
 
-[![License](http://img.shields.io/:license-LGPL-blue.svg)](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html)  [![Latest version](https://img.shields.io/badge/Latest_version-1.2.0-brightgreen.svg)](http://shields.io) <!--
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.883135.svg)](https://doi.org/10.5281/zenodo.883135)--> [![Build Status](https://travis-ci.org/sbmlteam/moccasin.svg?branch=master)](https://travis-ci.org/sbmlteam/moccasin) [![Coverage Status](https://coveralls.io/repos/sbmlteam/moccasin/badge.svg?branch=master)](https://coveralls.io/r/sbmlteam/moccasin?branch=master)
+[![License](http://img.shields.io/:license-LGPL-blue.svg)](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html)  [![Latest version](https://img.shields.io/badge/Latest_version-1.2.0-brightgreen.svg)](http://shields.io) [![DOI](http://img.shields.io/badge/DOI-10.22002%20%2F%20D1.940-blue.svg)](https://data.caltech.edu/records/940)
+[![Build Status](https://travis-ci.org/sbmlteam/moccasin.svg?branch=master)](https://travis-ci.org/sbmlteam/moccasin) [![Coverage Status](https://coveralls.io/repos/sbmlteam/moccasin/badge.svg?branch=master)](https://coveralls.io/r/sbmlteam/moccasin?branch=master)
 
 *Authors*:      [Michael Hucka](http://www.cds.caltech.edu/~mhucka), [Sarah Keating](http://www.ebi.ac.uk/about/people/sarah-keating), and [Harold G&oacute;mez](http://www.bu.edu/computationalimmunology/people/harold-gomez/).<br>
 *License*:      This code is licensed under the LGPL version 2.1.  Please see the file [../LICENSE.txt](https://raw.githubusercontent.com/sbmlteam/moccasin/master/LICENSE.txt) for details.<br>
@@ -46,7 +46,9 @@ Harold F. Gómez, Michael Hucka, Sarah M. Keating, German Nudelman, Dagmar Iber 
 
 Please also use the DOI to indicate the specific version you use, to improve other people's ability to reproduce your results:
 
-* MOCCASIN release 1.1.2 &rArr; [10.5281/zenodo.883135](https://doi.org/10.5281/zenodo.883135)
+* MOCCASIN release 1.2.0 &rArr; [10.22002/D1.940](https://doi.org/10.22002/D1.940)
+* MOCCASIN release 1.1.2 &rArr; 
+[10.5281/zenodo.883135](https://doi.org/10.5281/zenodo.883135)
 
 ☀ Background and introduction
 -----------------------------
