@@ -4,7 +4,7 @@ MOCCASIN News &ndash; History of user-visible changes
 1.2.0
 -----
 
-There are three important changes in this release.  The first is a *massive* improvement to the speed of parsing MATLAB files compared to recent performance.  The second is the elimination of the separate `moccasin_CLI` and `moccasin_GUI` entry points in favor of a single program, `moccasin`, that can be used either to start the GUI or perform actions via the command line.  The third is corretions of errors in the installation scripts so that `setup.py` now correctly installs dependencies.
+There are three important changes in this release.  The first is a *massive* improvement to the speed of parsing MATLAB files compared to recent performance.  The second is the elimination of the separate `moccasin_CLI` and `moccasin_GUI` entry points in favor of a single program, `moccasin`, that can be used either to start the GUI or perform actions via the command line.  The third is corrections of errors in the installation scripts so that `setup.py` now correctly installs dependencies.
 
 Enhancements:
 
