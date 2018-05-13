@@ -332,7 +332,6 @@ class MainFrame (wx.Frame):
 
         topPanelSizer.Add(sbSizer9, 2, wx.ALL|wx.EXPAND, 0)
         topPanelSizer.Add(optionInset, 2, wx.ALL|wx.EXPAND, 0)
-        topPanelSizer.Add(buttonVSizer, 2, wx.ALL|wx.EXPAND, 0)
         mainSizer.Add(topPanelSizer, 1, wx.ALL|wx.EXPAND, 0)
 
         # Mid sizer
@@ -348,6 +347,7 @@ class MainFrame (wx.Frame):
         self.matlabWebView.SetPage(_EMPTY_PAGE, "")
         midPanelSizer.Add(self.matlabWebView, 1, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND, 5)
         mainSizer.Add(midPanelSizer, 2, wx.ALL|wx.EXPAND, 5)
+        mainSizer.Add(buttonVSizer, 0, wx.ALL|wx.EXPAND, 0)
 
         # Bottom sizer
         bottomPanelSizer = wx.StaticBoxSizer(
