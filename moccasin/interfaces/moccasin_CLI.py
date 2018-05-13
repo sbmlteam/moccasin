@@ -64,8 +64,8 @@ sys.setrecursionlimit(5000)
     paths         = 'paths to MATLAB input files to convert'
 )
 
-def cli_main(gui, use_equations, use_params, quiet, relaxed, version,
-             xpp_output, no_color, debug_parser, no_comments, *paths):
+def cli_main(gui, use_equations, use_params, quiet, relaxed, xpp_output,
+             no_color, debug_parser, version, no_comments, *paths):
     '''Interface for controlling MOCCASIN, the MATLAB ODE converter for SBML.
 MOCCASIN can take certain forms of ODE (ordinary differential equation) models
 written in MATLAB and Octave and export them as SBML files.  MOCCASIN does not
