@@ -26,6 +26,7 @@ import os
 import re
 import requests
 import sys
+from   sys import platform
 import textwrap
 import webbrowser
 
@@ -123,9 +124,9 @@ class MainFrame (wx.Frame):
                           style = wx.DEFAULT_FRAME_STYLE|wx.TAB_TRAVERSAL)
 
         if _WX4:
-            self.SetSizeHints(wx.Size(760,-1))
+            self.SetSizeHints(wx.Size(780,-1))
         else:
-            self.SetSizeHintsSz(wx.Size(760,-1))
+            self.SetSizeHintsSz(wx.Size(780,-1))
         self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE))
 
         # Interface with the back-end
@@ -243,7 +244,7 @@ class MainFrame (wx.Frame):
         # Top sizer
         labelFont = wx.Font(wx.NORMAL_FONT.GetPointSize(), 70, 90, 90,
                             False, wx.EmptyString)
-        topPanelSizer = wx.FlexGridSizer(2, 1, 0, 0)
+        topPanelSizer = wx.FlexGridSizer(6, 1, 0, 0)
 
         fileConvSizer1 = wx.StaticBoxSizer(
             wx.StaticBox(self, wx.ID_ANY, "File selection"), wx.HORIZONTAL)
@@ -252,7 +253,8 @@ class MainFrame (wx.Frame):
                                            wx.DefaultPosition, wx.DefaultSize, 0)
         self.m_staticText6.Wrap(-1)
         self.m_staticText6.SetFont(labelFont)
-        fileConvSizer1.Add(self.m_staticText6, 1, wx.ALL, 10)
+        self.m_staticText6.SetToolTip("The input file to be converted by MOCCASIN.")
+        fileConvSizer1.Add(self.m_staticText6, 1, wx.ALL, 6)
         self.filePicker = wx.FilePickerCtrl(self, wx.ID_ANY, wx.EmptyString,
                                             "Select a file", "*.m", wx.DefaultPosition,
                                             wx.DefaultSize, wx.FLP_DEFAULT_STYLE)
@@ -261,65 +263,77 @@ class MainFrame (wx.Frame):
         fileConvSizer1.Add(self.filePicker, 6, wx.ALL, 1)
         topPanelSizer.Add(fileConvSizer1, 1, wx.ALL|wx.EXPAND, 1)
 
-        sbSizer9 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "File conversion"),
+        sbSizer9 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Conversion actions"),
                                      wx.VERTICAL)
-        optionLayoutSizer = wx.GridSizer(1, 6, 0, 180)
-
-        self.assumeTranslatable = wx.CheckBox(self, id = wx.ID_ANY,
-                                              label = 'Assume matrix operations are not used in MATLAB code')
-        self.assumeTranslatable.SetFont(labelFont)
-        sbSizer9.Add(self.assumeTranslatable, flag = wx.ALL, border = 7)
-        if _WX4:
-            sbSizer9.AddSpacer(2)
-        else:
-            sbSizer9.AddSpacer((0, 0), 2, wx.ALL|wx.EXPAND, 2)
+        optionLayoutSizer = wx.GridSizer(1, 6, 0, 375 if platform == 'darwin' else 385)
 
         self.staticTextOpt = wx.StaticText(self, wx.ID_ANY, "Encode variables as: ",
                                            wx.DefaultPosition, wx.DefaultSize, 0)
         self.staticTextOpt.Wrap(-1)
         self.staticTextOpt.SetFont(labelFont)
-        optionLayoutSizer.Add(self.staticTextOpt, 0, wx.ALL, 8)
+        self.staticTextOpt.SetToolTip("The dynamic variables in a model can be encoded either as SBML species or SBML reactions.")
+        optionLayoutSizer.Add(self.staticTextOpt, 0, wx.ALL, 6)
         self.varsAsSpecies = wx.RadioButton(self, wx.ID_ANY, "SBML Species",
                                             wx.DefaultPosition, wx.DefaultSize, wx.RB_GROUP)
         self.varsAsSpecies.SetValue(True)
-        optionLayoutSizer.Add(self.varsAsSpecies, 0, wx.ALL, 8)
+        optionLayoutSizer.Add(self.varsAsSpecies, 0, wx.ALL, 6)
         self.varsAsParams = wx.RadioButton(self, wx.ID_ANY, "SBML Parameters",
                                            wx.DefaultPosition, wx.DefaultSize, 0)
-        optionLayoutSizer.Add(self.varsAsParams, 0, wx.ALL, 8)
-        if _WX4:
-            optionLayoutSizer.AddSpacer(1)
-            optionLayoutSizer.AddSpacer(1)
-        else:
-            optionLayoutSizer.AddSpacer((0, 0), 1, wx.ALL|wx.EXPAND, 2)
-            optionLayoutSizer.AddSpacer((0, 0), 1, wx.ALL|wx.EXPAND, 2)
-        self.convertButton = wx.Button(self, wx.ID_ANY, "Convert",
-                                       wx.DefaultPosition, wx.DefaultSize, 0)
-        self.convertButton.SetFont(labelFont)
-        self.convertButton.Disable()
-        optionLayoutSizer.Add(self.convertButton, 1, wx.ALIGN_LEFT|wx.ALIGN_RIGHT|wx.ALL, 5)
-        sbSizer9.Add(optionLayoutSizer, 0, wx.EXPAND, 5)
-        gSizer7 = wx.GridSizer(0, 6, 0, 180)
+        optionLayoutSizer.Add(self.varsAsParams, 0, wx.ALL, 6)
+        sbSizer9.Add(optionLayoutSizer)
 
+        gSizer7 = wx.GridSizer(0, 6, 0, 375 if platform == 'darwin' else 385)
         self.modeType = wx.StaticText(self, wx.ID_ANY, "Produce output format: ",
                                       wx.DefaultPosition, wx.DefaultSize, 0)
         self.modeType.Wrap(-1)
         self.modeType.SetFont(labelFont)
-        gSizer7.Add(self.modeType, 0, wx.ALL, 8)
-        self.reactionBasedModel = wx.RadioButton(self, wx.ID_ANY, "SBML (reactions)",
+        self.modeType.SetToolTip("The conversion results can be written in SBML or XPP format.")
+        gSizer7.Add(self.modeType, 0, wx.ALL, 6)
+        self.reactionBasedModel = wx.RadioButton(self, wx.ID_ANY, "SBML (reaction-based)",
                                                  wx.DefaultPosition, wx.DefaultSize, wx.RB_GROUP)
         self.reactionBasedModel.SetValue(True)
-        gSizer7.Add(self.reactionBasedModel, 0, wx.ALL, 8)
-        self.equationBasedModel = wx.RadioButton(self, wx.ID_ANY, "SBML (equations)",
+        gSizer7.Add(self.reactionBasedModel, 0, wx.ALL, 6)
+        self.equationBasedModel = wx.RadioButton(self, wx.ID_ANY, "SBML (equation-based)",
                                                  wx.DefaultPosition, wx.DefaultSize, 0)
-        gSizer7.Add(self.equationBasedModel, 0, wx.ALL, 8)
+        gSizer7.Add(self.equationBasedModel, 0, wx.ALL, 6)
         self.xppModel = wx.RadioButton(self, wx.ID_ANY, "XPP/XPPAUT",
                                        wx.DefaultPosition, wx.DefaultSize, 0)
-        gSizer7.Add(self.xppModel, 0, wx.ALL, 8)
+        gSizer7.Add(self.xppModel, 0, wx.ALL, 6)
         sbSizer9.Add(gSizer7, 0, wx.EXPAND, 5)
 
-        topPanelSizer.Add(sbSizer9, 2, wx.ALL|wx.EXPAND, 1)
+        optionInset = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Conversion options"), wx.VERTICAL)
+        optionGrid = wx.GridSizer(1, 2, 0, 0)
 
-        mainSizer.Add(topPanelSizer, 1, wx.ALL|wx.EXPAND, 5)
+        self.assumeTranslatable = wx.CheckBox(self, id = wx.ID_ANY,
+                                              label = 'Assume array operations are not used')
+        self.assumeTranslatable.SetToolTip("Relax compatibility checks for certain constructs (such as element-wise multiplication) that would otherwise be assumed to mean the variables are matrices.")
+        self.assumeTranslatable.SetFont(labelFont)
+        optionGrid.Add(self.assumeTranslatable, flag = wx.ALL, border = 6)
+
+        self.addMoccasinComments = wx.CheckBox(self, id = wx.ID_ANY,
+                                              label = 'Add converter info as comments in file')
+        self.addMoccasinComments.SetToolTip("Relax compatibility checks for certain constructs (such as element-wise multiplication) that would otherwise be assumed to mean the variables are matrices.")
+        self.addMoccasinComments.SetFont(labelFont)
+        self.addMoccasinComments.Value = True
+        self.addMoccasinComments.SetToolTip("Write a comment into the output file with the MOCCASIN version, time stamp, and other information.")
+        optionGrid.Add(self.addMoccasinComments, flag = wx.ALL, border = 6)
+        optionInset.Add(optionGrid, 0, wx.EXPAND, 0)
+
+        self.convertButton = wx.Button(self, wx.ID_ANY, "Convert",
+                                       wx.DefaultPosition, wx.DefaultSize, 0)
+        self.convertButton.SetFont(labelFont)
+        self.convertButton.Disable()
+
+        buttonHSizer = wx.BoxSizer(wx.HORIZONTAL)
+        buttonVSizer = wx.BoxSizer(wx.VERTICAL)
+        buttonHSizer.Add(self.convertButton, 0, wx.CENTER)
+        buttonVSizer.AddSpacer(10)
+        buttonVSizer.Add(buttonHSizer, 0, wx.CENTER)
+
+        topPanelSizer.Add(sbSizer9, 2, wx.ALL|wx.EXPAND, 0)
+        topPanelSizer.Add(optionInset, 2, wx.ALL|wx.EXPAND, 0)
+        topPanelSizer.Add(buttonVSizer, 2, wx.ALL|wx.EXPAND, 0)
+        mainSizer.Add(topPanelSizer, 1, wx.ALL|wx.EXPAND, 0)
 
         # Mid sizer
         panelTextFont = wx.Font(wx.NORMAL_FONT.GetPointSize() -1, 70, 90,
@@ -430,6 +444,7 @@ class MainFrame (wx.Frame):
         self.reactionBasedModel.SetValue(True)
         self.varsAsSpecies.SetValue(True)
         self.assumeTranslatable.SetValue(False)
+        self.addMoccasinComments.SetValue(True)
         self._output_saved = False
 
 
@@ -448,7 +463,7 @@ class MainFrame (wx.Frame):
                     use_species = self.varsAsSpecies.GetValue(),
                     output_format = "xpp",
                     name_after_param = False,
-                    add_comments = False)
+                    add_comments = self.addMoccasinComments.Value)
 
                 self.convertedWebView.SetPage(tokenize(output, "matlab", "borland"), "")
                 self.statusBar.SetStatusText("XPP/XPPAUT ODE format", 2)
@@ -459,7 +474,7 @@ class MainFrame (wx.Frame):
                     use_species = self.varsAsSpecies.GetValue(),
                     output_format = "sbml",
                     name_after_param = False,
-                    add_comments = False)
+                    add_comments = self.addMoccasinComments.Value)
 
                 self.convertedWebView.SetPage(tokenize(output, "xml", "borland"), "")
                 self.statusBar.SetStatusText("SBML format - equations", 2)
@@ -474,7 +489,7 @@ class MainFrame (wx.Frame):
                     sbml = self.controller.build_reaction_model(
                         use_species = self.varsAsSpecies.GetValue(),
                         name_after_param = False,
-                        add_comments = False)
+                        add_comments = self.addMoccasinComments.Value)
 
                     self.convertedWebView.SetPage(tokenize(sbml, "xml", "borland"), "")
                     self.statusBar.SetStatusText("SBML format - reactions",  2)

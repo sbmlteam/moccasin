@@ -14,7 +14,7 @@ Enhancements:
 
 * The installation instructions have been updated and improved.
 
-* The GUI interface provides (hopefully) more helpful dialogs.
+* The GUI interface has been enhanced.  In addition, the GUI interface now provides (hopefully) more helpful dialogs in error situations.
 
 * Huge performance improvements.
 
