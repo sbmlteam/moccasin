@@ -240,7 +240,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 
 <br>
 <div align="center">
-  <a href="https://www.nsf.gov">
+  <a href="https://www.nigms.nih.gov">
     <img valign="middle"  height="100" src=".graphics/US-NIH-NIGMS-Logo.svg">
   </a>
   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
