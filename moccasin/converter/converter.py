@@ -1211,6 +1211,10 @@ def reconstruct_separate_assignments(context, var):
         # Build a new array.  FIXME this assumes a 1-D array!
         rows = [None]*len(need_adjust)
         for elem in need_adjust:
+            # Is the object something we can handle?
+            if not hasattr(elem.args[0], 'value'):
+                fail(UnsupportedInputError,
+                     'Model contains constructs that MOCCASIN cannot convert')
             # Matlab arrays are 1-indexed, Python are 0-indexed.
             index = int(elem.args[0].value) - 1
             rows[index] = context.assignments[elem]
