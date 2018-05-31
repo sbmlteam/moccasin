@@ -147,15 +147,18 @@ class MatlabRewriter(MatlabNodeVisitor):
 
     def matlab_zeros(self, thing):
         # Function calls like zeros(3,1) produces a matrix.  This generates
-        # the equivalent expanded form.
+        # the equivalent expanded form if the arguments are numbers.  (If
+        # they're not numbers, we can't do it.)
         args = thing.args
         if len(args) == 1:
-            rows = int(args[0].value)
-            return Array(rows=[[Number(value='0')]]*rows, is_cell=False)
+            if isinstance(args[0], Number):
+                rows = int(args[0].value)
+                return Array(rows=[[Number(value='0')]]*rows, is_cell=False)
         elif len(args) == 2:
-            rows = int(args[0].value)
-            cols = int(args[1].value)
-            return Array(rows=[[Number(value='0')]*cols]*rows, is_cell=False)
+            if isinstance(args[0], Number) and isinstance(args[1], Number):
+                rows = int(args[0].value)
+                cols = int(args[1].value)
+                return Array(rows=[[Number(value='0')]*cols]*rows, is_cell=False)
         # Fall back: make sure to return *something*.
         return thing
 
