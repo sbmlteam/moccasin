@@ -174,58 +174,57 @@ SBML INteroperability".
 
     def convert(path):
         controller = Controller()
-        with open(path) as input_file:
-            file_contents = input_file.read()
-            if debug_parser:
-                print_header('{}'.format(path), 'info', quiet, colorize)
-                msg(file_contents)
-            if not debug_parser and not quiet:
-                msg('Parsing MATLAB file "{}" ...'.format(path), 'info', colorize)
-            controller.parse_file(file_contents)
-            controller.check_translatable(relaxed)
-            if debug_parser:
-                print_header('Parsed MATLAB output', 'info', quiet, colorize)
-                msg(controller.print_parsed_results())
-            elif not quiet:
+        contents = file_contents(path, colorize)
+        if debug_parser:
+            print_header('{}'.format(path), 'info', quiet, colorize)
+            msg(contents)
+        if not debug_parser and not quiet:
+            msg('Parsing MATLAB file "{}" ...'.format(path), 'info', colorize)
+        controller.parse_file(contents)
+        controller.check_translatable(relaxed)
+        if debug_parser:
+            print_header('Parsed MATLAB output', 'info', quiet, colorize)
+            msg(controller.print_parsed_results())
+        elif not quiet:
+            msg('... finished.', 'info', colorize)
+            msg('Converting to {} ...'.format('XPP' if xpp_output else 'SBML'),
+                'info', colorize)
+        if xpp_output:
+            text = 'XPP output'
+            output = controller.build_model(use_species = (not use_params),
+                                            output_format = "xpp",
+                                            name_after_param = False,
+                                            add_comments = add_comments)
+        elif use_equations:
+            text = 'Equation-based SBML output'
+            output = controller.build_model(use_species = (not use_params),
+                                            output_format = "sbml",
+                                            name_after_param = False,
+                                            add_comments = add_comments)
+        else:
+            text = 'Reaction-based SBML output'
+            output = controller.build_reaction_model(use_species = (not use_params),
+                                                     name_after_param = False,
+                                                     add_comments = add_comments)
+        if debug_parser:
+            print_header(text, 'info', quiet, colorize)
+            msg(output)
+        else:
+            if not quiet:
                 msg('... finished.', 'info', colorize)
-                msg('Converting to {} ...'.format('XPP' if xpp_output else 'SBML'),
-                    'info', colorize)
-            if xpp_output:
-                text = 'XPP output'
-                output = controller.build_model(use_species = (not use_params),
-                                                output_format = "xpp",
-                                                name_after_param = False,
-                                                add_comments = add_comments)
-            elif use_equations:
-                text = 'Equation-based SBML output'
-                output = controller.build_model(use_species = (not use_params),
-                                                output_format = "sbml",
-                                                name_after_param = False,
-                                                add_comments = add_comments)
-            else:
-                text = 'Reaction-based SBML output'
-                output = controller.build_reaction_model(use_species = (not use_params),
-                                                         name_after_param = False,
-                                                         add_comments = add_comments)
-            if debug_parser:
-                print_header(text, 'info', quiet, colorize)
-                msg(output)
-            else:
+            output_path = os.path.splitext(path)[0] + extension
+            backup_path = output_path + '.bak'
+            if os.path.exists(output_path):
                 if not quiet:
-                    msg('... finished.', 'info', colorize)
-                output_path = os.path.splitext(path)[0] + extension
-                backup_path = output_path + '.bak'
-                if os.path.exists(output_path):
-                    if not quiet:
-                        msg('Output file "{}" already exists.'.format(output_path),
-                            'warning', colorize)
-                        msg('Renaming to "{}".'.format(backup_path),
-                            'warning', colorize)
-                    os.rename(output_path, backup_path)
-                with open(output_path, 'w') as output_file:
-                    output_file.write(output)
-                if not quiet:
-                    msg('Wrote output to "{}"'.format(output_path), 'info', colorize)
+                    msg('Output file "{}" already exists.'.format(output_path),
+                        'warning', colorize)
+                    msg('Renaming to "{}".'.format(backup_path),
+                        'warning', colorize)
+                os.rename(output_path, backup_path)
+            with open(output_path, 'w') as output_file:
+                output_file.write(output)
+            if not quiet:
+                msg('Wrote output to "{}"'.format(output_path), 'info', colorize)
 
     # Loop over the input files and process each one.
 
@@ -260,6 +259,14 @@ SBML INteroperability".
 # -----------------------------------------------------------------------------
 # Helper functions.
 # -----------------------------------------------------------------------------
+
+def file_contents(path, colorize):
+    try:
+        with open(path) as input_file:
+            return input_file.read()
+    except Exception as err:
+        raise
+
 
 def print_header(text, flags, quiet = False, colorize = True):
     if not quiet:
