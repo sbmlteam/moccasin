@@ -255,9 +255,11 @@ class MainFrame (wx.Frame):
         self.m_staticText6.SetFont(labelFont)
         self.m_staticText6.SetToolTip("The input file to be converted by MOCCASIN.")
         fileConvSizer1.Add(self.m_staticText6, 1, wx.ALL, 6)
-        self.filePicker = wx.FilePickerCtrl(self, wx.ID_ANY, wx.EmptyString,
-                                            "Select a file", "*.m", wx.DefaultPosition,
-                                            wx.DefaultSize, wx.FLP_DEFAULT_STYLE)
+        self.filePicker = wx.FilePickerCtrl(self, wx.ID_ANY, path = wx.EmptyString,
+                                            message = "Select a file",
+                                            wildcard = "*.m",
+                                            pos = wx.DefaultPosition,
+                                            size = wx.DefaultSize)
         self.filePicker.SetMinSize(wx.Size(350, -1))
         self.filePicker.SetFont(labelFont)
         fileConvSizer1.Add(self.filePicker, 6, wx.ALL, 1)
@@ -410,7 +412,9 @@ class MainFrame (wx.Frame):
 
     def onFilePicker(self, event):
         self.resetOnOpen(event)
-        path=self.filePicker.GetPath()
+        path = self.filePicker.GetPath()
+        if not os.path.isfile(path):
+            return
         self.openFile(event, path)
         self.modifyHistory(event, path)
 
@@ -722,7 +726,6 @@ class MainFrame (wx.Frame):
         self.pdata.SetPaperId(wx.PAPER_LETTER)
         self.pdata.SetOrientation(wx.PORTRAIT)
         self.margins = (wx.Point(15,15), wx.Point(15,15))
-
 
 
 # -----------------------------------------------------------------------------
