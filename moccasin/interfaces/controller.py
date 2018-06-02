@@ -59,7 +59,7 @@ class Controller():
         self.parse_results = None
 
 
-    def parse_file(self , file_contents):
+    def parse_contents(self , file_contents):
         '''Parses input file using Moccasin's parser.'''
         self.file_contents = file_contents
         self.parse_results = self.parser.parse_string(self.file_contents)
