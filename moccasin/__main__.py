@@ -26,7 +26,13 @@ import os
 import sys
 import plac
 
-from .interfaces import moccasin_CLI
+try:
+    thisdir = os.path.dirname(os.path.abspath(__file__))
+    sys.path.append(os.path.join(thisdir, '..'))
+except:
+    sys.path.append('..')
+
+from moccasin.interfaces import moccasin_CLI
 
 if __name__ == "__main__":
     plac.call(moccasin_CLI.cli_main)
