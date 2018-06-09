@@ -1,7 +1,7 @@
 # -*- mode: python -*-
 #
-# @file    moccasin.spec
-# @brief   Spec file for PyInstaller
+# @file    pyinstaller-macos.spec
+# @brief   Spec file for PyInstaller for macOS
 # @author  Michael Hucka
 #
 # <!---------------------------------------------------------------------------
