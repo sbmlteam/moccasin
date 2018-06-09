@@ -21,7 +21,7 @@ file named "COPYING.txt" included with this software distribution and also
 available online at https://github.com/sbmlteam/moccasin/.
 '''
 
-__version__     = '1.2.0'
+__version__     = '1.3.0'
 __title__       = 'MOCCASIN'
 __description__ = 'MOCCASIN translates basic ODE-based MATLAB models of biological processes into SBML format.'
 __url__         = 'https://github.com/sbmlteam/moccasin'
