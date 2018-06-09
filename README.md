@@ -11,10 +11,12 @@ MOCCASIN
 *Code repository*:   [https://github.com/sbmlteam/moccasin](https://github.com/sbmlteam/moccasin)<br>
 *Developers' discussion group*: [https://groups.google.com/forum/#!forum/moccasin-dev](https://groups.google.com/forum/#!forum/moccasin-dev)
 
+
 🏁 Recent news and activities
 ------------------------------
 
-_May 2018_: Release 1.2.0 includes a fix for a critical performance bug caused by a change to the API in PyParsing, with the consequence that MOCCASIN should run an order of magnitude faster than the last release.  Additional changes include several important bug fixes, improvements to the installation instructions, and improved diagnostics in the GUI interface.  Please see the [NEWS.md](NEWS.md) file for more details.
+_June 2018_: With version 1.3.0, we now distribute MOCCASIN as a self-contained program&mdash;users do not even need to install Python to run MOCCASIN.  In addition, the previous release 1.2.0 included a fix for a critical performance bug, with the consequence that MOCCASIN should run an order of magnitude faster than the last release.  Additional changes include several important bug fixes, improvements to the installation instructions, and improved diagnostics in the GUI interface.  Please see the [NEWS.md](NEWS.md) file for more details.
+
 
 Table of Contents
 -----------------
@@ -23,8 +25,6 @@ Table of Contents
 * [Background and introduction](#-background-and-introduction)
 * [How it works](#-how-it-works)
 * [Installation and configuration](#-installation-and-configuration)
-    * [<em>Check and install dependencies</em>](#-check-and-install-dependencies)
-    * [<em>Download and install MOCCASIN</em>](#-download-and-install-moccasin)
 * [Using MOCCASIN](#-using-moccasin)
 * [Getting help and support](#-getting-help-and-support)
 * [Do you like it?](#-do-you-like-it)
@@ -50,6 +50,7 @@ Please also use the DOI to indicate the specific version you use, to improve oth
 * MOCCASIN release 1.1.2 &rArr; 
 [10.5281/zenodo.883135](https://doi.org/10.5281/zenodo.883135)
 
+
 ☀ Background and introduction
 -----------------------------
 
@@ -57,7 +58,8 @@ Computational modeling has become a crucial aspect of biological research, and [
 
 The goal of this project is to develop software that uses a combination of heuristics and user assistance to help researchers export models written as ordinary MATLAB and Octave scripts. MOCCASIN (*"Model ODE Converter for Creating Automated SBML INteroperability"*) helps researchers take ODE (ordinary differential equation) models written in MATLAB and Octave and export them as SBML files.  Although its scope is limited to MATLAB written with certain assumptions, and general conversion of MATLAB models is impossible, MOCCASIN nevertheless *can* translate some common forms of models into SBML.
 
-MOCCASIN is written in Python and does _not_ require MATLAB to run.  It requires [libSBML](http://sbml.org/Software/libSBML) and a number of common Python 3 libraries to run.
+MOCCASIN is written in Python and does _not_ require MATLAB to run.
+
 
 ✺ How it works
 ------------
@@ -94,58 +96,26 @@ You can view the SBML output for this example [in a separate file](docs/project/
 ☛ Installation and configuration
 --------------------------------
 
-MOCCASIN requires Python version 3 and depends on numerous other Python packages.
+As of version 1.3, MOCCASIN is distributed as a standalone self-contained program.  Users no longer need to install Python (although running MOCCASIN as a Python program remains an option).
 
-## ⓵&nbsp;&nbsp; _Check and install dependencies_
+To obtain a copy of MOCCASIN, please select the appropriate version from the following table.  If you do not see your operating listed below, please [contact us](mailto:moccasin-dev@googlegroups.com) and we may be able to create an appropriate version for you.
 
-Most dependent packages should install automatically using Python `pip` and PyPI, but some of those packages themselves have dependencies on system libraries that may require separate manual installation.  The following is a guide for the systems we have tested.
+| Operating System           | Download                         |
+|----------------------------|----------------------------------|
+| macOS 10.13 (High Sierra)  | |
+| macOS 10.12 (Sierra)       | |
+| Windows 10                 | |
+| Ubuntu Linux 16.x          | |
+| Ubuntu Linux 14.x          | |
 
-### Ubuntu Linux 14.x and 16.x
+After downloading one of the installer programs, start the installer on your system (e.g., by double-clicking its icon) and follow the instructions.  Once MOCCASIN is installed, you should have both the version that runs with a graphical user interface (GUI) and the version that runs as a command-line program (CLI).  Please proceed to the section below titled [Using MOCCASIN](#-using-moccasin) for instructions on how to use it.
 
-The basic installation of Ubuntu Linux does not come with Python, `pip` or `git`, so they need to be installed.  In addition, wxPython needs numerous libraries to be installed first, or the installation of wxPython itself (during the installation of MOCCASIN) will fail.  The following shell commands should get the necessary things installed:
 
-```
-sudo apt-get install -y git python3-pip build-essential libtiff5-dev freeglut3-dev libsdl2-dev
-sudo apt-get install -y libgstreamer-plugins-base1.0-dev libwebkit2gtk-4.0-dev 
-```
+### _Alternative approach: run MOCCASIN as a Python program_
 
-After this is finished, the steps to download and install MOCCASIN should work.
+MOCCASIN requires Python version 3.4 or higher, and depends on other Python packages such as [wxPython](https://wxpython.org).  Installing the necessary dependencies can be a difficult process.  We provide detailed instructions in the wiki.
 
-### macOS
-
-For recent versions of macOS such as 10.13 (High Sierra), you will need  [Xcode](https://itunes.apple.com/us/app/xcode/id497799835?mt=12) from the Apple App Store.  You will also need to install the command-line tools, which can be done using the following shell command:
-```
-sudo xcode-select --install
-```
-
-Finally, you will also to install Python&nbsp;3 and `pip`.  If you use [MacPorts](https://www.macports.org), you could use the following sequence of commands:
-```
-sudo port install python34 py34-pip
-sudo port select --set python3 python34
-```
-
-After this, the steps to download and install MOCCASIN should work.
-
-### CentOS 7
-
-Python&nbsp;3 and `pip`, as well as development tools such as a compiler, first need to be installed:
-
-```csh
-sudo yum -y install epel-release
-sudo yum -y install python34-setuptools python34-pip
-sudo yum -y install groupinstall development
-```
-
-Next, installing wxPython is the most difficult step.  If at all possible, find an existing wheel file.  For CentOS&nbsp;7, the site [https://extras.wxpython.org/wxPython4/extras/linux/gtk3/centos-7/](https://extras.wxpython.org/wxPython4/extras/linux/gtk3/centos-7/) contains recent builds in Python wheel format.  Download the latest version that matches your Python configuration.  For example, at the time of this writing, the most recent version of wxPython is 4.0.1 and the wheel file for Python&nbsp;3.4 is named [wxPython-4.0.1-cp34-cp34m-linux_x86_64.whl](https://extras.wxpython.org/wxPython4/extras/linux/gtk3/centos-7/wxPython-4.0.1-cp34-cp34m-linux_x86_64.whl). Download the wheel file to a temporary location on your computer and then run the following command:
-```csh
-sudo python3 -m pip install /path/to/wxPython-4.0.1-cp34-cp34m-linux_x86_64.whl
-```
-
-After that, the steps below to download and install MOCCASIN should work.  If you cannot get wxPython installed using a prebuilt wheel, then please consult the [wxPython build information  page](https://wxpython.org/pages/downloads/index.html) or contact the MOCCASIN developers.
-
-## ⓶&nbsp;&nbsp; _Download and install MOCCASIN_
-
-The following is probably the simplest and most direct way to install MOCCASIN on your computer:
+After you have installed the third-party libraries that MOCCASIN depends upon, proceed to install MOCCASIN. The following is probably the simplest and most direct way:
 ```sh
 sudo python3 -m pip install git+https://github.com/sbmlteam/moccasin.git
 ```
@@ -157,30 +127,16 @@ cd moccasin
 sudo python3 -m pip install .
 ```
 
+
 ► Using MOCCASIN
 --------------
 
-You can use MOCCASIN either via the command line or via a built-in GUI interface.  Both interface area accessed using the same command, with the default being to start the GUI interface.  On Linux and macOS systems, the installation _should_ place a new program on your shell's search path, so that you can start MOCCASIN with a simple shell command:
-```
-moccasin
-```
+You can use MOCCASIN either via the command line or via a graphical user interface (GUI).
 
-If that fails because the shell cannot find the command, you should be able to run it using the alternative approach:
-```
-python3 -m moccasin
-```
 
-To use the command-line interface, supply one or more MATLAB files on the command line; MOCCASIN will read and convert the file(s):
-```
-moccasin path/to/a/matlab/file.m
-```
+### _The graphical user interface_
 
-It also accepts additional command-line arguments.  To get information about the other options, use the `-h` argument:
-```
-moccasin -h
-```
-
-Once the GUI window opens, the first thing you will probably want to do is click the *Browse* button in the upper right of the window, to find the MATLAB file you want to convert on your computer.  Once you do this, you can select a few options, and click the *Convert* button.  After some time (depending on the size of the file), you should eventually get SBML output in the lowest panel of the GUI.  The animation below illustrates the whole process:
+To run the GUI version, you typically start MOCCASIN like most ordinary programs on your computer (e.g., by double-clicking the icon).  Once the GUI window opens, the first thing you will probably want to do is click the *Browse* button in the upper right of the window, to find the MATLAB file you want to convert on your computer.  Once you do this, you can select a few options, and click the *Convert* button.  After some time (depending on the size of the file), you should eventually get SBML output in the lowest panel of the GUI.  The animation below illustrates the whole process:
 
 <p align="center">
 <img src="https://cloud.githubusercontent.com/assets/1450019/16715437/44c33744-4694-11e6-9f81-ebbe64788ac1.gif" alt="MOCCASIN GUI" title="MOCCASIN GUI"/>
@@ -193,6 +149,25 @@ MOCCASIN offers a few conversion options:
 * It can encode variables as SBML parameters instead of the default, to encode them as SBML species.  Depending on your application and what you do with the output, this may or may not be useful.
 
 * It can generate XPP `.ode` file output, instead of SBML format.
+
+
+### _The command-line interface_
+
+
+The MOCCASIN installer _should_ also place a new command-line program on your shell's search path, so that you can start MOCCASIN with a simple shell command:
+```
+moccasin
+```
+
+To use the command-line interface, supply one or more MATLAB files on the command line; MOCCASIN will read and convert the file(s):
+```
+moccasin matlabfile.m
+```
+
+It also accepts additional command-line arguments.  To get information about the other options, use the `-h` argument:
+```
+moccasin -h
+```
 
 
 ⁇ Getting help and support
@@ -217,7 +192,7 @@ A quick way to find out what is currently on people's plates and our near-term p
 Everyone is asked to read and respect the [code of conduct](CONDUCT.md) when participating in this project.
 
 
-☺ Acknowledgments
+☺︎ Acknowledgments
 -----------------------
 
 Continuing work on MOCCASIN is made possible thanks to funding from the [National Institutes of Health](https://nih.gov) (NIH) via [NIGMS](https://www.nigms.nih.gov/Pages/default.aspx) grant number GM070923 (principal investigator: Michael Hucka).  This software was originally developed thanks in part to funding from the Icahn School of Medicine at Mount Sinai, provided as part of the NIH-funded project *Modeling Immunity for Biodefense* (contract number HHSN266200500021C, Principal Investigator: [Stuart Sealfon](http://www.mountsinai.org/profiles/stuart-c-sealfon)), and in part to funding from the School of Medicine at Boston University, provided as part of the NIH-funded project *Modeling Immunity for Biodefense* (contract number HHSN272201000053C, Principal Investigators: [Thomas B. Kepler](http://www.bu.edu/computationalimmunology/people/thomas-b-kepler/) and [Garnett H. Kelsoe](http://immunology.duke.edu/faculty/details/0205291)).
@@ -227,7 +202,7 @@ We also acknowledge the contributions made by Dr. [Dagmar Iber](http://www.silva
 The MOCCASIN logo was created by Randy Carlton (<rcarlton@rancar2.com>).
 
 
-☮ Copyright and license
+☮︎ Copyright and license
 ---------------------
 
 Copyright (C) 2014-2018 jointly by the California Institute of Technology (Pasadena, California, USA), the Icahn School of Medicine at Mount Sinai (New York, New York, USA), and Boston University (Boston, Massachusetts, USA).
