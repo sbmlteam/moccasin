@@ -1,5 +1,7 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
-# Info:
-# https://developer.github.com/v3/repos/releases/#get-a-single-release
-
+curl https://api.github.com/repos/sbmlteam/moccasin/releases 2>&1 | \
+gawk -- '
+$0 ~ "       \"name\":" {printf $2}
+$0 ~ "       \"download_count\":" {print " " $2}
+'
