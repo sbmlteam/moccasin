@@ -59,6 +59,7 @@ from moccasin.errors import *
 from .controller import Controller
 from .network_utils import have_network
 from .printDialog import PrintDialog
+from .moccasin_logo import getMoccasinLogoIcon
 
 
 # -----------------------------------------------------------------------------
@@ -73,8 +74,6 @@ _LICENSE_URL     = moccasin.__license_url__
 _VERSION         = moccasin.__version__
 _EMPTY_PAGE      ='''<HTML lang=en><HEAD></HEAD>
 <BODY><!-- empty page --></BODY> </HTML> ''' # Used as empty value to clear the empty WebView text field
-
-_icon_file       = os.path.join(thisdir, "../../docs/project/logo/moccasin_logo_20151002/logo_64.png")
 
 
 # -----------------------------------------------------------------------------
@@ -261,7 +260,7 @@ class MainFrame (wx.Frame):
                                             pos = wx.DefaultPosition,
                                             size = wx.DefaultSize)
         self.filePicker.SetMinSize(wx.Size(350, -1))
-        self.filePicker.SetFont(labelFont)
+        self.filePicker.SetFont(labelFont) 
         fileConvSizer1.Add(self.filePicker, 6, wx.ALL, 1)
         topPanelSizer.Add(fileConvSizer1, 1, wx.ALL|wx.EXPAND, 1)
 
@@ -530,7 +529,7 @@ class MainFrame (wx.Frame):
 
     def onAbout(self, event):
         dlg = wx.adv.AboutDialogInfo()
-        dlg.SetIcon(wx.Icon(_icon_file, wx.BITMAP_TYPE_PNG))
+        dlg.SetIcon(getMoccasinLogoIcon())
         dlg.SetName(_TITLE)
         dlg.SetVersion(_VERSION)
         dlg.SetLicense(_LICENSE)
