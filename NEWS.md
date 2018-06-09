@@ -1,6 +1,35 @@
 MOCCASIN News &ndash; History of user-visible changes
 =====================================================
 
+1.3.0
+-----
+
+This release fixes a few bugs, but the most important new development
+is the introduction of self-contained executables of MOCCASIN: users
+no longer need to install or interact with Python at all, because
+MOCCASIN is now available in a form that is like any other ordinary
+program.
+
+Enhancements:
+
+* We have successfully built self-contained, standalone executable
+versions of MOCCASIN so that users do not need to install wxPython or
+other dependencies&mdash;or even have Python installed on their
+computers at all.  This has been made possible through the use of
+[PyInstaller](http://www.pyinstaller.org).  A downside to this
+approach is that the executables are specific to operating system
+versions and we must distribute copies for specific OS versions
+(and not simply for OS families).
+
+Bug fixes:
+
+* The GUI interface no longer throws an error if you try to type in
+  the file path text box.
+
+* The converter no longer generates an error if it encounters uses of
+  MATLAB `zeros()` or `ones()` that employ variables instead of numbers.
+
+
 1.2.0
 -----
 
