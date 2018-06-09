@@ -22,6 +22,7 @@
 
 # Variables.
 
+release    := $(shell egrep 'version.*=' moccasin/__version__.py | awk '{print $$3}' | tr -d "'")
 platform   := $(shell python -c 'import sys; print(sys.platform)')
 macos_vers := $(shell sw_vers -productVersion 2>/dev/null | cut -f1-2 -d'.' || true)
 github-css := dev/github-css/github-markdown-css.html
@@ -34,10 +35,10 @@ build: build-$(platform)
 
 build-darwin: dist/MOCCASIN.app ABOUT.html NEWS.html
 	packagesbuild dev/installer-builders/macos/packages-config/MOCCASIN.pkgproj
-	mv dist/MOCCASIN_mac.pkg dist/MOCCASIN_mac_$(macos_vers).pkg 
+	mv dist/MOCCASIN-mac.pkg dist/MOCCASIN-$(release)-macos-$(macos_vers).pkg 
 
-dist/MOCCASIN.app: clean
-	pyinstaller moccasin-macos.spec
+dist/MOCCASIN.app dist/MOCCASIN.exe: clean
+	pyinstaller pyinstaller-$(platform).spec
 
 # Component files placed in the installers.
 
