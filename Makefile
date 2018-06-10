@@ -44,13 +44,11 @@ dist/MOCCASIN.app dist/MOCCASIN.exe: clean
 
 ABOUT.html: README.md
 	pandoc --standalone -f gfm -H $(github-css) -o README.html README.md
-        # I know this looks like a UUC, but inliner won't work otherwise.
-	cat README.html | inliner -n > ABOUT.html
+	inliner -n < README.html > ABOUT.html
 
 NEWS.html: NEWS.md
 	pandoc --standalone -f gfm -H $(github-css) -o NEWS.html NEWS.md
-        # I know this looks like a UUC, but inliner won't work otherwise.
-	cat NEWS.html | inliner -n > NEWS-inlined.html
+	inliner -n < NEWS.html > NEWS-inlined.html
 	mv NEWS-inlined.html NEWS.html
 
 # Miscellaneous directives.
