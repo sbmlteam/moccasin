@@ -54,6 +54,6 @@ NEWS.html: NEWS.md
 # Miscellaneous directives.
 
 clean:;
-	-rm -fr dist build
+	-rm -fr dist build ABOUT.html NEWS.html
 
 .PHONY: html clean
