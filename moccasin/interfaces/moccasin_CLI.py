@@ -21,7 +21,6 @@
 # available online at https://github.com/sbmlteam/moccasin/.
 # ------------------------------------------------------------------------- -->
 
-from __future__ import print_function
 import plac
 import sys
 import os
@@ -242,6 +241,15 @@ SBML INteroperability".
             else:
                 prefix = color('{} '.format(path), 'info', colorize)
                 if colorize:
+                    if sys.platform.startswith('linux'):
+                        # The following is an ugly hack to resolve the error
+                        # "'ascii' code can't encode character .... ordinal
+                        # not in range(128)" on Linux when the environment
+                        # variable LC_ALL defaults to C.  Setting the locale
+                        # within Python didn't work.  We can't ask the users
+                        # to set LC_ALL to 'en_US.UTF-8'. The following did it.
+                        sys.stdout = open(sys.stdout.fileno(), mode='w',
+                                          encoding='utf8', buffering=1)
                     with Halo(spinner='bouncingBall', enabled = not quiet):
                         init_halo_hack()
                         convert(path)
