@@ -1159,7 +1159,79 @@
 		<key>PROJECT_PRESENTATION</key>
 		<dict>
 			<key>BACKGROUND</key>
-			<dict/>
+			<dict>
+				<key>ALIGNMENT</key>
+				<integer>6</integer>
+				<key>BACKGROUND_PATH</key>
+				<dict>
+					<key>PATH</key>
+					<string>background_icon.png</string>
+					<key>PATH_TYPE</key>
+					<integer>1</integer>
+				</dict>
+				<key>CUSTOM</key>
+				<true/>
+				<key>SCALING</key>
+				<integer>2</integer>
+			</dict>
+			<key>INSTALLATION TYPE</key>
+			<dict>
+				<key>HIERARCHIES</key>
+				<dict>
+					<key>INSTALLER</key>
+					<dict>
+						<key>LIST</key>
+						<array>
+							<dict>
+								<key>CHILDREN</key>
+								<array/>
+								<key>DESCRIPTION</key>
+								<array/>
+								<key>OPTIONS</key>
+								<dict>
+									<key>HIDDEN</key>
+									<false/>
+									<key>STATE</key>
+									<integer>1</integer>
+								</dict>
+								<key>PACKAGE_UUID</key>
+								<string>DE4CC88B-2804-421A-B514-0CE6E977045E</string>
+								<key>TITLE</key>
+								<array/>
+								<key>TYPE</key>
+								<integer>0</integer>
+								<key>UUID</key>
+								<string>BD8AC68B-0D40-4786-BB64-669344D4570A</string>
+							</dict>
+							<dict>
+								<key>CHILDREN</key>
+								<array/>
+								<key>DESCRIPTION</key>
+								<array/>
+								<key>OPTIONS</key>
+								<dict>
+									<key>HIDDEN</key>
+									<false/>
+									<key>STATE</key>
+									<integer>1</integer>
+								</dict>
+								<key>PACKAGE_UUID</key>
+								<string>2B82A92F-73AA-419E-80A5-90B6B95F916D</string>
+								<key>TITLE</key>
+								<array/>
+								<key>TYPE</key>
+								<integer>0</integer>
+								<key>UUID</key>
+								<string>614102B0-BBA9-4F75-9129-BA76A9202904</string>
+							</dict>
+						</array>
+						<key>REMOVED</key>
+						<dict/>
+					</dict>
+				</dict>
+				<key>MODE</key>
+				<integer>0</integer>
+			</dict>
 			<key>INSTALLATION_STEPS</key>
 			<array>
 				<dict>
@@ -1231,7 +1303,7 @@
 							<key>PATH</key>
 							<string>/Users/mhucka/project-files/sysbio/sbml/software/moccasin/dev/installer-builders/macos/packages-config/introduction-screen.html</string>
 							<key>PATH_TYPE</key>
-							<integer>0</integer>
+							<integer>1</integer>
 						</dict>
 					</dict>
 				</array>
@@ -1256,6 +1328,11 @@
 				<integer>0</integer>
 			</dict>
 			<key>README</key>
+			<dict>
+				<key>LOCALIZATIONS</key>
+				<array/>
+			</dict>
+			<key>SUMMARY</key>
 			<dict>
 				<key>LOCALIZATIONS</key>
 				<array/>
