@@ -23,7 +23,9 @@
 # Variables.
 
 release    := $(shell egrep 'version.*=' moccasin/__version__.py | awk '{print $$3}' | tr -d "'")
-platform   := $(shell python -c 'import sys; print(sys.platform)')
+platform   := $(shell python3 -c 'import sys; print(sys.platform)')
+distro     := $(shell python3 -c 'import platform; print(platform.dist()[0].lower())')
+linux_vers := $(shell python3 -c 'import platform; print(platform.dist()[1].lower())' | cut -f1-2 -d'.')
 macos_vers := $(shell sw_vers -productVersion 2>/dev/null | cut -f1-2 -d'.' || true)
 github-css := dev/github-css/github-markdown-css.html
 
@@ -37,7 +39,15 @@ build-darwin: dist/MOCCASIN.app ABOUT.html NEWS.html
 	packagesbuild dev/installer-builders/macos/packages-config/MOCCASIN.pkgproj
 	mv dist/MOCCASIN-mac.pkg dist/MOCCASIN-$(release)-macos-$(macos_vers).pkg 
 
-dist/MOCCASIN.app dist/MOCCASIN.exe: clean
+build-linux: dist/moccasin
+	(cd dist; tar czf MOCCASIN-$(release)-$(distro)-$(linux_vers).tar.gz moccasin)
+
+dist/MOCCASIN.app dist/MOCCASIN.exe:
+	pyinstaller pyinstaller-$(platform).spec
+	sed -i '' -e 's/0.0.0/$(release)/' dist/MOCCASIN.app/Contents/Info.plist
+	rm -f dist/MOCCASIN.app/Contents/Info.plist.bak
+
+dist/moccasin:
 	pyinstaller pyinstaller-$(platform).spec
 
 # Component files placed in the installers.
@@ -53,7 +63,12 @@ NEWS.html: NEWS.md
 
 # Miscellaneous directives.
 
-clean:;
-	-rm -fr dist build ABOUT.html NEWS.html
+clean: clean-dist clean-html
 
-.PHONY: html clean
+clean-dist:;
+	-rm -fr dist/MOCCASIN.app dist/moccasin build
+
+clean-html:;
+	-rm -fr ABOUT.html NEWS.html
+
+.PHONY: html clean clean-dist clean-html
