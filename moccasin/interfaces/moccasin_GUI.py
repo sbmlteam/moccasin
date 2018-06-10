@@ -458,7 +458,7 @@ class MainFrame (wx.Frame):
         self.statusBar.SetStatusText("Generating output ...", 0)
         wx.BeginBusyCursor()
         try:
-            self.controller.parse_file(self.file_contents)
+            self.controller.parse_contents(self.file_contents)
             self.controller.check_translatable(self.assumeTranslatable.Value)
             # output XPP files
             if self.xppModel.GetValue():
