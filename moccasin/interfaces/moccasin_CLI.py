@@ -29,6 +29,7 @@ try:
     from termcolor import colored
 except:
     pass
+import time
 
 try:
     thisdir = os.path.dirname(os.path.abspath(__file__))
@@ -242,6 +243,7 @@ SBML INteroperability".
                 prefix = color('{} '.format(path), 'info', colorize)
                 if colorize:
                     with Halo(spinner='bouncingBall', enabled = not quiet):
+                        init_halo_hack()
                         convert(path)
                 else:
                     convert(path)
@@ -336,6 +338,19 @@ def color_codes(flags):
     if 'dark' in flags:
         attrib.append('dark')
     return (prefix, color_name, attrib)
+
+
+# init_halo_hack() is mostly a guess at a way to keep the first part of the
+# spinner printed by Halo from overwriting part of the first message we
+# print.  It seems to work, but the problem that this tries to solve occurred
+# sporadically anyway, so maybe the issue still remains and I just haven't
+# seen it happen again.
+
+def init_halo_hack():
+    '''Write a blank to prevent occasional garbled first line printed by Halo.'''
+    sys.stdout.write('')
+    sys.stdout.flush()
+    time.sleep(0.1)
 
 
 # Please leave the following for Emacs users.
