@@ -43,11 +43,11 @@ dist/MOCCASIN.app dist/MOCCASIN.exe: clean
 # Component files placed in the installers.
 
 ABOUT.html: README.md
-	pandoc --standalone -f gfm -H $(github-css) -o README.html README.md
+	pandoc --standalone --quiet -f gfm -H $(github-css) -o README.html README.md
 	inliner -n < README.html > ABOUT.html
 
 NEWS.html: NEWS.md
-	pandoc --standalone -f gfm -H $(github-css) -o NEWS.html NEWS.md
+	pandoc --standalone --quiet -f gfm -H $(github-css) -o NEWS.html NEWS.md
 	inliner -n < NEWS.html > NEWS-inlined.html
 	mv NEWS-inlined.html NEWS.html
 
