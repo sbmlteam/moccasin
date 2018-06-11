@@ -103,12 +103,12 @@ As of version 1.3, MOCCASIN is distributed as a standalone self-contained progra
 
 To obtain a copy of MOCCASIN, please select the appropriate version from the following table.  If you do not see your operating listed below, please [contact us](mailto:moccasin-dev@googlegroups.com) and we may be able to create an appropriate version for you.
 
-| Operating System           | Download                            | Post-download instructions | Notes | 
+| Operating System           | Download                            | Post-download instructions | Note | 
 |----------------------------|-------------------------------------|--------------|:-------:| 
-| macOS 10.13 (High Sierra)  | [MOCCASIN-1.3.0-macos-10.13.pkg]()  | Double-click the `.pkg` file | (a) |
-| macOS 10.12 (Sierra)       | [MOCCASIN-1.3.0-macos-10.12.pkg]()  | Double-click the `.pkg` file | (a) | 
-| Ubuntu Linux 16.x          | [MOCCASIN-1.3.0-ubuntu-16.04.tar.gz]() | Uncompress &amp; untar the `.tar.gz` | (b) |
-| CentOS Linux 7.4           | [MOCCASIN-1.3.0-centos-7.4.tar.gz]() | Uncompress &amp; untar the `.tar.gz` | (b) |
+| macOS 10.13 (High Sierra)  | [MOCCASIN-1.3.0-macos-10.13.pkg](https://github.com/sbmlteam/moccasin/releases/download/1.3.0_beta/MOCCASIN-1.3.0-macos-10.13.pkg)  | Double-click the `.pkg` file | (a) |
+| macOS 10.12 (Sierra)       | [MOCCASIN-1.3.0-macos-10.12.pkg](https://github.com/sbmlteam/moccasin/releases/download/1.3.0_beta/MOCCASIN-1.3.0-macos-10.12.pkg)  | Double-click the `.pkg` file | (a) | 
+| Ubuntu Linux 16.x          | [MOCCASIN-1.3.0-ubuntu-16.04.tar.gz](https://github.com/sbmlteam/moccasin/releases/download/1.3.0_beta/MOCCASIN-1.3.0-ubuntu-16.04.tar.gz) | Uncompress &amp; untar the `.tar.gz` | (b) |
+| CentOS Linux 7.4           | [MOCCASIN-1.3.0-centos-7.4.tar.gz](https://github.com/sbmlteam/moccasin/releases/download/1.3.0_beta/MOCCASIN-1.3.0-centos-7.4.tar.gz) | Uncompress &amp; untar the `.tar.gz` | (b) |
 
 Notes:
 
