@@ -96,24 +96,32 @@ You can view the SBML output for this example [in a separate file](docs/project/
 ☛ Installation and configuration
 --------------------------------
 
-As of version 1.3, MOCCASIN is distributed as a standalone self-contained program.  Users no longer need to install Python (although running MOCCASIN as a Python program remains an option).
+As of version 1.3, MOCCASIN is distributed as a standalone self-contained program.  Users no longer need to install Python (although running MOCCASIN as a Python program still remains an option).
+
+
+### _Preferred approach: download and install the self-contained program_
 
 To obtain a copy of MOCCASIN, please select the appropriate version from the following table.  If you do not see your operating listed below, please [contact us](mailto:moccasin-dev@googlegroups.com) and we may be able to create an appropriate version for you.
 
-| Operating System           | Download                         |
-|----------------------------|----------------------------------|
-| macOS 10.13 (High Sierra)  | |
-| macOS 10.12 (Sierra)       | |
-| Windows 10                 | |
-| Ubuntu Linux 16.x          | |
-| Ubuntu Linux 14.x          | |
+| Operating System           | Download                            | Post-download instructions | Notes | 
+|----------------------------|-------------------------------------|--------------|:-------:| 
+| macOS 10.13 (High Sierra)  | [MOCCASIN-1.3.0-macos-10.13.pkg]()  | Double-click the `.pkg` file | (a) |
+| macOS 10.12 (Sierra)       | [MOCCASIN-1.3.0-macos-10.12.pkg]()  | Double-click the `.pkg` file | (a) | 
+| Ubuntu Linux 16.x          | [MOCCASIN-1.3.0-ubuntu-16.04.tar.gz]() | Uncompress &amp; untar the `.tar.gz` | (b) |
+| CentOS Linux 7.4           | [MOCCASIN-1.3.0-centos-7.4.tar.gz]() | Uncompress &amp; untar the `.tar.gz` | (b) |
 
-After downloading one of the installer programs, start the installer on your system (e.g., by double-clicking its icon) and follow the instructions.  Once MOCCASIN is installed, you should have both the version that runs with a graphical user interface (GUI) and the version that runs as a command-line program (CLI).  Please proceed to the section below titled [Using MOCCASIN](#-using-moccasin) for instructions on how to use it.
+Notes:
+
+(a) The installer will create a folder in `/Applications` where it will place the `MOCCASIN` graphical application; it will also put a command-line program named `moccasin` in `/usr/local/bin/`.
+
+(b) There is no MOCCASIN installer program for Linux.  The `.tar.gz` archive simply contains a single program, `moccasin`, that can be used both to start the graphical interface and to use MOCCASIN via the command line.  Move `moccasin` to a suitable `bin` directory on your computer and run it from there.
+
+After installation, please proceed to the section below titled [Using MOCCASIN](#-using-moccasin) for further instructions.
 
 
-### _Alternative approach: run MOCCASIN as a Python program_
+### _Alternative approach: run MOCCASIN as a typical Python program_
 
-MOCCASIN requires Python version 3.4 or higher, and depends on other Python packages such as [wxPython](https://wxpython.org).  Installing the necessary dependencies can be a difficult process.  We provide detailed instructions in the wiki.
+MOCCASIN requires Python version 3.4 or higher, and depends on other Python packages such as [wxPython](https://wxpython.org).  Installing the necessary dependencies can be a difficult process.  We provide instructions in the wiki.
 
 After you have installed the third-party libraries that MOCCASIN depends upon, proceed to install MOCCASIN. The following is probably the simplest and most direct way:
 ```sh
