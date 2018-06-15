@@ -46,7 +46,12 @@ def libsbml_lib_path():
 # Main PyInstaller definitions
 # .............................................................................
 
-other_libs = [ ("libGL.so", "/usr/lib/x86_64-linux-gnu/libGL.so", 'BINARY') ]
+if 'Ubuntu' in platform.dist():
+    other_libs = [ ("libGL.so", "/usr/lib/x86_64-linux-gnu/libGL.so", 'BINARY') ]
+elif 'centos' in platform.dist():
+    other_libs = [ ("libGL.so", "/usr/lib64/libGL.so", 'BINARY') ]
+else:
+    other_libs = []
 
 configuration = Analysis(['moccasin/__main__.py'],
                          pathex = ['.'],
@@ -81,7 +86,7 @@ executable         = EXE(application_pyz,
 
 app             = BUNDLE(executable,
                          name = 'MOCCASIN.app',
-                         icon = 'dev/icon/moccasin.icns',
+                         icon = 'dev/icon/moccasin.ico',
                          bundle_identifier = None,
                          info_plist = {'NSHighResolutionCapable': 'True'},
                         )
