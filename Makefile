@@ -43,12 +43,12 @@ build-linux: dist/moccasin
 	(cd dist; tar czf MOCCASIN-$(release)-$(distro)-$(linux_vers).tar.gz moccasin)
 
 dist/MOCCASIN.app dist/MOCCASIN.exe:
-	pyinstaller pyinstaller-$(platform).spec
+	pyinstaller --clean pyinstaller-$(platform).spec
 	sed -i '' -e 's/0.0.0/$(release)/' dist/MOCCASIN.app/Contents/Info.plist
 	rm -f dist/MOCCASIN.app/Contents/Info.plist.bak
 
 dist/moccasin:
-	pyinstaller pyinstaller-$(platform).spec
+	pyinstaller --clean pyinstaller-$(platform).spec
 
 # Component files placed in the installers.
 
