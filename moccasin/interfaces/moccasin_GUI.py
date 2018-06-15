@@ -249,7 +249,7 @@ class MainFrame (wx.Frame):
             wx.StaticBox(self, wx.ID_ANY, "File selection"), wx.HORIZONTAL)
         self.m_staticText6 = wx.StaticText(self, wx.ID_ANY,
                                            "MATLAB file to be converted:",
-                                           wx.DefaultPosition, wx.DefaultSize, 0)
+                                           wx.DefaultPosition, wx.DefaultSize, 10)
         self.m_staticText6.Wrap(-1)
         self.m_staticText6.SetFont(labelFont)
         self.m_staticText6.SetToolTip("The input file to be converted by MOCCASIN.")
@@ -260,9 +260,9 @@ class MainFrame (wx.Frame):
                                             pos = wx.DefaultPosition,
                                             size = wx.DefaultSize)
         self.filePicker.SetMinSize(wx.Size(350, -1))
-        self.filePicker.SetFont(labelFont) 
+        self.filePicker.SetFont(labelFont)
         fileConvSizer1.Add(self.filePicker, 6, wx.ALL, 1)
-        topPanelSizer.Add(fileConvSizer1, 1, wx.ALL|wx.EXPAND, 1)
+        topPanelSizer.Add(fileConvSizer1, 1, wx.ALL|wx.EXPAND, 5)
 
         sbSizer9 = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Conversion actions"),
                                      wx.VERTICAL)
@@ -303,7 +303,7 @@ class MainFrame (wx.Frame):
         sbSizer9.Add(gSizer7, 0, wx.EXPAND, 5)
 
         optionInset = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Conversion options"), wx.VERTICAL)
-        optionGrid = wx.GridSizer(1, 2, 0, 0)
+        optionGrid = wx.GridSizer(1, 2, 10, 10)
 
         self.assumeTranslatable = wx.CheckBox(self, id = wx.ID_ANY,
                                               label = 'Assume array operations are not used')
@@ -331,8 +331,8 @@ class MainFrame (wx.Frame):
         buttonVSizer.AddSpacer(10)
         buttonVSizer.Add(buttonHSizer, 0, wx.CENTER)
 
-        topPanelSizer.Add(sbSizer9, 2, wx.ALL|wx.EXPAND, 0)
-        topPanelSizer.Add(optionInset, 2, wx.ALL|wx.EXPAND, 0)
+        topPanelSizer.Add(sbSizer9, 2, wx.ALL|wx.EXPAND, 5)
+        topPanelSizer.Add(optionInset, 2, wx.ALL|wx.EXPAND, 5)
         mainSizer.Add(topPanelSizer, 1, wx.ALL|wx.EXPAND, 0)
 
         # Mid sizer
