@@ -66,7 +66,7 @@ NEWS.html: NEWS.md
 clean: clean-dist clean-html
 
 clean-dist:;
-	-rm -fr dist/MOCCASIN.app dist/moccasin build
+	-rm -fr dist/MOCCASIN.app dist/moccasin dist/moccasin.exe build
 
 clean-html:;
 	-rm -fr ABOUT.html NEWS.html
