@@ -29,6 +29,8 @@ Bug fixes:
 * The converter no longer generates an error if it encounters uses of
   MATLAB `zeros()` or `ones()` that employ variables instead of numbers.
 
+* Some aesthetic inconsistencies in the GUI layout have been fixed.
+
 
 1.2.0
 -----
