@@ -629,7 +629,7 @@ class MainFrame (wx.Frame):
             return
         else:
             output = open(dlg.GetPath(), 'w')
-            output.write(convertedWebView.GetPageText().replace("\n",""))
+            output.write(self.convertedWebView.GetPageText().replace("\n",""))
             output.close()
             self._output_saved = True
 
