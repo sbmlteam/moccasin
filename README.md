@@ -111,13 +111,15 @@ To obtain a copy of MOCCASIN, please select the appropriate version from the fol
 | Ubuntu Linux 16.x          | [MOCCASIN-1.3.0-ubuntu-16.04.tar.gz](https://github.com/sbmlteam/moccasin/releases/download/1.3.0_beta/MOCCASIN-1.3.0-ubuntu-16.04.tar.gz) | Uncompress &amp; untar the `.tar.gz` | (b) |
 | CentOS Linux 7.5           | [MOCCASIN-1.3.0-centos-7.5.tar.gz](https://github.com/sbmlteam/moccasin/releases/download/1.3.0_beta/MOCCASIN-1.3.0-centos-7.5.tar.gz) | Uncompress &amp; untar the `.tar.gz` | (b) |
 | CentOS Linux 7.4           | [MOCCASIN-1.3.0-centos-7.4.tar.gz](https://github.com/sbmlteam/moccasin/releases/download/1.3.0_beta/MOCCASIN-1.3.0-centos-7.4.tar.gz) | Uncompress &amp; untar the `.tar.gz` | (b) |
-| Windows 10 64-bit          | [MOCCASIN-1.3.0-windows-10-x86-64.zip](https://github.com/sbmlteam/moccasin/releases/download/1.3.0_beta/MOCCASIN-1.3.0-windows-10-x86-64.zip) | Uncompress &amp; untar the `.tar.gz` | (b) |
+| Windows 10 64-bit          | [MOCCASIN-1.3.0-windows-10-x86-64.zip](https://github.com/sbmlteam/moccasin/releases/download/1.3.0_beta/MOCCASIN-1.3.0-windows-10-x86-64.zip) | Uncompress &amp; untar the `.tar.gz` | (c) |
 
 Notes:
 
 (a) The installer will create a folder in `/Applications` where it will place the `MOCCASIN` graphical application; it will also put a command-line program named `moccasin` in `/usr/local/bin/`.
 
 (b) There is no MOCCASIN installer program for Linux.  The `.tar.gz` archive simply contains a single program, `moccasin`, that can be used both to start the graphical interface and to use MOCCASIN via the command line.  Move `moccasin` to a suitable `bin` directory on your computer and run it from there.
+
+(c) The Windows distribution currently is only available as an executable program distributed in a zipped folder; there is no proper installer program (yet).  Simply unzip the folder and move the MOCCASIN executable to somewhere on your computer, and run it from there.
 
 After installation, please proceed to the section below titled [Using MOCCASIN](#-using-moccasin) for further instructions.
 
