@@ -71,13 +71,14 @@ MOCCASIN can take certain forms of ODE (ordinary differential equation) models
 written in MATLAB and Octave and export them as SBML files.  MOCCASIN does not
 require MATLAB -- it contains its own parser and translation code.
 
-If given no arguments at all, or if given the command-line option --gui, this
-program will start the graphical interface to MOCCASIN and ignore all other
-arguments.  If given the argument -v, it will print information about the
-current program version, and exit.  Otherwise, this program expects at least
-one file name as an argument.  MOCCASIN will convert each given file, saving
-the results in the same file path but with the extension ".xml".  (That is,
-if given the file "model.m", it will produce "model.xml".)
+If given no arguments at all, or if given the command-line option -g (or /g
+on Windows), this program will start the graphical interface to MOCCASIN and
+ignore all other arguments.  If given the argument -V (or /V on Windows), it
+will print information about the current program version, and exit.
+Otherwise, this program expects at least one file name as an argument.
+MOCCASIN will convert each given file, saving the results in the same file
+path but with the extension ".xml".  (That is, if given the file "model.m",
+it will produce "model.xml".)
 
 Currently, MOCCASIN is limited to inputs in which the model is self-contained
 in a single file and not split across multiple files.  (In other words, each
@@ -119,21 +120,22 @@ notable class of constructs it cannot handle is matrix/array operators in
 equations such as the element-wise equivalents of addition, subtraction, and
 similar.  Since MATLAB users sometimes employ the operators in their formulas
 even when they do not need to, MOCCASIN can be told to assume non-matrix
-meanings of .*, .^, etc. using the argument -r.
+meanings of .*, .^, etc. using the argument -r (or /r on Windows).
 
 This command-line interface understands some additional arguments controlling
 the translation process:
 
-  -e  makes the translator create equation-based SBML output, instead of
-      the default, which is to convert the model to reaction-based form
+  -e (/e on Windows) makes the translator create equation-based SBML output,
+     instead of converting the model to reaction-based form (the default)
 
-  -p  makes the translator encode variables as SBML parameters, instead of
-      the default, which is to use SBML species
+  -p (/p on windows) makes the translator encode variables as SBML
+     parameters, instead of the default, which is to use SBML species
 
-  -x  makes the translator create XPP ODE files instead of SBML output
+  -x (/x on Windows) makes the translator create XPP ODE files instead of
+     SBML output
 
-  -V  omits the comments that are inserted into the SBML file by default to
-      record the MOCCASIN version used to create the file
+  -V (/V on Windows) omits the comments that are inserted into the SBML file
+      by default to record the MOCCASIN version used to create the file
 
 For more information about SBML, please visit https://sbml.org
 For more information about MOCCASIN, visit https://sbml.org/Software/MOCCASIN
@@ -264,6 +266,12 @@ SBML INteroperability".
         except Exception as err:
             msg("Error: {0}".format(err), 'error', colorize)
             sys.exit()
+
+# If this is windows, we want the command-line args to use slash intead
+# of hyphen.
+
+if sys.platform.startswith('win'):
+    cli_main.prefix_chars = '/'
 
 
 # -----------------------------------------------------------------------------

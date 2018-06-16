@@ -177,7 +177,7 @@ To use the command-line interface, supply one or more MATLAB files on the comman
 moccasin matlabfile.m
 ```
 
-It also accepts additional command-line arguments.  To get information about the other options, use the `-h` argument:
+It also accepts additional command-line arguments.  To get information about the other options, use the `-h` argument (or `/h` on Windows):
 ```
 moccasin -h
 ```
