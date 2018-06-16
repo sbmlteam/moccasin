@@ -125,16 +125,16 @@ meanings of .*, .^, etc. using the argument -r (or /r on Windows).
 This command-line interface understands some additional arguments controlling
 the translation process:
 
-  -e (/e on Windows) makes the translator create equation-based SBML output,
-     instead of converting the model to reaction-based form (the default)
+  -e  (/e on Windows) makes the translator create equation-based SBML output,
+      instead of converting the model to reaction-based form (the default)
 
-  -p (/p on windows) makes the translator encode variables as SBML
-     parameters, instead of the default, which is to use SBML species
+  -p  (/p on windows) makes the translator encode variables as SBML
+      parameters, instead of the default, which is to use SBML species
 
-  -x (/x on Windows) makes the translator create XPP ODE files instead of
-     SBML output
+  -x  (/x on Windows) makes the translator create XPP ODE files instead of
+      SBML output
 
-  -V (/V on Windows) omits the comments that are inserted into the SBML file
+  -V  (/V on Windows) omits the comments that are inserted into the SBML file
       by default to record the MOCCASIN version used to create the file
 
 For more information about SBML, please visit https://sbml.org
