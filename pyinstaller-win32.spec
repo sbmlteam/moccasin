@@ -51,7 +51,7 @@ executable         = EXE(application_pyz,
                          configuration.binaries,
                          configuration.zipfiles,
                          configuration.datas,
-                         name = 'moccasin',
+                         name = 'MOCCASIN',
                          icon = r'dev\icon\moccasin.ico',
                          # The extra manifest contents I added seem to be
                          # ignored. Leaving this here anyway, in case I want
