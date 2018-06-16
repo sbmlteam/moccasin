@@ -462,7 +462,7 @@ class MainFrame (wx.Frame):
             self.controller.check_translatable(self.assumeTranslatable.Value)
             # output XPP files
             if self.xppModel.GetValue():
-                [output, extra] = self.controller.build_model(
+                output = self.controller.build_model(
                     use_species = self.varsAsSpecies.GetValue(),
                     output_format = "xpp",
                     name_after_param = False,
@@ -473,7 +473,7 @@ class MainFrame (wx.Frame):
 
             # output equation-based SBML
             elif self.equationBasedModel.GetValue():
-                [output, extra] = self.controller.build_model(
+                output = self.controller.build_model(
                     use_species = self.varsAsSpecies.GetValue(),
                     output_format = "sbml",
                     name_after_param = False,
