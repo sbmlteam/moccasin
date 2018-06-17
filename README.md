@@ -111,7 +111,6 @@ To obtain a copy of MOCCASIN, please select the appropriate version from the fol
 | Ubuntu Linux 16.x          | [MOCCASIN-1.3.0-ubuntu-16.04.tar.gz](https://github.com/sbmlteam/moccasin/releases/download/1.3.0_beta/MOCCASIN-1.3.0-ubuntu-16.04.tar.gz) | Uncompress &amp; untar the `.tar.gz` | (b) |
 | CentOS Linux 7.5           | [MOCCASIN-1.3.0-centos-7.5.tar.gz](https://github.com/sbmlteam/moccasin/releases/download/1.3.0_beta/MOCCASIN-1.3.0-centos-7.5.tar.gz) | Uncompress &amp; untar the `.tar.gz` | (b) |
 | CentOS Linux 7.4           | [MOCCASIN-1.3.0-centos-7.4.tar.gz](https://github.com/sbmlteam/moccasin/releases/download/1.3.0_beta/MOCCASIN-1.3.0-centos-7.4.tar.gz) | Uncompress &amp; untar the `.tar.gz` | (b) |
-| Windows 8.1 64-bit         | [MOCCASIN-1.3.0-win-8.1-x64.zip](https://github.com/sbmlteam/moccasin/releases/download/1.3.0_beta/MOCCASIN-1.3.0-win-8.1-x64.exe) | Double-click the `.exe` | (c) |
 | Windows 10 64-bit          | [MOCCASIN-1.3.0-win-10-x64.zip](https://github.com/sbmlteam/moccasin/releases/download/1.3.0_beta/MOCCASIN-1.3.0-win-10-x64.exe) | Double-click the `.exe` | (c) |
 
 Notes:
