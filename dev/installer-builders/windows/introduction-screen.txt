@@ -1,0 +1,3 @@
+Welcome to MOCCASIN for Windows.
+
+MOCCASIN is a desktop program that can convert certain basic forms of ODE simulation models written in MATLAB and translate them into SBML format. This installer program will install a graphical user interface (GUI) version of MOCCASIN on your computer.
