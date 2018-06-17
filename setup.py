@@ -34,7 +34,7 @@ from sys import platform
 
 here = path.abspath(path.dirname(__file__))
 
-with open(path.join(here, 'requirements.txt')) as f:
+with open(path.join(here, 'requirements.txt'), encoding='utf-8') as f:
     reqs = f.read().rstrip().splitlines()
 
 class PyTest(TestCommand):
@@ -66,7 +66,7 @@ class PyTest(TestCommand):
 # we're using setup() in the first place.  This code avoids eval, for security.
 
 version = {}
-with open(path.join(here, 'moccasin/__version__.py')) as f:
+with open(path.join(here, 'moccasin/__version__.py'), encoding='utf-8') as f:
     text = f.read().rstrip().splitlines()
     vars = [line for line in text if line.startswith('__') and '=' in line]
     for v in vars:
