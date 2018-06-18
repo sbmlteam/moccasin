@@ -396,12 +396,12 @@ class MainFrame (wx.Frame):
 
     def onOpen(self, event):
         dirname=""
-        dlg = wx.FileDialog(self, "Choose a file", dirname, "", "*.m", wx.OPEN)
+        dlg = wx.FileDialog(self, "Choose a file", dirname, "", "*.m", wx.FD_OPEN)
         if dlg.ShowModal() == wx.ID_OK:
             filename = dlg.GetFilename()
             dirname = dlg.GetDirectory()
             path=os.path.join(dirname, filename)
-            self.resetOnOpen(self, event)
+            self.resetOnOpen(event)
             self.openFile(event, path)
             self.filePicker.SetPath(path)
             # Only reset values when file was loaded
