@@ -15,7 +15,7 @@ MOCCASIN
 🏁 Recent news and activities
 ------------------------------
 
-_June 2018_: With version 1.3.0, we now distribute MOCCASIN as a self-contained program&mdash;users do not even need to install Python to run MOCCASIN.  In addition, the previous release 1.2.0 included a fix for a critical performance bug, with the consequence that MOCCASIN should run an order of magnitude faster than the last release.  Additional changes include several important bug fixes, improvements to the installation instructions, and improved diagnostics in the GUI interface.  Please see the [NEWS.md](NEWS.md) file for more details.
+_June 2018_: With version 1.3.0, we now distribute MOCCASIN as a self-contained program&mdash;users do not even need to install Python to run MOCCASIN.  In addition, the previous release 1.2.0 included a fix for a critical performance bug, with the consequence that MOCCASIN should run an order of magnitude faster than the last release.  Additional changes include several important bug fixes, improvements to the installation instructions, a change to keyboard shortcuts, and improved diagnostics in the GUI interface.  Please see the [NEWS.md](NEWS.md) file for more details.
 
 
 Table of Contents
