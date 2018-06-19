@@ -21,6 +21,11 @@ approach is that the executables are specific to operating system
 versions and we must distribute copies for specific OS versions
 (and not simply for OS families).
 
+* The keyboard shortcut for running conversions has been changed to
+  <kbd>control</kbd>-<kbd>r</kbd> instead of
+  <kbd>control</kbd>-<kbd>c</kbd>, to avoid confusion with a common
+  editing shortcut.
+
 Bug fixes:
 
 * The GUI interface no longer throws an error if you try to type in
