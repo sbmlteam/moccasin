@@ -196,7 +196,7 @@ class MainFrame (wx.Frame):
 
         self.runMenu = wx.Menu()
         self.convertFile = wx.MenuItem(self.runMenu, wx.ID_ANY,
-                                       "Convert"+ "\t" + "Ctrl+C",
+                                       "Convert"+ "\t" + "Ctrl+R",
                                        wx.EmptyString, wx.ITEM_NORMAL)
         wxAppendItem(self.runMenu, self.convertFile)
         self.convertFile.Enable(0)
