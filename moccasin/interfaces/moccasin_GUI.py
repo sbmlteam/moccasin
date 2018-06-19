@@ -396,6 +396,11 @@ class MainFrame (wx.Frame):
 
     def onOpen(self, event):
         dirname=""
+        if self.needSaveOutput(event):
+            self.saveFile(event)
+            return
+        else:
+            self._output_saved = True
         dlg = wx.FileDialog(self, "Choose a file", dirname, "", "*.m", wx.FD_OPEN)
         if dlg.ShowModal() == wx.ID_OK:
             filename = dlg.GetFilename()
@@ -410,6 +415,11 @@ class MainFrame (wx.Frame):
 
 
     def onFilePicker(self, event):
+        if self.needSaveOutput(event):
+            if not self.saveFile(event):
+                return
+        else:
+            self._output_saved = True
         self.resetOnOpen(event)
         path = self.filePicker.GetPath()
         if not os.path.isfile(path):
@@ -448,13 +458,14 @@ class MainFrame (wx.Frame):
         self.varsAsSpecies.SetValue(True)
         self.assumeTranslatable.SetValue(False)
         self.addMoccasinComments.SetValue(True)
-        self._output_saved = False
+        self._output_saved = True
 
 
     def onConvert(self, event):
-        self.checkSaveOutput(event)
+        if self.needSaveOutput(event):
+            if not self.saveFile(event):
+                return
         self.convertedWebView.SetPage(_EMPTY_PAGE, "")
-
         self.statusBar.SetStatusText("Generating output ...", 0)
         wx.BeginBusyCursor()
         try:
@@ -546,7 +557,9 @@ class MainFrame (wx.Frame):
 
 
     def onClose(self, event):
-        self.checkSaveOutput(event)
+        if self.needSaveOutput(event):
+            if not self.saveFile(event):
+                return
         self.Destroy()
 
 
@@ -626,22 +639,25 @@ class MainFrame (wx.Frame):
 
         dlg = wx.FileDialog(self, msg, "", "", fileFormat, wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
         if dlg.ShowModal() == wx.ID_CANCEL:
-            return
+            return False
         else:
             output = open(dlg.GetPath(), 'w')
             output.write(self.convertedWebView.GetPageText().replace("\n",""))
             output.close()
             self._output_saved = True
+            return True
 
 
-    def checkSaveOutput(self, event):
-        '''Checks that converted output is saved'''
+    def needSaveOutput(self, event):
+        '''Checks that converted output is saved and asks the user what to do.'''
         if (not self._output_saved and not self.isOutputEmpty()):
-            msg = _TITLE + " output may be lost. Do you want to save the file first?"
+            msg = _TITLE + " output may be lost. Do you want to save the current converted output first?"
             dlg = wx.MessageDialog(self, msg, "Warning", wx.YES_NO | wx.ICON_WARNING)
-            if dlg.ShowModal() == wx.ID_YES:
-                self.saveFile(event)
+            answer = (dlg.ShowModal() == wx.ID_YES)
             dlg.Destroy()
+            return answer
+        else:
+            return False
 
 
     def report(self, context, error):
@@ -717,6 +733,7 @@ class MainFrame (wx.Frame):
         self.convertedWebView.SetPage(_EMPTY_PAGE, "")
         self.matlabWebView.SetPage(_EMPTY_PAGE, "")
         self.statusBar.SetStatusText("Ready", 0)
+        self._output_saved = True
 
 
     def initializePrintingDefaults(self):
