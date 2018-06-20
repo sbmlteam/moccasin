@@ -108,13 +108,13 @@ To obtain a copy of MOCCASIN, please select the appropriate version from the fol
 
 | Operating System           | Download                            | Post-download instructions | Note | 
 |----------------------------|-------------------------------------|--------------|:-------:| 
-| macOS 10.13 (High Sierra)  | [MOCCASIN-1.3.0-macos-10.13.pkg](https://github.com/sbmlteam/moccasin/releases/download/1.3.0_beta/MOCCASIN-1.3.0-macos-10.13.pkg)  | Double-click the `.pkg` file | (a) |
-| macOS 10.12 (Sierra)       | [MOCCASIN-1.3.0-macos-10.12.pkg](https://github.com/sbmlteam/moccasin/releases/download/1.3.0_beta/MOCCASIN-1.3.0-macos-10.12.pkg)  | Double-click the `.pkg` file | (a) | 
-| Ubuntu Linux 18.x          | [MOCCASIN-1.3.0-ubuntu-18.04.tar.gz](https://github.com/sbmlteam/moccasin/releases/download/1.3.0_beta/MOCCASIN-1.3.0-ubuntu-18.04.tar.gz) | Uncompress &amp; untar the `.tar.gz` | (b) |
-| Ubuntu Linux 16.x          | [MOCCASIN-1.3.0-ubuntu-16.04.tar.gz](https://github.com/sbmlteam/moccasin/releases/download/1.3.0_beta/MOCCASIN-1.3.0-ubuntu-16.04.tar.gz) | Uncompress &amp; untar the `.tar.gz` | (b) |
-| CentOS Linux 7.5           | [MOCCASIN-1.3.0-centos-7.5.tar.gz](https://github.com/sbmlteam/moccasin/releases/download/1.3.0_beta/MOCCASIN-1.3.0-centos-7.5.tar.gz) | Uncompress &amp; untar the `.tar.gz` | (b) |
-| CentOS Linux 7.4           | [MOCCASIN-1.3.0-centos-7.4.tar.gz](https://github.com/sbmlteam/moccasin/releases/download/1.3.0_beta/MOCCASIN-1.3.0-centos-7.4.tar.gz) | Uncompress &amp; untar the `.tar.gz` | (b) |
-| Windows 10 64-bit          | [MOCCASIN-1.3.0-win-10-x64.zip](https://github.com/sbmlteam/moccasin/releases/download/1.3.0_beta/MOCCASIN-1.3.0-win-10-x64.exe) | Double-click the `.exe` | (c) |
+| macOS 10.13 (High Sierra)  | [MOCCASIN-1.3.0-macos-10.13.pkg](https://github.com/sbmlteam/moccasin/releases/download/1.3.0/MOCCASIN-1.3.0-macos-10.13.pkg)  | Double-click the `.pkg` file | (a) |
+| macOS 10.12 (Sierra)       | [MOCCASIN-1.3.0-macos-10.12.pkg](https://github.com/sbmlteam/moccasin/releases/download/1.3.0/MOCCASIN-1.3.0-macos-10.12.pkg)  | Double-click the `.pkg` file | (a) | 
+| Ubuntu Linux 18.x          | [MOCCASIN-1.3.0-ubuntu-18.04.tar.gz](https://github.com/sbmlteam/moccasin/releases/download/1.3.0/MOCCASIN-1.3.0-ubuntu-18.04.tar.gz) | Uncompress &amp; untar the `.tar.gz` | (b) |
+| Ubuntu Linux 16.x          | [MOCCASIN-1.3.0-ubuntu-16.04.tar.gz](https://github.com/sbmlteam/moccasin/releases/download/1.3.0/MOCCASIN-1.3.0-ubuntu-16.04.tar.gz) | Uncompress &amp; untar the `.tar.gz` | (b) |
+| CentOS Linux 7.5           | [MOCCASIN-1.3.0-centos-7.5.tar.gz](https://github.com/sbmlteam/moccasin/releases/download/1.3.0/MOCCASIN-1.3.0-centos-7.5.tar.gz) | Uncompress &amp; untar the `.tar.gz` | (b) |
+| CentOS Linux 7.4           | [MOCCASIN-1.3.0-centos-7.4.tar.gz](https://github.com/sbmlteam/moccasin/releases/download/1.3.0/MOCCASIN-1.3.0-centos-7.4.tar.gz) | Uncompress &amp; untar the `.tar.gz` | (b) |
+| Windows 10 64-bit          | [MOCCASIN-1.3.0-win-10-x64.zip](https://github.com/sbmlteam/moccasin/releases/download/1.3.0/MOCCASIN-1.3.0-win-10-x64.exe) | Double-click the `.exe` | (c) |
 
 Notes:
 
