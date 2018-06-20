@@ -32,5 +32,6 @@ Please also use the DOI to **indicate the specific version of MOCCASIN that you 
 other people's ability to reproduce your results. Here are the DOIs for the
 most recent releases:
 
+* MOCCASIN release 1.3.0 &rArr; [10.22002/D1.965](https://doi.org/10.22002/D1.965)
 * MOCCASIN release 1.2.0 &rArr; [10.22002/D1.940](https://doi.org/10.22002/D1.940)
 * MOCCASIN release 1.1.2 &rArr; [10.5281/zenodo.883135](https://doi.org/10.5281/zenodo.883135)
