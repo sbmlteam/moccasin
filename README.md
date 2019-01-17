@@ -1,7 +1,7 @@
 MOCCASIN
 ========
 
-<img align="right" src="https://raw.githubusercontent.com/sbmlteam/moccasin/master/docs/project/logo/moccasin_logo_20151002/logo_128.png"> *MOCCASIN* stands for *"Model ODE Converter for Creating Automated SBML INteroperability"*.  MOCCASIN is designed to convert certain basic forms of ODE simulation models written in MATLAB or Octave and translate them into [SBML](http://sbml.org) format.  It thereby enables researchers to convert MATLAB models into an open and widely-used format in systems biology.
+<img align="right" width="128px" src="docs/project/logo/moccasin_logo_20151002/logo_256.svg"> *MOCCASIN* stands for *"Model ODE Converter for Creating Automated SBML INteroperability"*.  MOCCASIN is designed to convert certain basic forms of ODE simulation models written in MATLAB or Octave and translate them into [SBML](http://sbml.org) format.  It thereby enables researchers to convert MATLAB models into an open and widely-used format in systems biology.
 
 [![License](http://img.shields.io/:license-LGPL-blue.svg)](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html)  [![Latest version](https://img.shields.io/badge/Latest_version-1.3.0-brightgreen.svg)](http://shields.io) [![DOI](http://img.shields.io/badge/DOI-10.22002%20%2F%20D1.965-blue.svg)](https://data.caltech.edu/records/965)
 [![Build Status](https://travis-ci.org/sbmlteam/moccasin.svg?branch=master)](https://travis-ci.org/sbmlteam/moccasin) [![Coverage Status](https://coveralls.io/repos/sbmlteam/moccasin/badge.svg?branch=master)](https://coveralls.io/r/sbmlteam/moccasin?branch=master)
@@ -216,6 +216,28 @@ Continuing work on MOCCASIN is made possible thanks to funding from the [Nationa
 We also acknowledge the contributions made by Dr. [Dagmar Iber](http://www.silva.bsse.ethz.ch/cobi/people/iberd) from the Department of Biosystems Science and Engineering (D-BSSE), and Dr. [Bernd Rinn](https://www1.ethz.ch/id/about/sections/sis/index_EN) from the Scientific IT Services (SIS) division from ETH Zurich.
 
 The MOCCASIN logo was created by Randy Carlton (<rcarlton@rancar2.com>).
+
+MOCCASIN was makes use of numerous open-source packages, without which it would have been effectively impossible to develop MOCCASIN with the resources we had.  We want to acknowledge this debt.  In alphabetical order, the packages are:
+
+* [colorama](https://github.com/tartley/colorama) &ndash; makes ANSI escape character sequences work under MS Windows terminals
+* [coverage](https://coverage.readthedocs.io) &ndash; a tool for measuring code coverage of Python programs
+* [halo](https://github.com/ManrajGrover/halo) &ndash; busy-spinners for Python command-line programs
+* [ipdb](https://github.com/gotcha/ipdb) &ndash; the IPython debugger
+* [Markdown](https://python-markdown.github.io) &ndash; a Python implementation of a Markdown converter
+* [natsort](https://github.com/SethMMorton/natsort) &ndash; a natural sorting library for Python
+* [plac](http://micheles.github.io/plac/) &ndash; a command line argument parser
+* [Pygments](http://pygments.org) &ndash; a syntax highlighter for displaying source code
+* [pyparsing](http://pyparsing.wikispaces.com) &ndash; a library for creating grammars and parsers
+* [pytest](https://docs.pytest.org/en/latest/) &ndash; a testing framework for Python
+* [pytest-xdist](https://github.com/pytest-dev/pytest-xdist) &ndash; an extension for `py.test` for parallelized distributed testing 
+* [libSBML](http://sbml.org/Software/libSBML) &ndash; a library for working with [SBML](http://sbml.org)
+* [requests](http://docs.python-requests.org) &ndash; an HTTP library for Python
+* [setuptools]() &ndash; 
+* [six]() &ndash; 
+* [termcolor]() &ndash; 
+* [tox]() &ndash; 
+* [virtualenv]() &ndash; 
+* [wxPython]() &ndash; 
 
 
 ☮︎ Copyright and license
