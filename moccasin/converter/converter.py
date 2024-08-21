@@ -898,7 +898,7 @@ def infer_real_names(context, ode_var, underscores):
 # -----------------------------------------------------------------------------
 
 def create_raterule_model(parse_results, use_species=True, output_format="sbml",
-                          name_vars_after_param=False, add_comments=True):
+                          name_vars_after_param=False, add_comments=True, convert_to_reactions=False):
 
     # First, gather some initial information.
     working_context = first_function_context(parse_results)
@@ -1021,6 +1021,13 @@ def create_raterule_model(parse_results, use_species=True, output_format="sbml",
             # Although we don't need to define 't' for XPP, we will need to add
             # (in poss-processing) a definition to the SBML produced by Biocham.
             document.post_add.append(('t', 'time'))
+
+    # convert to reactions
+    if convert_to_reactions:
+        prop = ConversionProperties()
+        prop.addOption("inferReactions", True,
+                 "Infer reactions from rateRules in the model");
+        check(document.convert(prop), 'infering reactions failed')
 
     # Finally, return the model, with extra info about things that may need
     # to be added back in post-processing if we are hand this to BIOCHAM.
