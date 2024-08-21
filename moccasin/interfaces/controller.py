@@ -89,6 +89,14 @@ class Controller():
                                                add_comments)
         return output
 
+    def build_reaction_model_libsbml(self, use_species, name_after_param, add_comments):
+        '''Converts a parsed file into reaction-based SBML.'''
+
+        (output, _, _) = create_raterule_model(self.parse_results, use_species,
+                                               'sbml', name_after_param,
+                                               add_comments, convert_to_reactions=True)
+        return output
+    
 
     def build_reaction_model(self, use_species, name_after_param, add_comments):
         '''Converts a parsed file into reaction-based SBML.'''

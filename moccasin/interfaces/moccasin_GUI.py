@@ -303,7 +303,7 @@ class MainFrame (wx.Frame):
         sbSizer9.Add(gSizer7, 0, wx.EXPAND, 5)
 
         optionInset = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "Conversion options"), wx.VERTICAL)
-        optionGrid = wx.GridSizer(1, 2, 10, 10)
+        optionGrid = wx.GridSizer(1, 3, 10, 10)
 
         self.assumeTranslatable = wx.CheckBox(self, id = wx.ID_ANY,
                                               label = 'Assume array operations are not used')
@@ -318,6 +318,15 @@ class MainFrame (wx.Frame):
         self.addMoccasinComments.Value = True
         self.addMoccasinComments.SetToolTip("Write a comment into the output file with the MOCCASIN version, time stamp, and other information.")
         optionGrid.Add(self.addMoccasinComments, flag = wx.ALL, border = 6)
+
+        self.useLibSBML = wx.CheckBox(self, id = wx.ID_ANY,
+                                      label = 'Use LibSBML Conveter')
+        self.useLibSBML.SetToolTip("Use LibSBML to convert from raterules to reactions (if false, it will use BIOCHAM)")
+        self.useLibSBML.SetFont(labelFont)
+        self.useLibSBML.Value = True
+        self.useLibSBML.SetToolTip("Use LibSBML to convert from raterules to reactions (if false, it will use BIOCHAM)")
+        optionGrid.Add(self.useLibSBML, flag = wx.ALL, border = 6)
+
         optionInset.Add(optionGrid, 0, wx.EXPAND, 0)
 
         self.convertButton = wx.Button(self, wx.ID_ANY, "Convert",
@@ -339,29 +348,32 @@ class MainFrame (wx.Frame):
         panelTextFont = wx.Font(wx.NORMAL_FONT.GetPointSize() -1, 70, 90,
                                 wx.FONTWEIGHT_NORMAL, False, wx.EmptyString)
 
-        midPanelSizer = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "MATLAB File"),
-                                          wx.VERTICAL)
-        self.matlabWebView = wx.html2.WebView.New(self, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND )
+        #midPanelSizer = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, "MATLAB File"),
+        #                                  wx.VERTICAL)
+        midPanelSizer = wx.BoxSizer(wx.VERTICAL)
+        self.matlabWebView = wx.html2.WebView.New(self, wx.ALL|wx.EXPAND )
         self.matlabWebView.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
         wxSetToolTip(self.matlabWebView, "Input file for conversion")
         self.matlabWebView.SetFont(panelTextFont)
         self.matlabWebView.SetPage(_EMPTY_PAGE, "")
-        midPanelSizer.Add(self.matlabWebView, 1, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND, 5)
+        midPanelSizer.Add(self.matlabWebView, 1, wx.ALL|wx.EXPAND, 5)
         mainSizer.Add(midPanelSizer, 2, wx.ALL|wx.EXPAND, 5)
         mainSizer.Add(buttonVSizer, 0, wx.ALL|wx.EXPAND, 0)
 
         # Bottom sizer
-        bottomPanelSizer = wx.StaticBoxSizer(
-            wx.StaticBox(self, wx.ID_ANY, "Converted File"), wx.VERTICAL)
+        #bottomPanelSizer = wx.StaticBoxSizer(
+        #    wx.StaticBox(self, wx.ID_ANY, "Converted File"), wx.VERTICAL)
+        bottomPanelSizer = wx.BoxSizer(wx.VERTICAL)
         self.convertedWebView = wx.html2.WebView.New(
-            self, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND)
+            self, wx.ALL|wx.EXPAND)
         self.convertedWebView.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
         self.convertedWebView.SetFont(panelTextFont)
+        self.convertedWebView.SetZoomType(wx.html2.WEBVIEW_ZOOM_TYPE_LAYOUT)
         wxSetToolTip(self.convertedWebView, "Output file after conversion")
         self.convertedWebView.SetPage(_EMPTY_PAGE, "")
         bottomPanelSizer.Add(
-            self.convertedWebView, 1, wx.ALIGN_BOTTOM|wx.ALL|wx.EXPAND, 5)
+            self.convertedWebView, 1, wx.ALL|wx.EXPAND, 5)
         mainSizer.Add(bottomPanelSizer, 2, wx.ALL|wx.EXPAND, 5)
 
         # Set frame sizer
@@ -384,8 +396,7 @@ class MainFrame (wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnPageSetup, id= self.pageSetup.GetId())
         self.Bind(wx.EVT_MENU, self.OnPrint, id=self.printOption.GetId())
         self.Bind(wx.EVT_MENU_RANGE, self.onFileHistory, id=wx.ID_FILE1, id2=wx.ID_FILE9)
-        self.Bind(wx.EVT_CLOSE, self.onClose)
-
+        self.Bind(wx.EVT_CLOSE, self.onClose)        
 
     def __del__(self):
         pass
@@ -494,20 +505,31 @@ class MainFrame (wx.Frame):
                 self.statusBar.SetStatusText("SBML format - equations", 2)
             # Output reaction-based SBML
             else:
-                if not have_network():
-                    msg = "A network connection is needed for this feature, but the network appears to be unavailable."
-                    dlg = wx.MessageDialog(self, msg, "Warning", wx.OK | wx.ICON_WARNING)
-                    dlg.ShowModal()
-                    dlg.Destroy()
-                else:
-                    sbml = self.controller.build_reaction_model(
-                        use_species = self.varsAsSpecies.GetValue(),
-                        name_after_param = False,
-                        add_comments = self.addMoccasinComments.Value)
+                use_libSBML = self.useLibSBML.GetValue()
+                if use_libSBML:
+                    sbml = self.controller.build_reaction_model_libsbml(
+                            use_species = self.varsAsSpecies.GetValue(),
+                            name_after_param = False,
+                            add_comments = self.addMoccasinComments.Value)
 
                     self.convertedWebView.SetPage(tokenize(sbml, "xml", "borland"), "")
-                    self.statusBar.SetStatusText("SBML format - reactions",  2)
+                    self.statusBar.SetStatusText("SBML format - reactions (libsbml)",  2)
                     self._output_saved = False
+                else:
+                    if not have_network():
+                        msg = "A network connection is needed for this feature, but the network appears to be unavailable."
+                        dlg = wx.MessageDialog(self, msg, "Warning", wx.OK | wx.ICON_WARNING)
+                        dlg.ShowModal()
+                        dlg.Destroy()
+                    else:
+                        sbml = self.controller.build_reaction_model(
+                            use_species = self.varsAsSpecies.GetValue(),
+                            name_after_param = False,
+                            add_comments = self.addMoccasinComments.Value)
+
+                        self.convertedWebView.SetPage(tokenize(sbml, "xml", "borland"), "")
+                        self.statusBar.SetStatusText("SBML format - reactions (BIOCHAM)",  2)
+                        self._output_saved = False
 
         except IOError as err:
             wx.EndBusyCursor()
