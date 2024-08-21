@@ -29,7 +29,9 @@ import getopt
 sys.path.append('../../moccasin/converter/')
 sys.path.append('../../moccasin/')
 
-from evaluate_formula import *
+#from evaluate_formula import *
+from moccasin.converter.evaluate_formula import *
+import os
 
 
 def main(argv):
@@ -48,7 +50,9 @@ def main(argv):
     do_print = any(['-v' in y for y in options])
     do_debug = not any(['-n' in y for y in options])
 
-    for f in glob.glob("evaluate-test-cases/valid_*.m"):
+    script_location = os.path.dirname(os.path.abspath(__file__))
+
+    for f in glob.glob(os.path.join(script_location, "evaluate-test-cases/valid_*.m")):
         print('===== ' + f + ' ' + '='*30)
         with open(f, 'r') as file_in:
             contents = file_in.read()

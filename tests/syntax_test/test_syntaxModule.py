@@ -13,7 +13,8 @@ from string import printable
 sys.path.append('moccasin/')
 sys.path.append('../moccasin')
 sys.path.append('../../moccasin')
-from matlab_parser import MatlabParser
+from moccasin import *
+import traceback
 
 _VERSION2 = platform.python_version().startswith('2')
 
@@ -30,21 +31,26 @@ def pytest_generate_tests(metafunc):
 def build_model(path):
     try:
         with MatlabParser() as parser:
-            results = parser.parse_file(path, fail_soft=True)
+            results = parser.parse_file(path, fail_soft=True, print_debug=False)
             parser.print_parse_results(results, print_raw=True)
     except Exception as e:
         print(e)
+        traceback.print_exc()
+        raise e
 
 #reads file containing expected parsed model and returns it as string
 def read_parsed(path):
     file = codecs.open(path, encoding='utf-8')
     contents = file.read()
     file.close()
-    return contents
+    return contents.replace('\r\n', '\n')
 
 # Constructs the params dictionary for test function parametrization
 def obtain_params():
-    if os.path.isdir('tests'):
+    this_dir = os.path.dirname(os.path.abspath(__file__))
+    if os.path.isdir(this_dir + '/syntax-test-cases'):
+        path = [this_dir + '/syntax-test-cases']
+    elif os.path.isdir('tests'):
         path = ['tests', 'syntax_test', 'syntax-test-cases']
     elif os.path.isdir('syntax_test'):
         path = ['syntax_test', 'syntax-test-cases']
@@ -82,4 +88,9 @@ class TestClass:
         print("---Ouput from parser---")
         print(repr(from_parser))
         print ("\n \n")
+        if from_parser != from_file:
+            print("Parser output does not match expected output")
         assert from_parser == from_file
+
+if __name__ == "__main__":
+    pytest.main(sys.argv)

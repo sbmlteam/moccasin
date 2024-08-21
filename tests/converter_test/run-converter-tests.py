@@ -6,6 +6,7 @@ import sys
 from pyparsing import ParseException, ParseResults
 sys.path.append('../..')
 from moccasin import *
+import os
 
 sys.setrecursionlimit(10000)
 
@@ -16,7 +17,10 @@ def main(argv):
     quiet=False
     print_parse=True
 
-    for path in glob.glob("converter-test-cases/valid*.m"):
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    test_cases_dir = os.path.join(current_dir, "converter-test-cases")
+
+    for path in glob.glob(os.path.join(test_cases_dir, "valid*.m")):
         file = open(path, 'r')
         file_contents = file.read()
         file.close()
