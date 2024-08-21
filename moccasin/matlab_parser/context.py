@@ -22,6 +22,7 @@
 
 from __future__ import print_function
 import collections
+from collections.abc import MutableMapping
 from pyparsing import ParseResults
 
 
@@ -34,7 +35,7 @@ from pyparsing import ParseResults
 #
 # This next class def is based on http://stackoverflow.com/a/7760938/743730
 
-class ContextDict(collections.MutableMapping, dict):
+class ContextDict(MutableMapping, dict):
     """Class used to implement MatlabContext properties that are dictionaries."""
 
     def __getitem__(self, key):
