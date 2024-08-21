@@ -229,7 +229,7 @@ class MatlabNode(object):
             body = MatlabNode.as_string(thing.body)
             return '@(' + arg_list + ')' + body
         elif isinstance(thing, Comment) or isinstance(thing, FunDef) \
-             or isinstance(thing, Command):
+             or isinstance(thing, ShellCommand):
             # No reason for as_string called for these things, but must catch
             # random mayhem before falling through to the final case.
             return None
@@ -853,10 +853,11 @@ class MatlabNodeVisitor(object):
 
     def default_visit(self, node):
         """Default visitor.  Users can redefine this if desired."""
-        for a in type(node)._visitable_attr:
-            value = getattr(node, a, None)
-            if value:
-                setattr(node, a, self.visit(value))
+        if isinstance(node, MatlabNode):
+            for a in type(node)._visitable_attr:
+                value = getattr(node, a, None)
+                if value:
+                    setattr(node, a, self.visit(value))
         return node
 
 

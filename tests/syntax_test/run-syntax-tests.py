@@ -27,7 +27,9 @@ import pdb
 import getopt
 from pyparsing import ParseException, ParseResults
 sys.path.append('../../moccasin/')
-from matlab_parser import *
+sys.path.append('../..')
+from moccasin import *
+import os
 
 
 def main(argv):
@@ -45,7 +47,10 @@ def main(argv):
     do_debug = not any(['-n' in y for y in options])
     do_print = any(['-v' in y for y in options])
 
-    for f in glob.glob("syntax-test-cases/valid*.m"):
+    script_location = os.path.dirname(os.path.abspath(__file__))
+    test_cases_path = os.path.join(script_location, "syntax-test-cases")
+
+    for f in glob.glob(os.path.join(test_cases_path, "valid*.m")):
         print('===== ' + f + ' ' + '='*30)
         contents = ''
         with open(f, 'r') as file:

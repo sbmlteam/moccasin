@@ -21,6 +21,7 @@
 # ------------------------------------------------------------------------- -->
 
 import sys
+import os
 
 try:
     thisdir = os.path.dirname(os.path.abspath(__file__))

@@ -119,6 +119,9 @@ class NumericStringParser(object):
             "/": operator.truediv,
             "^": operator.pow
         }
+        self.int_fn = {            
+            "factorial": math.factorial,
+        }
         self.fn = {
             "abs": abs,
             "acos": math.acos,
@@ -131,7 +134,6 @@ class NumericStringParser(object):
             "cos": math.cos,
             "cosh": math.cosh,
             "exp": math.exp,  # not working
-            "factorial": math.factorial,
             "floor": math.floor,
             "fix": self.fix,
             "ln": math.log,
@@ -174,6 +176,8 @@ class NumericStringParser(object):
             return Decimal(math.e)   # 2.718281828
         elif op in self.fn:
             return Decimal(self.fn[op](self.evaluate_stack(s)))
+        elif op in self.int_fn:
+            return Decimal(self.int_fn[op](int(self.evaluate_stack(s))))
         elif op in self.bin_fn:
             op2 = Decimal(self.evaluate_stack(s))
             op1 = Decimal(self.evaluate_stack(s))

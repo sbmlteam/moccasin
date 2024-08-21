@@ -358,6 +358,7 @@
 from __future__ import print_function
 import codecs
 import copy
+from math import e
 import pdb
 import six
 import sys
@@ -367,15 +368,15 @@ from pyparsing import *                 # ... DON'T merge this & previous stmt!
 from distutils.version import LooseVersion
 from collections import defaultdict
 try:
-    from grammar_utils import *
-    from context import *
-    from matlab import *
-    from functions import *
-except:
     from .grammar_utils import *
     from .context import *
     from .matlab import *
     from .functions import *
+except:
+    from grammar_utils import *
+    from context import *
+    from matlab import *
+    from functions import *
 
 # Check minimum version of PyParsing.
 
@@ -472,6 +473,8 @@ class ParseResultsTransformer:
             msg = 'Internal grammar inconsistency: multiple tags for same construct.'
             raise MatlabInternalException(msg)
         key = first_key(pr)
+        if key is None:
+            return pr
         methname = 'visit_' + '_'.join(key.split())
         meth = getattr(self, methname, None)
         if meth is None:
@@ -557,6 +560,10 @@ class ParseResultsTransformer:
 
     def visit_assignment(self, pr):
         content = pr['assignment']
+        all_keys = list(content.keys())
+        if not all_keys:
+            content = content[0]
+
         lvalue = self.visit(content['lhs'])
         rvalue = self.visit(content['rhs'])
         node = Assignment(lhs=lvalue, rhs=rvalue)
@@ -565,6 +572,9 @@ class ParseResultsTransformer:
 
     def visit_array(self, pr):
         content = pr['array']
+        all_keys = list(content.keys())
+        if not all_keys:
+            content = content[0]
         # Two kinds of array situations: a bare array, and one where we
         # managed to determine it's an array access (and not the more
         # ambiguous function call or array access).  If we have an 'array
@@ -587,6 +597,9 @@ class ParseResultsTransformer:
 
     def visit_cell_array(self, pr):
         content = pr['cell array']
+        all_keys = list(content.keys())
+        if not all_keys:
+            content = content[0]
         # Two kinds of situations: a bare cell array, and one where we
         # managed to determine it's an array access.  If we have 'row list'
         # in the keys, it's the former.
@@ -610,7 +623,7 @@ class ParseResultsTransformer:
 
     def visit_array_or_function(self, pr):
         content = pr['array or function']
-        the_name = self.visit(content['name'])
+        the_name = self.visit(content['name'][0])
         if 'argument list' in content.keys():
             the_args = self._convert_list(content['argument list'])
         else:
@@ -620,6 +633,9 @@ class ParseResultsTransformer:
 
     def visit_function_handle(self, pr):
         content = pr['function handle']
+        all_keys = list(content.keys())
+        if not all_keys:
+            content = content[0]
         if 'name' in content:
             return FuncHandle(name=self.visit(content['name']))
         else:
@@ -627,7 +643,10 @@ class ParseResultsTransformer:
                 the_args = self._convert_list(content['parameter list'])
             else:
                 the_args = []
-            the_body = self.visit(content['function definition'])
+            if 'function definition' in content.keys():                
+                the_body = self.visit(content['function definition'])
+            else:
+                the_body = None
             return AnonFun(args=the_args, body=the_body)
 
 
@@ -640,6 +659,10 @@ class ParseResultsTransformer:
         # in the appropriate context.
 
         content = pr['function definition']
+        all_keys = list(content.keys())
+        if not all_keys:
+            content = content[0]
+
         name = self.visit(content['name'])
 
         params = None
@@ -647,7 +670,7 @@ class ParseResultsTransformer:
         if 'parameter list' in content:
             params = self._convert_list(content['parameter list'])
         if 'output list' in content:
-            output = self._convert_list(content['output list'])
+            output = self._convert_list(content['output list'][0])
 
         # Chicken, meet egg.  So: create an incomplete FunDef, use it to
         # create a context object, and then set the FunDef's context field.
@@ -678,12 +701,16 @@ class ParseResultsTransformer:
 
     def visit_struct(self, pr):
         content = pr['struct']
+        all_keys = list(content.keys())
+        if not all_keys:
+            content = content[0]
+
         the_base = self.visit(content['struct base'])
         dynamic = 'dynamic field' in content
         if dynamic:
-            the_field = self.visit(content['dynamic field'])
+            the_field = self.visit(content['dynamic field'][0])
         else:
-            the_field = self.visit(content['static field'])
+            the_field = Identifier(self.visit(content['static field'][0]))
         return StructRef(name=the_base, field=the_field, dynamic=dynamic)
 
 
@@ -810,7 +837,7 @@ class ParseResultsTransformer:
 
 
     def _convert_list(self, list):
-        return [self.visit(thing) for thing in list]
+        return [self.visit(thing) for thing in list if thing is not None] 
 
 
     def _convert_rows(self, rowlist):
@@ -2107,7 +2134,9 @@ class MatlabParser:
 
     def _do_parse(self, input):
         preprocessed = self._preprocess(input)
-        pr = self._matlab.parseString(preprocessed, parseAll=True)
+        #self._matlab.debug = True
+        #self._matlab.verbose_stacktrace = True
+        pr = self._matlab.parse_string(preprocessed, parse_all=False)
         return self._generate_nodes_and_contexts(pr)
 
 
@@ -2157,9 +2186,9 @@ class MatlabParser:
     def _object_name(self, obj):
         """Returns the name of a given object."""
         try:
-            values = MatlabParser.__dict__.iteritems()  # Python 2
-        except:
             values = MatlabParser.__dict__.items()      # Python 3
+        except:
+            values = MatlabParser.__dict__.iteritems()  # Python 2
         for name, thing in values:
             if thing is obj:
                 return name
@@ -2180,6 +2209,7 @@ class MatlabParser:
     #    _to_print_debug = [_cell_access, _cell_array, _bare_cell, _expr]
 
     _to_print_debug = _to_name # [_fun_body, _fun_def_deep, _fun_def_shallow, _stmt, _matlab]
+    _to_print_debug = [_fun_body, _fun_def_deep, _fun_def_shallow, _stmt, _matlab]
 
     def _print_debug(self, print_debug=False):
         if print_debug:
@@ -2260,7 +2290,7 @@ class MatlabParser:
         """
         self._reset()
         try:
-            file = codecs.open(path)
+            file = codecs.open(path, encoding='utf-8')
             contents = file.read()
             self._print_debug(print_debug)
             top_context = self._do_parse(contents)

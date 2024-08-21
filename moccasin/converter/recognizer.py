@@ -22,6 +22,7 @@
 
 import sys
 from collections import defaultdict
+import os
 
 try:
     thisdir = os.path.dirname(os.path.abspath(__file__))

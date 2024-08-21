@@ -61,11 +61,12 @@ sys.setrecursionlimit(5000)
     debug_parser  = ('print debug information about the parsed MATLAB',        'flag', 'D'),
     version       = ('print MOCCASIN version info and exit',                   'flag', 'V'),
     no_comments   = ('do not insert version comments into SBML output',        'flag', 'X'),
+    use_libsbml   = ('use libsbml converter for reaction-based SBML (default=False)',   'flag', 'l'),
     paths         = 'paths to MATLAB input files to convert'
 )
 
 def cli_main(gui, use_equations, use_params, quiet, relaxed, xpp_output,
-             no_color, debug_parser, version, no_comments, *paths):
+             no_color, debug_parser, version, no_comments, use_libsbml=False, *paths):
     '''Interface for controlling MOCCASIN, the MATLAB ODE converter for SBML.
 MOCCASIN can take certain forms of ODE (ordinary differential equation) models
 written in MATLAB and Octave and export them as SBML files.  MOCCASIN does not
@@ -128,6 +129,9 @@ the translation process:
   -e  (/e on Windows) makes the translator create equation-based SBML output,
       instead of converting the model to reaction-based form (the default)
 
+  -l  (/l on Windows) makes the translator use libsbml for the reaction-based
+        SBML output, instead of biocham
+
   -p  (/p on windows) makes the translator encode variables as SBML
       parameters, instead of the default, which is to use SBML species
 
@@ -153,7 +157,7 @@ SBML INteroperability".
     add_comments = not no_comments
 
     if gui or not any([paths, use_equations, use_params, xpp_output,
-                       version, debug_parser, quiet, no_comments]):
+                       version, debug_parser, quiet, no_comments, use_libsbml]):
         moccasin_GUI.gui_main()
         sys.exit()
     if version:
@@ -166,7 +170,7 @@ SBML INteroperability".
         sys.exit()
     if not paths:
         raise SystemExit(color('Must provide a path to a file.', 'error', colorize))
-    if not xpp_output and not use_equations and not have_network():
+    if not xpp_output and not use_equations and not use_libsbml and not have_network():
         raise SystemExit(color('No network connection.', 'error', colorize))
     if not quiet:
         from halo import Halo
@@ -204,10 +208,16 @@ SBML INteroperability".
                                             name_after_param = False,
                                             add_comments = add_comments)
         else:
-            text = 'Reaction-based SBML output'
-            output = controller.build_reaction_model(use_species = (not use_params),
-                                                     name_after_param = False,
-                                                     add_comments = add_comments)
+            if use_libsbml:
+                text = 'Reaction-based SBML output (libsbml)'
+                output = controller.build_reaction_model_libsbml(use_species = (not use_params),
+                                                        name_after_param = False,
+                                                        add_comments = add_comments)
+            else:
+                text = 'Reaction-based SBML output (biocham)'
+                output = controller.build_reaction_model(use_species = (not use_params),
+                                                        name_after_param = False,
+                                                        add_comments = add_comments)
         if debug_parser:
             print_header(text, 'info', quiet, colorize)
             msg(output)
@@ -222,6 +232,9 @@ SBML INteroperability".
                         'warning', colorize)
                     msg('Renaming to "{}".'.format(backup_path),
                         'warning', colorize)
+                # remove backup if it exists (otherwise rename will fail)
+                if os.path.exists(backup_path):
+                    os.remove(backup_path)
                 os.rename(output_path, backup_path)
             with open(output_path, 'w') as output_file:
                 output_file.write(output)

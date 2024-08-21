@@ -27,7 +27,7 @@ import pdb
 import getopt
 from pyparsing import ParseException, ParseResults
 sys.path.append('../../moccasin/')
-from matlab_parser import *
+from moccasin import *
 
 def main(argv):
     '''Usage: run-syntax-tests.py [-d] [-v]
